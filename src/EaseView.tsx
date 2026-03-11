@@ -1,6 +1,8 @@
-import { StyleSheet, type ViewProps } from 'react-native';
+import { StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
 import NativeEaseView from './EaseViewNativeComponent';
 import type { AnimateProps, Transition } from './types';
+
+export type EaseViewStyle = Omit<ViewStyle, 'opacity' | 'transform'>;
 
 const IDENTITY: Required<AnimateProps> = {
   opacity: 1,
@@ -10,10 +12,11 @@ const IDENTITY: Required<AnimateProps> = {
   rotate: 0,
 };
 
-export type EaseViewProps = ViewProps & {
+export type EaseViewProps = Omit<ViewProps, 'style'> & {
   animate?: AnimateProps;
   initialAnimate?: AnimateProps;
   transition?: Transition;
+  style?: EaseViewStyle | EaseViewStyle[];
 };
 
 export function EaseView({
@@ -26,19 +29,17 @@ export function EaseView({
   const resolved = { ...IDENTITY, ...animate };
   const resolvedInitial = { ...IDENTITY, ...(initialAnimate ?? animate) };
 
-  // Strip animated properties from style
+  // Strip animated properties from style at runtime as a safety net
   let cleanStyle = style;
-  if (style) {
-    const flat = StyleSheet.flatten(style);
-    if (flat) {
-      const { opacity, transform, ...remaining } = flat;
-      if (__DEV__ && (opacity !== undefined || transform !== undefined)) {
-        console.warn(
-          'react-native-ease: Set opacity/transforms in the animate prop, not style. ' +
-            'Animated properties in style will be ignored.'
-        );
-      }
-      cleanStyle = remaining;
+  if (__DEV__ && style) {
+    const flat = StyleSheet.flatten(style as ViewStyle) as Record<string, unknown>;
+    if (flat && ('opacity' in flat || 'transform' in flat)) {
+      console.warn(
+        'react-native-ease: Set opacity/transforms in the animate prop, not style. ' +
+          'Animated properties in style will be ignored.'
+      );
+      const { opacity: _o, transform: _t, ...remaining } = flat;
+      cleanStyle = remaining as EaseViewStyle;
     }
   }
 
