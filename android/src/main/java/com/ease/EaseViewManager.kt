@@ -2,14 +2,14 @@ package com.ease
 
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ThemedReactContext
-import com.facebook.react.uimanager.ViewGroupManager
 import com.facebook.react.uimanager.ViewManagerDelegate
+import com.facebook.react.views.view.ReactViewManager
 import com.facebook.react.viewmanagers.EaseViewManagerDelegate
 import com.facebook.react.viewmanagers.EaseViewManagerInterface
 
 @ReactModule(name = EaseViewManager.NAME)
 class EaseViewManager :
-    ViewGroupManager<EaseView>(),
+    ReactViewManager(),
     EaseViewManagerInterface<EaseView> {
 
     private val delegate = EaseViewManagerDelegate(this)
