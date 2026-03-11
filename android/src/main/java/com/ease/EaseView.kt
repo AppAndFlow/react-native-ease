@@ -58,13 +58,20 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     private val runningAnimators = mutableMapOf<String, ObjectAnimator>()
     private val runningSpringAnimations = mutableMapOf<DynamicAnimation.ViewProperty, SpringAnimation>()
 
-    // --- Easing interpolators ---
+    // --- Easing interpolators (lazy singletons shared across all instances) ---
+    companion object {
+        private val INTERPOLATOR_EASE_IN by lazy { PathInterpolator(0.42f, 0f, 1.0f, 1.0f) }
+        private val INTERPOLATOR_EASE_OUT by lazy { PathInterpolator(0.0f, 0.0f, 0.58f, 1.0f) }
+        private val INTERPOLATOR_EASE_IN_OUT by lazy { PathInterpolator(0.42f, 0f, 0.58f, 1.0f) }
+        private val INTERPOLATOR_LINEAR by lazy { LinearInterpolator() }
+    }
+
     private fun getInterpolator(easing: String): TimeInterpolator = when (easing) {
-        "easeIn" -> PathInterpolator(0.42f, 0f, 1.0f, 1.0f)
-        "easeOut" -> PathInterpolator(0.0f, 0.0f, 0.58f, 1.0f)
-        "easeInOut" -> PathInterpolator(0.42f, 0f, 0.58f, 1.0f)
-        "linear" -> LinearInterpolator()
-        else -> PathInterpolator(0.42f, 0f, 0.58f, 1.0f)
+        "easeIn" -> INTERPOLATOR_EASE_IN
+        "easeOut" -> INTERPOLATOR_EASE_OUT
+        "easeInOut" -> INTERPOLATOR_EASE_IN_OUT
+        "linear" -> INTERPOLATOR_LINEAR
+        else -> INTERPOLATOR_EASE_IN_OUT
     }
 
     // --- Hardware layer management ---
