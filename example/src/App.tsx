@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,28 +8,16 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { EaseView } from 'react-native-ease';
+import { EaseView, type TransitionEndEvent } from 'react-native-ease';
 
 import ComparisonScreen from './ComparisonScreen';
+import { Section } from './components/Section';
+import { TabBar, type Screen } from './components/TabBar';
+import { Button } from './components/Button';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 20px scrollContent padding + 20px section padding on each side
 const BANNER_WIDTH = SCREEN_WIDTH - 80;
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
 
 function ButtonDemo() {
   const [pressed, setPressed] = useState(false);
@@ -70,6 +58,7 @@ function BannerDemo() {
             loop: 'repeat',
           }}
           style={styles.bannerTrack}
+          useHardwareLayer={false}
         >
           <View style={styles.bannerSlide}>
             <Text style={styles.bannerText}>react-native-ease</Text>
@@ -83,6 +72,24 @@ function BannerDemo() {
   );
 }
 
+function PulseDemo() {
+  return (
+    <Section title="Pulse (Reverse Loop)">
+      <EaseView
+        initialAnimate={{ scale: 1, opacity: 0.5 }}
+        animate={{ scale: 1.3, opacity: 1 }}
+        transition={{
+          type: 'timing',
+          duration: 800,
+          easing: 'easeInOut',
+          loop: 'reverse',
+        }}
+        style={styles.pulse}
+      />
+    </Section>
+  );
+}
+
 function FadeDemo() {
   const [visible, setVisible] = useState(true);
   return (
@@ -92,9 +99,10 @@ function FadeDemo() {
         transition={{ type: 'timing', duration: 300, easing: 'easeOut' }}
         style={styles.box}
       />
-      <Pressable style={styles.button} onPress={() => setVisible((v) => !v)}>
-        <Text style={styles.buttonText}>{visible ? 'Hide' : 'Show'}</Text>
-      </Pressable>
+      <Button
+        label={visible ? 'Hide' : 'Show'}
+        onPress={() => setVisible((v) => !v)}
+      />
     </Section>
   );
 }
@@ -108,9 +116,10 @@ function SlideDemo() {
         transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
         style={styles.box}
       />
-      <Pressable style={styles.button} onPress={() => setMoved((v) => !v)}>
-        <Text style={styles.buttonText}>{moved ? 'Back' : 'Slide'}</Text>
-      </Pressable>
+      <Button
+        label={moved ? 'Back' : 'Slide'}
+        onPress={() => setMoved((v) => !v)}
+      />
     </Section>
   );
 }
@@ -126,9 +135,7 @@ function EnterDemo() {
         transition={{ type: 'spring', damping: 12, stiffness: 120, mass: 1 }}
         style={styles.box}
       />
-      <Pressable style={styles.button} onPress={() => setKey((k) => k + 1)}>
-        <Text style={styles.buttonText}>Replay</Text>
-      </Pressable>
+      <Button label="Replay" onPress={() => setKey((k) => k + 1)} />
     </Section>
   );
 }
@@ -142,9 +149,119 @@ function RotateDemo() {
         transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
         style={styles.box}
       />
-      <Pressable style={styles.button} onPress={() => setRotated((v) => !v)}>
-        <Text style={styles.buttonText}>Rotate</Text>
-      </Pressable>
+      <Button label="Rotate" onPress={() => setRotated((v) => !v)} />
+    </Section>
+  );
+}
+
+function TransformOriginDemo() {
+  const [active, setActive] = useState(false);
+  return (
+    <Section title="Transform Origin">
+      <View style={styles.originRow}>
+        <EaseView
+          animate={{ rotate: active ? 45 : 0, scale: active ? 1.15 : 1 }}
+          transformOrigin={{ x: 0, y: 0 }}
+          transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
+          style={styles.originBox}
+        >
+          <Text style={styles.originLabel}>top-left</Text>
+        </EaseView>
+        <EaseView
+          animate={{ rotate: active ? 45 : 0, scale: active ? 1.15 : 1 }}
+          transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
+          style={styles.originBox}
+        >
+          <Text style={styles.originLabel}>center</Text>
+        </EaseView>
+        <EaseView
+          animate={{ rotate: active ? 45 : 0, scale: active ? 1.15 : 1 }}
+          transformOrigin={{ x: 1, y: 1 }}
+          transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
+          style={styles.originBox}
+        >
+          <Text style={styles.originLabel}>bottom-right</Text>
+        </EaseView>
+      </View>
+      <Button
+        label={active ? 'Reset' : 'Rotate'}
+        onPress={() => setActive((v) => !v)}
+      />
+    </Section>
+  );
+}
+
+function ExitDemo() {
+  const [show, setShow] = useState(true);
+  const [exiting, setExiting] = useState(false);
+
+  const handleTransitionEnd = ({ finished }: TransitionEndEvent) => {
+    if (finished) {
+      setShow(false);
+      setExiting(false);
+    }
+  };
+
+  return (
+    <Section title="Exit Animation">
+      <View style={styles.exitContainer}>
+        {show && (
+          <EaseView
+            animate={{
+              opacity: exiting ? 0 : 1,
+              scale: exiting ? 0.8 : 1,
+              translateY: exiting ? 20 : 0,
+            }}
+            transition={{ type: 'timing', duration: 300, easing: 'easeIn' }}
+            onTransitionEnd={exiting ? handleTransitionEnd : undefined}
+            style={styles.box}
+          />
+        )}
+      </View>
+      <Button
+        label={show ? 'Remove' : 'Show Again'}
+        onPress={() => {
+          if (show) {
+            setExiting(true);
+          } else {
+            setShow(true);
+          }
+        }}
+      />
+    </Section>
+  );
+}
+
+function InterruptDemo() {
+  const [moved, setMoved] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  return (
+    <Section title="Interrupt Detection">
+      <Text style={styles.interruptHint}>
+        Tap quickly to interrupt the animation
+      </Text>
+      <EaseView
+        animate={{ translateX: moved ? 200 : 0 }}
+        transition={{ type: 'timing', duration: 1000, easing: 'easeInOut' }}
+        onTransitionEnd={({ finished }) => {
+          setStatus(finished ? 'Finished' : 'Interrupted!');
+        }}
+        style={styles.box}
+      />
+      <View style={styles.interruptRow}>
+        <Button label="Toggle" compact onPress={() => setMoved((v) => !v)} />
+        <Text
+          style={[
+            styles.statusText,
+            status === 'Interrupted!'
+              ? styles.statusInterrupted
+              : styles.statusFinished,
+          ]}
+        >
+          {status ?? ' '}
+        </Text>
+      </View>
     </Section>
   );
 }
@@ -163,48 +280,11 @@ function CombinedDemo() {
         transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
         style={styles.box}
       />
-      <Pressable style={styles.button} onPress={() => setActive((v) => !v)}>
-        <Text style={styles.buttonText}>{active ? 'Reset' : 'Animate'}</Text>
-      </Pressable>
+      <Button
+        label={active ? 'Reset' : 'Animate'}
+        onPress={() => setActive((v) => !v)}
+      />
     </Section>
-  );
-}
-
-type Screen = 'demos' | 'comparison';
-
-function TabBar({
-  screen,
-  onChangeScreen,
-}: {
-  screen: Screen;
-  onChangeScreen: (s: Screen) => void;
-}) {
-  return (
-    <View style={styles.tabBar}>
-      <Pressable
-        style={[styles.tab, screen === 'demos' && styles.tabActive]}
-        onPress={() => onChangeScreen('demos')}
-      >
-        <Text
-          style={[styles.tabText, screen === 'demos' && styles.tabTextActive]}
-        >
-          Demos
-        </Text>
-      </Pressable>
-      <Pressable
-        style={[styles.tab, screen === 'comparison' && styles.tabActive]}
-        onPress={() => onChangeScreen('comparison')}
-      >
-        <Text
-          style={[
-            styles.tabText,
-            screen === 'comparison' && styles.tabTextActive,
-          ]}
-        >
-          vs Reanimated
-        </Text>
-      </Pressable>
-    </View>
   );
 }
 
@@ -217,10 +297,14 @@ function DemosScreen() {
       </Text>
       <ButtonDemo />
       <BannerDemo />
+      <PulseDemo />
       <FadeDemo />
       <SlideDemo />
       <EnterDemo />
+      <ExitDemo />
+      <InterruptDemo />
       <RotateDemo />
+      <TransformOriginDemo />
       <CombinedDemo />
     </ScrollView>
   );
@@ -244,30 +328,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a2e',
   },
-  tabBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#16213e',
-  },
-  tabActive: {
-    backgroundColor: '#4a90d9',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8888aa',
-  },
-  tabTextActive: {
-    color: '#fff',
-  },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
@@ -283,18 +343,6 @@ const styles = StyleSheet.create({
     color: '#8888aa',
     marginBottom: 32,
   },
-  section: {
-    marginBottom: 28,
-    backgroundColor: '#16213e',
-    borderRadius: 16,
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#e0e0ff',
-    marginBottom: 16,
-  },
   box: {
     width: 80,
     height: 80,
@@ -303,18 +351,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  button: {
-    marginTop: 16,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#2a2a4a',
-    borderRadius: 8,
+  interruptHint: {
+    color: '#8888aa',
+    fontSize: 13,
+    marginBottom: 12,
   },
-  buttonText: {
-    color: '#e0e0ff',
-    fontWeight: '600',
+  interruptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 12,
+  },
+  statusText: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  statusFinished: {
+    color: '#4ade80',
+  },
+  statusInterrupted: {
+    color: '#f87171',
+  },
+  pulse: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#4a90d9',
+  },
+  exitContainer: {
+    width: 80,
+    height: 80,
+  },
+  originRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  originBox: {
+    width: 70,
+    height: 70,
+    backgroundColor: '#4a90d9',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  originLabel: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600',
   },
   animatedButton: {
     paddingHorizontal: 32,

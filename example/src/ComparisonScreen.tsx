@@ -9,13 +9,13 @@ import {
 } from 'react-native';
 import Animated, {
   Easing,
-  runOnUI,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import { EaseView } from 'react-native-ease';
+import { scheduleOnUI } from 'react-native-worklets';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 20px scrollContent padding + 20px section padding on each side
@@ -68,10 +68,10 @@ function ReanimatedBanner() {
     <View style={styles.bannerContainer}>
       <Animated.View style={[styles.bannerTrack, animatedStyle]}>
         <View style={[styles.bannerSlide, styles.reanimatedBanner]}>
-          <Text style={styles.bannerText}>Reanimated</Text>
+          <Text style={styles.bannerText}>🏇 react-native-reanimated</Text>
         </View>
         <View style={[styles.bannerSlide, styles.reanimatedBanner]}>
-          <Text style={styles.bannerText}>Reanimated</Text>
+          <Text style={styles.bannerText}>🏇 react-native-reanimated</Text>
         </View>
       </Animated.View>
     </View>
@@ -86,13 +86,13 @@ function LagSwitch() {
       return;
     }
     const id = setInterval(() => {
-      runOnUI(() => {
+      scheduleOnUI(() => {
         'worklet';
         const start = Date.now();
         while (Date.now() - start < 500) {
           // block UI thread
         }
-      })();
+      });
     }, 800);
     return () => clearInterval(id);
   }, [enabled]);
@@ -120,7 +120,7 @@ function LagSwitch() {
 export default function ComparisonScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.title}>ease vs Reanimated</Text>
+      <Text style={styles.title}>Ease vs Reanimated</Text>
       <Text style={styles.subtitle}>
         Toggle the lag switch to block the UI thread.{'\n'}ease uses native
         animation APIs that run on the render thread,{'\n'}so animations stay
@@ -133,7 +133,7 @@ export default function ComparisonScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Reanimated</Text>
+        <Text style={styles.sectionTitle}>🏇 react-native-reanimated</Text>
         <ReanimatedBanner />
       </View>
 
