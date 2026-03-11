@@ -2,94 +2,101 @@ package com.ease
 
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ThemedReactContext
-import com.facebook.react.uimanager.ViewManagerDelegate
+import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.views.view.ReactViewGroup
 import com.facebook.react.views.view.ReactViewManager
-import com.facebook.react.viewmanagers.EaseViewManagerDelegate
-import com.facebook.react.viewmanagers.EaseViewManagerInterface
 
 @ReactModule(name = EaseViewManager.NAME)
-class EaseViewManager :
-    ReactViewManager(),
-    EaseViewManagerInterface<EaseView> {
-
-    private val delegate = EaseViewManagerDelegate<EaseView, EaseViewManager>(this)
-
-    override fun getDelegate(): ViewManagerDelegate<ReactViewGroup> =
-        delegate as ViewManagerDelegate<ReactViewGroup>
+class EaseViewManager : ReactViewManager() {
 
     override fun getName(): String = NAME
 
     override fun createViewInstance(context: ThemedReactContext): EaseView =
         EaseView(context)
 
-    // --- Animate value setters (buffered on the view instance) ---
+    // --- Animate value setters ---
 
-    override fun setAnimateOpacity(view: EaseView, value: Float) {
+    @ReactProp(name = "animateOpacity", defaultFloat = 1f)
+    fun setAnimateOpacity(view: EaseView, value: Float) {
         view.pendingOpacity = value
     }
 
-    override fun setAnimateTranslateX(view: EaseView, value: Float) {
+    @ReactProp(name = "animateTranslateX", defaultFloat = 0f)
+    fun setAnimateTranslateX(view: EaseView, value: Float) {
         view.pendingTranslateX = value
     }
 
-    override fun setAnimateTranslateY(view: EaseView, value: Float) {
+    @ReactProp(name = "animateTranslateY", defaultFloat = 0f)
+    fun setAnimateTranslateY(view: EaseView, value: Float) {
         view.pendingTranslateY = value
     }
 
-    override fun setAnimateScale(view: EaseView, value: Float) {
+    @ReactProp(name = "animateScale", defaultFloat = 1f)
+    fun setAnimateScale(view: EaseView, value: Float) {
         view.pendingScale = value
     }
 
-    override fun setAnimateRotate(view: EaseView, value: Float) {
+    @ReactProp(name = "animateRotate", defaultFloat = 0f)
+    fun setAnimateRotate(view: EaseView, value: Float) {
         view.pendingRotate = value
     }
 
     // --- Initial animate value setters ---
 
-    override fun setInitialAnimateOpacity(view: EaseView, value: Float) {
+    @ReactProp(name = "initialAnimateOpacity", defaultFloat = 1f)
+    fun setInitialAnimateOpacity(view: EaseView, value: Float) {
         view.initialAnimateOpacity = value
     }
 
-    override fun setInitialAnimateTranslateX(view: EaseView, value: Float) {
+    @ReactProp(name = "initialAnimateTranslateX", defaultFloat = 0f)
+    fun setInitialAnimateTranslateX(view: EaseView, value: Float) {
         view.initialAnimateTranslateX = value
     }
 
-    override fun setInitialAnimateTranslateY(view: EaseView, value: Float) {
+    @ReactProp(name = "initialAnimateTranslateY", defaultFloat = 0f)
+    fun setInitialAnimateTranslateY(view: EaseView, value: Float) {
         view.initialAnimateTranslateY = value
     }
 
-    override fun setInitialAnimateScale(view: EaseView, value: Float) {
+    @ReactProp(name = "initialAnimateScale", defaultFloat = 1f)
+    fun setInitialAnimateScale(view: EaseView, value: Float) {
         view.initialAnimateScale = value
     }
 
-    override fun setInitialAnimateRotate(view: EaseView, value: Float) {
+    @ReactProp(name = "initialAnimateRotate", defaultFloat = 0f)
+    fun setInitialAnimateRotate(view: EaseView, value: Float) {
         view.initialAnimateRotate = value
     }
 
     // --- Transition config setters ---
 
-    override fun setTransitionType(view: EaseView, value: String?) {
+    @ReactProp(name = "transitionType")
+    fun setTransitionType(view: EaseView, value: String?) {
         view.transitionType = value ?: "timing"
     }
 
-    override fun setTransitionDuration(view: EaseView, value: Int) {
+    @ReactProp(name = "transitionDuration", defaultInt = 300)
+    fun setTransitionDuration(view: EaseView, value: Int) {
         view.transitionDuration = value
     }
 
-    override fun setTransitionEasing(view: EaseView, value: String?) {
+    @ReactProp(name = "transitionEasing")
+    fun setTransitionEasing(view: EaseView, value: String?) {
         view.transitionEasing = value ?: "easeInOut"
     }
 
-    override fun setTransitionDamping(view: EaseView, value: Float) {
+    @ReactProp(name = "transitionDamping", defaultFloat = 15f)
+    fun setTransitionDamping(view: EaseView, value: Float) {
         view.transitionDamping = value
     }
 
-    override fun setTransitionStiffness(view: EaseView, value: Float) {
+    @ReactProp(name = "transitionStiffness", defaultFloat = 120f)
+    fun setTransitionStiffness(view: EaseView, value: Float) {
         view.transitionStiffness = value
     }
 
-    override fun setTransitionMass(view: EaseView, value: Float) {
+    @ReactProp(name = "transitionMass", defaultFloat = 1f)
+    fun setTransitionMass(view: EaseView, value: Float) {
         view.transitionMass = value
     }
 
