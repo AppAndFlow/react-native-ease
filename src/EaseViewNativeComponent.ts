@@ -30,6 +30,10 @@ export interface NativeProps extends ViewProps {
   transitionDamping?: CodegenTypes.WithDefault<CodegenTypes.Float, 15.0>;
   transitionStiffness?: CodegenTypes.WithDefault<CodegenTypes.Float, 120.0>;
   transitionMass?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
+  transitionLoop?: CodegenTypes.WithDefault<
+    'none' | 'repeat' | 'reverse',
+    'none'
+  >;
 
   // Android hardware layer optimization (no-op on iOS)
   useHardwareLayer?: CodegenTypes.WithDefault<boolean, true>;

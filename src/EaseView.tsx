@@ -74,6 +74,8 @@ export function EaseView({
     transition?.type === 'spring' ? transition.stiffness ?? 120 : 120;
   const transitionMass =
     transition?.type === 'spring' ? transition.mass ?? 1 : 1;
+  const transitionLoop =
+    transition?.type === 'timing' ? transition.loop ?? 'none' : 'none';
 
   return (
     <NativeEaseView
@@ -94,6 +96,7 @@ export function EaseView({
       transitionDamping={transitionDamping}
       transitionStiffness={transitionStiffness}
       transitionMass={transitionMass}
+      transitionLoop={transitionLoop}
       useHardwareLayer={useHardwareLayer}
       {...rest}
     />

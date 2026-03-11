@@ -8,6 +8,8 @@ export type TimingTransition = {
   duration?: number;
   /** Easing curve. @default 'easeInOut' */
   easing?: EasingType;
+  /** Loop mode — 'repeat' restarts from the beginning, 'reverse' alternates direction. */
+  loop?: 'repeat' | 'reverse';
 };
 
 /** Physics-based spring transition. */
