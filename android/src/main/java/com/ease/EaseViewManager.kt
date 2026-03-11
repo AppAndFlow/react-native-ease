@@ -1,8 +1,15 @@
 package com.ease
 
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.WritableMap
+import com.facebook.react.common.MapBuilder
 import com.facebook.react.module.annotations.ReactModule
+import com.facebook.react.uimanager.PixelUtil
 import com.facebook.react.uimanager.ThemedReactContext
+import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.annotations.ReactProp
+import com.facebook.react.uimanager.events.Event
 import com.facebook.react.views.view.ReactViewGroup
 import com.facebook.react.views.view.ReactViewManager
 
@@ -11,8 +18,17 @@ class EaseViewManager : ReactViewManager() {
 
     override fun getName(): String = NAME
 
-    override fun createViewInstance(context: ThemedReactContext): EaseView =
-        EaseView(context)
+    override fun createViewInstance(context: ThemedReactContext): EaseView {
+        val view = EaseView(context)
+        view.onTransitionEnd = { property, finished ->
+            val eventDispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, view.id)
+            val surfaceId = UIManagerHelper.getSurfaceId(context)
+            eventDispatcher?.dispatchEvent(
+                TransitionEndEvent(surfaceId, view.id, property, finished)
+            )
+        }
+        return view
+    }
 
     // --- Animate value setters ---
 
@@ -23,12 +39,12 @@ class EaseViewManager : ReactViewManager() {
 
     @ReactProp(name = "animateTranslateX", defaultFloat = 0f)
     fun setAnimateTranslateX(view: EaseView, value: Float) {
-        view.pendingTranslateX = value
+        view.pendingTranslateX = PixelUtil.toPixelFromDIP(value)
     }
 
     @ReactProp(name = "animateTranslateY", defaultFloat = 0f)
     fun setAnimateTranslateY(view: EaseView, value: Float) {
-        view.pendingTranslateY = value
+        view.pendingTranslateY = PixelUtil.toPixelFromDIP(value)
     }
 
     @ReactProp(name = "animateScale", defaultFloat = 1f)
@@ -50,12 +66,12 @@ class EaseViewManager : ReactViewManager() {
 
     @ReactProp(name = "initialAnimateTranslateX", defaultFloat = 0f)
     fun setInitialAnimateTranslateX(view: EaseView, value: Float) {
-        view.initialAnimateTranslateX = value
+        view.initialAnimateTranslateX = PixelUtil.toPixelFromDIP(value)
     }
 
     @ReactProp(name = "initialAnimateTranslateY", defaultFloat = 0f)
     fun setInitialAnimateTranslateY(view: EaseView, value: Float) {
-        view.initialAnimateTranslateY = value
+        view.initialAnimateTranslateY = PixelUtil.toPixelFromDIP(value)
     }
 
     @ReactProp(name = "initialAnimateScale", defaultFloat = 1f)
@@ -112,6 +128,20 @@ class EaseViewManager : ReactViewManager() {
         view.useHardwareLayer = value
     }
 
+    // --- Prevent BaseViewManager from resetting animated properties ---
+
+    override fun setTransformProperty(
+        view: ReactViewGroup,
+        transforms: ReadableArray?,
+        transformOrigin: ReadableArray?
+    ) {
+        // No-op: we manage translationX/Y, scaleX/Y, rotation ourselves via animations.
+    }
+
+    override fun setOpacity(view: ReactViewGroup, opacity: Float) {
+        // No-op: we manage opacity ourselves via animations.
+    }
+
     // --- Lifecycle ---
 
     override fun onAfterUpdateTransaction(view: ReactViewGroup) {
@@ -122,6 +152,25 @@ class EaseViewManager : ReactViewManager() {
     override fun onDropViewInstance(view: ReactViewGroup) {
         super.onDropViewInstance(view)
         (view as? EaseView)?.cleanup()
+    }
+
+    override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any>? {
+        return MapBuilder.builder<String, Any>()
+            .put("onTransitionEnd", MapBuilder.of("registrationName", "onTransitionEnd"))
+            .build()
+    }
+
+    private class TransitionEndEvent(
+        surfaceId: Int,
+        viewId: Int,
+        private val property: String,
+        private val finished: Boolean
+    ) : Event<TransitionEndEvent>(surfaceId, viewId) {
+        override fun getEventName() = "onTransitionEnd"
+        override fun getEventData(): WritableMap = Arguments.createMap().apply {
+            putString("property", property)
+            putBoolean("finished", finished)
+        }
     }
 
     companion object {

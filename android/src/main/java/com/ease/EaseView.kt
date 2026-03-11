@@ -37,6 +37,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
     // --- Hardware layer ---
     var useHardwareLayer: Boolean = true
+
+    // --- Event callback ---
+    var onTransitionEnd: ((property: String, finished: Boolean) -> Unit)? = null
     private var activeAnimationCount: Int = 0
     private var savedLayerType: Int = View.LAYER_TYPE_NONE
 
@@ -64,6 +67,16 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         private val INTERPOLATOR_EASE_OUT by lazy { PathInterpolator(0.0f, 0.0f, 0.58f, 1.0f) }
         private val INTERPOLATOR_EASE_IN_OUT by lazy { PathInterpolator(0.42f, 0f, 0.58f, 1.0f) }
         private val INTERPOLATOR_LINEAR by lazy { LinearInterpolator() }
+    }
+
+    private fun toJsPropertyName(propertyName: String): String? = when (propertyName) {
+        "alpha" -> "opacity"
+        "translationX" -> "translateX"
+        "translationY" -> "translateY"
+        "scaleX" -> "scale"
+        "scaleY" -> null // Skip — scaleX already fires for scale
+        "rotation" -> "rotate"
+        else -> null
     }
 
     private fun getInterpolator(easing: String): TimeInterpolator = when (easing) {
@@ -238,11 +251,18 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 }
             }
             addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
                 override fun onAnimationStart(animation: Animator) {
                     this@EaseView.onEaseAnimationStart()
                 }
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
                 override fun onAnimationEnd(animation: Animator) {
                     this@EaseView.onEaseAnimationEnd()
+                    toJsPropertyName(propertyName)?.let { jsProp ->
+                        onTransitionEnd?.invoke(jsProp, !cancelled)
+                    }
                 }
             })
         }
@@ -274,8 +294,22 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                     this@EaseView.onEaseAnimationStart()
                 }
             }
-            addEndListener { _, _, _, _ ->
+            addEndListener { _, canceled, _, _ ->
                 this@EaseView.onEaseAnimationEnd()
+                val viewPropertyName = when (viewProperty) {
+                    DynamicAnimation.ALPHA -> "alpha"
+                    DynamicAnimation.TRANSLATION_X -> "translationX"
+                    DynamicAnimation.TRANSLATION_Y -> "translationY"
+                    DynamicAnimation.SCALE_X -> "scaleX"
+                    DynamicAnimation.SCALE_Y -> "scaleY"
+                    DynamicAnimation.ROTATION -> "rotation"
+                    else -> null
+                }
+                viewPropertyName?.let { name ->
+                    toJsPropertyName(name)?.let { jsProp ->
+                        onTransitionEnd?.invoke(jsProp, !canceled)
+                    }
+                }
             }
         }
 
