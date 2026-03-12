@@ -3,7 +3,6 @@ package com.ease
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.WritableMap
-import com.facebook.react.common.MapBuilder
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.PixelUtil
 import com.facebook.react.uimanager.ThemedReactContext
@@ -200,9 +199,9 @@ class EaseViewManager : ReactViewManager() {
     }
 
     override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any>? {
-        return MapBuilder.builder<String, Any>()
-            .put("onTransitionEnd", MapBuilder.of("registrationName", "onTransitionEnd"))
-            .build()
+        return mapOf(
+            "onTransitionEnd" to mapOf("registrationName" to "onTransitionEnd")
+        )
     }
 
     private class TransitionEndEvent(
