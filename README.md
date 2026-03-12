@@ -51,7 +51,6 @@ function FadeCard({ visible, children }) {
 | Fade/slide/scale on state change | ✅ | |
 | Enter/exit animations | ✅ | |
 | Gesture-driven animations (pan, pinch) | | ✅ |
-| Shared values across components | | ✅ |
 | Layout animations (width, height) | | ✅ |
 | Complex interpolations & chaining | | ✅ |
 
