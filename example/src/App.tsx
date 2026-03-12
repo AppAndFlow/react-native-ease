@@ -345,6 +345,27 @@ function CustomEasingDemo() {
   );
 }
 
+function BorderRadiusDemo() {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Section title="Border Radius">
+      <EaseView
+        animate={{ borderRadius: expanded ? 0 : 40 }}
+        transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+        style={styles.borderRadiusBox}
+      >
+        <Text style={styles.borderRadiusText}>
+          {expanded ? 'Square' : 'Round'}
+        </Text>
+      </EaseView>
+      <Button
+        label={expanded ? 'Round' : 'Square'}
+        onPress={() => setExpanded((v) => !v)}
+      />
+    </Section>
+  );
+}
+
 function CombinedDemo() {
   const [active, setActive] = useState(false);
   return (
@@ -387,6 +408,7 @@ function DemosScreen() {
       <IndependentScaleDemo />
       <TransformOriginDemo />
       <StyledCardDemo />
+      <BorderRadiusDemo />
       <CustomEasingDemo />
       <CombinedDemo />
     </ScrollView>
@@ -529,6 +551,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  borderRadiusBox: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#4a90d9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  borderRadiusText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
   },
   styledCard: {
     opacity: 0.6,
