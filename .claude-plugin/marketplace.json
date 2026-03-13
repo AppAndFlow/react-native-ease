@@ -1,0 +1,21 @@
+{
+  "name": "react-native-ease-plugins",
+  "owner": {
+    "name": "AppAndFlow",
+    "email": "devops@appandflow.com"
+  },
+  "metadata": {
+    "description": "Claude Code skills for react-native-ease — migrate Reanimated/Animated code to react-native-ease"
+  },
+  "plugins": [
+    {
+      "name": "react-native-ease",
+      "source": "./",
+      "description": "Scan for Animated/Reanimated code and migrate to react-native-ease",
+      "version": "0.2.0",
+      "author": {
+        "name": "AppAndFlow"
+      }
+    }
+  ]
+}
