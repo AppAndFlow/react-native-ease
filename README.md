@@ -24,6 +24,24 @@ npm install react-native-ease
 yarn add react-native-ease
 ```
 
+## Migration Skill
+
+If you're already using `react-native-reanimated` or React Native's `Animated` API, this project includes an [Agent Skill](https://agentskills.io) that scans your codebase for animations that can be replaced with `react-native-ease` and migrates them automatically.
+
+```bash
+npx skills add appandflow/react-native-ease
+```
+
+Then invoke the skill in your agent (e.g., `/refactor` in Claude Code).
+
+The skill will:
+
+1. Scan your project for Reanimated/Animated code
+2. Classify which animations can be migrated (and which can't, with reasons)
+3. Show a migration report with before/after details
+4. Let you select which components to migrate
+5. Apply the changes, preserving all non-animation logic
+
 ## Quick Start
 
 ```tsx
@@ -46,13 +64,13 @@ function FadeCard({ visible, children }) {
 
 ## When to use this vs Reanimated
 
-| Use case | Ease | Reanimated |
-|---|---|---|
-| Fade/slide/scale on state change | ✅ | |
-| Enter/exit animations | ✅ | |
-| Gesture-driven animations (pan, pinch) | | ✅ |
-| Layout animations (width, height) | | ✅ |
-| Complex interpolations & chaining | | ✅ |
+| Use case                               | Ease | Reanimated |
+| -------------------------------------- | ---- | ---------- |
+| Fade/slide/scale on state change       | ✅   |            |
+| Enter/exit animations                  | ✅   |            |
+| Gesture-driven animations (pan, pinch) |      | ✅         |
+| Layout animations (width, height)      |      | ✅         |
+| Complex interpolations & chaining      |      | ✅         |
 
 ## Guide
 
@@ -67,11 +85,11 @@ Timing animations transition from one value to another over a fixed duration wit
 />
 ```
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `duration` | `number` | `300` | Duration in milliseconds |
-| `easing` | `EasingType` | `'easeInOut'` | Easing curve (preset name or `[x1, y1, x2, y2]` cubic bezier) |
-| `loop` | `string` | — | `'repeat'` restarts from the beginning, `'reverse'` alternates direction |
+| Parameter  | Type         | Default       | Description                                                              |
+| ---------- | ------------ | ------------- | ------------------------------------------------------------------------ |
+| `duration` | `number`     | `300`         | Duration in milliseconds                                                 |
+| `easing`   | `EasingType` | `'easeInOut'` | Easing curve (preset name or `[x1, y1, x2, y2]` cubic bezier)            |
+| `loop`     | `string`     | —             | `'repeat'` restarts from the beginning, `'reverse'` alternates direction |
 
 Available easing curves:
 
@@ -112,11 +130,11 @@ Spring animations use a physics-based model for natural-feeling motion. Great fo
 />
 ```
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `damping` | `number` | `15` | Friction — higher values reduce oscillation |
-| `stiffness` | `number` | `120` | Spring constant — higher values mean faster animation |
-| `mass` | `number` | `1` | Mass of the object — higher values mean slower, more momentum |
+| Parameter   | Type     | Default | Description                                                   |
+| ----------- | -------- | ------- | ------------------------------------------------------------- |
+| `damping`   | `number` | `15`    | Friction — higher values reduce oscillation                   |
+| `stiffness` | `number` | `120`   | Spring constant — higher values mean faster animation         |
+| `mass`      | `number` | `1`     | Mass of the object — higher values mean slower, more momentum |
 
 Spring presets for common feels:
 
@@ -189,16 +207,16 @@ All properties are set in the `animate` prop as flat values (no transform array)
 ```tsx
 <EaseView
   animate={{
-    opacity: 1,       // 0 to 1
-    translateX: 0,    // pixels
-    translateY: 0,    // pixels
-    scale: 1,         // 1 = normal size (shorthand for scaleX + scaleY)
-    scaleX: 1,        // horizontal scale
-    scaleY: 1,        // vertical scale
-    rotate: 0,        // Z-axis rotation in degrees
-    rotateX: 0,       // X-axis rotation in degrees (3D)
-    rotateY: 0,       // Y-axis rotation in degrees (3D)
-    borderRadius: 0,  // pixels (hardware-accelerated, clips children)
+    opacity: 1, // 0 to 1
+    translateX: 0, // pixels
+    translateY: 0, // pixels
+    scale: 1, // 1 = normal size (shorthand for scaleX + scaleY)
+    scaleX: 1, // horizontal scale
+    scaleY: 1, // vertical scale
+    rotate: 0, // Z-axis rotation in degrees
+    rotateX: 0, // X-axis rotation in degrees (3D)
+    rotateY: 0, // Y-axis rotation in degrees (3D)
+    borderRadius: 0, // pixels (hardware-accelerated, clips children)
     backgroundColor: 'transparent', // any RN color value
   }}
 />
@@ -280,11 +298,11 @@ By default, scale and rotation animate from the view's center. Use `transformOri
 />
 ```
 
-| Value | Position |
-|---|---|
-| `{ x: 0, y: 0 }` | Top-left |
+| Value                | Position         |
+| -------------------- | ---------------- |
+| `{ x: 0, y: 0 }`     | Top-left         |
 | `{ x: 0.5, y: 0.5 }` | Center (default) |
-| `{ x: 1, y: 1 }` | Bottom-right |
+| `{ x: 1, y: 1 }`     | Bottom-right     |
 
 ### Style Handling
 
@@ -318,32 +336,32 @@ By default, scale and rotation animate from the view's center. Use `transformOri
 
 A `View` that animates property changes using native platform APIs.
 
-| Prop | Type | Description |
-|---|---|---|
-| `animate` | `AnimateProps` | Target values for animated properties |
-| `initialAnimate` | `AnimateProps` | Starting values for enter animations (animates to `animate` on mount) |
-| `transition` | `Transition` | Animation configuration (timing, spring, or none) |
-| `onTransitionEnd` | `(event) => void` | Called when all animations complete with `{ finished: boolean }` |
-| `transformOrigin` | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center) |
-| `useHardwareLayer` | `boolean` | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
-| `style` | `ViewStyle` | Non-animated styles (layout, colors, borders, etc.) |
-| `children` | `ReactNode` | Child elements |
-| ...rest | `ViewProps` | All other standard View props |
+| Prop               | Type                         | Description                                                                                                                  |
+| ------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `animate`          | `AnimateProps`               | Target values for animated properties                                                                                        |
+| `initialAnimate`   | `AnimateProps`               | Starting values for enter animations (animates to `animate` on mount)                                                        |
+| `transition`       | `Transition`                 | Animation configuration (timing, spring, or none)                                                                            |
+| `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }`                                                             |
+| `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center)                                      |
+| `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
+| `style`            | `ViewStyle`                  | Non-animated styles (layout, colors, borders, etc.)                                                                          |
+| `children`         | `ReactNode`                  | Child elements                                                                                                               |
+| ...rest            | `ViewProps`                  | All other standard View props                                                                                                |
 
 ### `AnimateProps`
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `opacity` | `number` | `1` | View opacity (0–1) |
-| `translateX` | `number` | `0` | Horizontal translation in pixels |
-| `translateY` | `number` | `0` | Vertical translation in pixels |
-| `scale` | `number` | `1` | Uniform scale factor (shorthand for `scaleX` + `scaleY`) |
-| `scaleX` | `number` | `1` | Horizontal scale factor (overrides `scale` for X axis) |
-| `scaleY` | `number` | `1` | Vertical scale factor (overrides `scale` for Y axis) |
-| `rotate` | `number` | `0` | Z-axis rotation in degrees |
-| `rotateX` | `number` | `0` | X-axis rotation in degrees (3D) |
-| `rotateY` | `number` | `0` | Y-axis rotation in degrees (3D) |
-| `borderRadius` | `number` | `0` | Border radius in pixels (hardware-accelerated, clips children) |
+| Property          | Type         | Default         | Description                                                                          |
+| ----------------- | ------------ | --------------- | ------------------------------------------------------------------------------------ |
+| `opacity`         | `number`     | `1`             | View opacity (0–1)                                                                   |
+| `translateX`      | `number`     | `0`             | Horizontal translation in pixels                                                     |
+| `translateY`      | `number`     | `0`             | Vertical translation in pixels                                                       |
+| `scale`           | `number`     | `1`             | Uniform scale factor (shorthand for `scaleX` + `scaleY`)                             |
+| `scaleX`          | `number`     | `1`             | Horizontal scale factor (overrides `scale` for X axis)                               |
+| `scaleY`          | `number`     | `1`             | Vertical scale factor (overrides `scale` for Y axis)                                 |
+| `rotate`          | `number`     | `0`             | Z-axis rotation in degrees                                                           |
+| `rotateX`         | `number`     | `0`             | X-axis rotation in degrees (3D)                                                      |
+| `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees (3D)                                                      |
+| `borderRadius`    | `number`     | `0`             | Border radius in pixels (hardware-accelerated, clips children)                       |
 | `backgroundColor` | `ColorValue` | `'transparent'` | Background color (any RN color value). Timing-only on Android, spring+timing on iOS. |
 
 Properties not specified in `animate` default to their identity values.
@@ -385,10 +403,7 @@ Applies values instantly with no animation. `onTransitionEnd` fires immediately 
 Setting `useHardwareLayer` rasterizes the view into a GPU texture for the duration of the animation. This means animated property changes (opacity, scale, rotation) are composited on the RenderThread without redrawing the view hierarchy — useful for complex views with many children.
 
 ```tsx
-<EaseView
-  animate={{ opacity: isVisible ? 1 : 0 }}
-  useHardwareLayer
-/>
+<EaseView animate={{ opacity: isVisible ? 1 : 0 }} useHardwareLayer />
 ```
 
 **Trade-offs:**
