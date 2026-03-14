@@ -42,6 +42,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     var transitionStiffness: Float = 120.0f
     var transitionMass: Float = 1.0f
     var transitionLoop: String = "none"
+    var transitionDelay: Long = 0L
 
     // --- Transform origin (0–1 fractions) ---
     var transformOriginX: Float = 0.5f
@@ -112,6 +113,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     // --- Running animations ---
     private val runningAnimators = mutableMapOf<String, Animator>()
     private val runningSpringAnimations = mutableMapOf<DynamicAnimation.ViewProperty, SpringAnimation>()
+    private val pendingDelayedRunnables = mutableListOf<Runnable>()
 
     // --- Animated properties bitmask (set by ViewManager) ---
     var animatedProperties: Int = 0
@@ -384,6 +386,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         val animator = ValueAnimator.ofArgb(fromColor, toColor).apply {
             duration = transitionDuration.toLong()
+            startDelay = transitionDelay
             interpolator = PathInterpolator(
                 transitionEasingBezier[0], transitionEasingBezier[1],
                 transitionEasingBezier[2], transitionEasingBezier[3]
@@ -443,6 +446,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
             duration = transitionDuration.toLong()
+            startDelay = transitionDelay
             interpolator = PathInterpolator(
                 transitionEasingBezier[0], transitionEasingBezier[1],
                 transitionEasingBezier[2], transitionEasingBezier[3]
@@ -520,10 +524,20 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         onEaseAnimationStart()
         runningSpringAnimations[viewProperty] = spring
-        spring.start()
+        if (transitionDelay > 0) {
+            val runnable = Runnable { spring.start() }
+            pendingDelayedRunnables.add(runnable)
+            postDelayed(runnable, transitionDelay)
+        } else {
+            spring.start()
+        }
     }
 
     private fun cancelAllAnimations() {
+        for (runnable in pendingDelayedRunnables) {
+            removeCallbacks(runnable)
+        }
+        pendingDelayedRunnables.clear()
         for (animator in runningAnimators.values) {
             animator.cancel()
         }
@@ -573,6 +587,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     }
 
     fun cleanup() {
+        for (runnable in pendingDelayedRunnables) {
+            removeCallbacks(runnable)
+        }
+        pendingDelayedRunnables.clear()
         for (animator in runningAnimators.values) {
             animator.cancel()
         }
