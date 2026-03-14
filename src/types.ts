@@ -38,8 +38,20 @@ export type NoneTransition = {
   type: 'none';
 };
 
-/** Animation transition configuration. */
-export type Transition = TimingTransition | SpringTransition | NoneTransition;
+/** A single animation transition configuration. */
+export type SingleTransition =
+  | TimingTransition
+  | SpringTransition
+  | NoneTransition;
+
+/** Per-property transition map. Each key overrides the transition for that animatable property. */
+export type TransitionMap = {
+  /** Fallback config for properties not explicitly listed. */
+  default?: SingleTransition;
+} & Partial<Record<keyof AnimateProps, SingleTransition>>;
+
+/** Animation transition configuration — either a single config or a per-property map. */
+export type Transition = SingleTransition | TransitionMap;
 
 /** Event fired when the animation ends. */
 export type TransitionEndEvent = {

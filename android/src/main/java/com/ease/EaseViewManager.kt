@@ -173,6 +173,71 @@ class EaseViewManager : ReactViewManager() {
         view.transitionLoop = value ?: "none"
     }
 
+    // --- Per-property transition arrays ---
+
+    @ReactProp(name = "perPropertyTransitionTypes")
+    fun setPerPropertyTransitionTypes(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionTypes = Array(10) { value.getString(it) ?: "" }
+        } else {
+            view.perPropertyTransitionTypes = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionDurations")
+    fun setPerPropertyTransitionDurations(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionDurations = IntArray(10) { value.getInt(it) }
+        } else {
+            view.perPropertyTransitionDurations = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionDampings")
+    fun setPerPropertyTransitionDampings(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionDampings = FloatArray(10) { value.getDouble(it).toFloat() }
+        } else {
+            view.perPropertyTransitionDampings = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionStiffnesses")
+    fun setPerPropertyTransitionStiffnesses(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionStiffnesses = FloatArray(10) { value.getDouble(it).toFloat() }
+        } else {
+            view.perPropertyTransitionStiffnesses = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionMasses")
+    fun setPerPropertyTransitionMasses(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionMasses = FloatArray(10) { value.getDouble(it).toFloat() }
+        } else {
+            view.perPropertyTransitionMasses = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionLoops")
+    fun setPerPropertyTransitionLoops(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 10) {
+            view.perPropertyTransitionLoops = Array(10) { value.getString(it) ?: "" }
+        } else {
+            view.perPropertyTransitionLoops = null
+        }
+    }
+
+    @ReactProp(name = "perPropertyTransitionEasingBeziers")
+    fun setPerPropertyTransitionEasingBeziers(view: EaseView, value: ReadableArray?) {
+        if (value != null && value.size() == 40) {
+            view.perPropertyTransitionEasingBeziers = FloatArray(40) { value.getDouble(it).toFloat() }
+        } else {
+            view.perPropertyTransitionEasingBeziers = null
+        }
+    }
+
     // --- Border radius ---
 
     @ReactProp(name = "animateBorderRadius", defaultFloat = 0f)
