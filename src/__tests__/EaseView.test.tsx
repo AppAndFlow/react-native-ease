@@ -132,6 +132,7 @@ describe('EaseView', () => {
       const props = getNativeProps();
       expect(props.transitionType).toBe('timing');
       expect(props.transitionDuration).toBe(300);
+      expect(props.transitionDelay).toBe(0);
       expect(props.transitionEasingBezier).toEqual([0.42, 0, 0.58, 1]);
       expect(props.transitionLoop).toBe('none');
     });
@@ -184,6 +185,20 @@ describe('EaseView', () => {
     it('passes none transition type', () => {
       render(<EaseView testID="ease" transition={{ type: 'none' }} />);
       expect(getNativeProps().transitionType).toBe('none');
+    });
+
+    it('passes delay from timing transition', () => {
+      render(
+        <EaseView testID="ease" transition={{ type: 'timing', delay: 200 }} />,
+      );
+      expect(getNativeProps().transitionDelay).toBe(200);
+    });
+
+    it('ignores delay for spring transitions', () => {
+      render(
+        <EaseView testID="ease" transition={{ type: 'spring', damping: 15 }} />,
+      );
+      expect(getNativeProps().transitionDelay).toBe(0);
     });
 
     it('passes custom cubic bezier control points', () => {

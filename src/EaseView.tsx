@@ -217,6 +217,8 @@ export function EaseView({
     transition?.type === 'spring' ? transition.stiffness ?? 120 : 120;
   const transitionMass =
     transition?.type === 'spring' ? transition.mass ?? 1 : 1;
+  const transitionDelay =
+    transition?.type === 'timing' ? transition.delay ?? 0 : 0;
   const transitionLoop =
     transition?.type === 'timing' ? transition.loop ?? 'none' : 'none';
 
@@ -253,6 +255,7 @@ export function EaseView({
       transitionType={transitionType}
       transitionDuration={transitionDuration}
       transitionEasingBezier={bezier}
+      transitionDelay={transitionDelay}
       transitionDamping={transitionDamping}
       transitionStiffness={transitionStiffness}
       transitionMass={transitionMass}

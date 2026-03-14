@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -440,36 +440,19 @@ function StaggeredCardsDemo() {
 }
 
 function StaggeredCards() {
-  const [visible, setVisible] = useState<boolean[]>(() =>
-    STAGGER_CARDS.map(() => false),
-  );
-
-  const showCard = useCallback((index: number) => {
-    setVisible((prev) => {
-      const next = [...prev];
-      next[index] = true;
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    const timers = STAGGER_CARDS.map((card, i) =>
-      setTimeout(() => showCard(i), card.delay),
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [showCard]);
-
   return (
     <View style={styles.staggerRow}>
-      {STAGGER_CARDS.map((card, i) => (
+      {STAGGER_CARDS.map((card) => (
         <EaseView
           key={card.label}
           initialAnimate={{ opacity: 0, translateY: 30 }}
-          animate={{
-            opacity: visible[i] ? 1 : 0,
-            translateY: visible[i] ? 0 : 30,
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: 'timing',
+            duration: 400,
+            easing: 'easeOut',
+            delay: card.delay,
           }}
-          transition={{ type: 'timing', duration: 400, easing: 'easeOut' }}
           style={[styles.staggerCard, { backgroundColor: card.color }]}
         >
           <Text style={styles.staggerCardText}>{card.label}</Text>
