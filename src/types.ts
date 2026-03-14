@@ -18,8 +18,6 @@ export type TimingTransition = {
   duration?: number;
   /** Easing curve. @default 'easeInOut' */
   easing?: EasingType;
-  /** Delay in milliseconds before the animation starts. @default 0 */
-  delay?: number;
   /** Loop mode — 'repeat' restarts from the beginning, 'reverse' alternates direction. */
   loop?: 'repeat' | 'reverse';
 };

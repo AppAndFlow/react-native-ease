@@ -439,24 +439,49 @@ function StaggeredCardsDemo() {
   );
 }
 
+function StaggeredCard({
+  color,
+  label,
+  delay,
+}: {
+  color: string;
+  label: string;
+  delay: number;
+}) {
+  const [visible, setVisible] = useState(delay === 0);
+
+  useEffect(() => {
+    if (delay > 0) {
+      const timer = setTimeout(() => setVisible(true), delay);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [delay]);
+
+  return (
+    <EaseView
+      initialAnimate={{ opacity: 0, translateY: 30 }}
+      animate={
+        visible ? { opacity: 1, translateY: 0 } : { opacity: 0, translateY: 30 }
+      }
+      transition={{ type: 'timing', duration: 400, easing: 'easeOut' }}
+      style={[styles.staggerCard, { backgroundColor: color }]}
+    >
+      <Text style={styles.staggerCardText}>{label}</Text>
+    </EaseView>
+  );
+}
+
 function StaggeredCards() {
   return (
     <View style={styles.staggerRow}>
       {STAGGER_CARDS.map((card) => (
-        <EaseView
+        <StaggeredCard
           key={card.label}
-          initialAnimate={{ opacity: 0, translateY: 30 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{
-            type: 'timing',
-            duration: 400,
-            easing: 'easeOut',
-            delay: card.delay,
-          }}
-          style={[styles.staggerCard, { backgroundColor: card.color }]}
-        >
-          <Text style={styles.staggerCardText}>{card.label}</Text>
-        </EaseView>
+          color={card.color}
+          label={card.label}
+          delay={card.delay}
+        />
       ))}
     </View>
   );

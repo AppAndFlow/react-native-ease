@@ -153,11 +153,6 @@ class EaseViewManager : ReactViewManager() {
         }
     }
 
-    @ReactProp(name = "transitionDelay", defaultInt = 0)
-    fun setTransitionDelay(view: EaseView, value: Int) {
-        view.transitionDelay = value
-    }
-
     @ReactProp(name = "transitionDamping", defaultFloat = 15f)
     fun setTransitionDamping(view: EaseView, value: Float) {
         view.transitionDamping = value

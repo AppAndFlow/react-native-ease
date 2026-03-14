@@ -45,7 +45,6 @@ export interface NativeProps extends ViewProps {
   transitionDuration?: CodegenTypes.WithDefault<CodegenTypes.Int32, 300>;
   // Easing cubic bezier control points [x1, y1, x2, y2] (default: easeInOut)
   transitionEasingBezier?: ReadonlyArray<CodegenTypes.Float>;
-  transitionDelay?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
   transitionDamping?: CodegenTypes.WithDefault<CodegenTypes.Float, 15.0>;
   transitionStiffness?: CodegenTypes.WithDefault<CodegenTypes.Float, 120.0>;
   transitionMass?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;

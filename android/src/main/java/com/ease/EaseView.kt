@@ -41,7 +41,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     var transitionDamping: Float = 15.0f
     var transitionStiffness: Float = 120.0f
     var transitionMass: Float = 1.0f
-    var transitionDelay: Int = 0
     var transitionLoop: String = "none"
 
     // --- Transform origin (0–1 fractions) ---
@@ -385,7 +384,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         val animator = ValueAnimator.ofArgb(fromColor, toColor).apply {
             duration = transitionDuration.toLong()
-            if (transitionDelay > 0) startDelay = transitionDelay.toLong()
             interpolator = PathInterpolator(
                 transitionEasingBezier[0], transitionEasingBezier[1],
                 transitionEasingBezier[2], transitionEasingBezier[3]
@@ -445,7 +443,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
             duration = transitionDuration.toLong()
-            if (transitionDelay > 0) startDelay = transitionDelay.toLong()
             interpolator = PathInterpolator(
                 transitionEasingBezier[0], transitionEasingBezier[1],
                 transitionEasingBezier[2], transitionEasingBezier[3]
@@ -616,7 +613,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         applyBackgroundColor(Color.TRANSPARENT)
 
         isFirstMount = true
-        transitionDelay = 0
         transitionLoop = "none"
     }
 }

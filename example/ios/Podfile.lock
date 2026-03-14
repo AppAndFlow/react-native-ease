@@ -1,7 +1,7 @@
 PODS:
   - boost (1.84.0)
   - DoubleConversion (1.1.6)
-  - Ease (0.2.0):
+  - Ease (0.1.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3005,12 +3005,12 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
-  Ease: 1926ac476b99e4d4bbe830c0f8f7edf5d3990cdb
+  Ease: e0e726adb99768bed143604b0b07661422921519
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: a293a88992c4c33f0aee184acab0b64a08ff9458
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: c97acd28cdf75b551ac6bd27a54375c20ccc9faa
+  hermes-engine: 3992289ac7e8cd4a0bb902711038e16b94212779
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 2b70c6e3abe00396cefd8913efbf6a2db01a2b36
   RCTRequired: f3540eee8094231581d40c5c6d41b0f170237a81
@@ -3088,4 +3088,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: b945c918935ce26cb0357d98636dc7184bab408a
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2
