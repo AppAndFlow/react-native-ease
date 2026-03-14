@@ -54,6 +54,17 @@ export interface NativeProps extends ViewProps {
   >;
   transitionDelay?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
 
+  // Per-property transition arrays (10 elements each, one per animatable property)
+  // Index order: 0=opacity, 1=translateX, 2=translateY, 3=scaleX, 4=scaleY,
+  //              5=rotate, 6=rotateX, 7=rotateY, 8=borderRadius, 9=backgroundColor
+  perPropertyTransitionTypes?: ReadonlyArray<string>;
+  perPropertyTransitionDurations?: ReadonlyArray<CodegenTypes.Int32>;
+  perPropertyTransitionDampings?: ReadonlyArray<CodegenTypes.Float>;
+  perPropertyTransitionStiffnesses?: ReadonlyArray<CodegenTypes.Float>;
+  perPropertyTransitionMasses?: ReadonlyArray<CodegenTypes.Float>;
+  perPropertyTransitionLoops?: ReadonlyArray<string>;
+  perPropertyTransitionEasingBeziers?: ReadonlyArray<CodegenTypes.Float>; // 40 elements (4 per property)
+
   // Transform origin (0–1 fractions, default center)
   transformOriginX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
   transformOriginY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
