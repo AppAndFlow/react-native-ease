@@ -336,6 +336,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_BACKGROUND_COLOR != 0 && initialAnimateBackgroundColor != backgroundColor) {
                     animateBackgroundColor(initialAnimateBackgroundColor, backgroundColor, getTransitionConfigForProperty(PROP_INDEX_BACKGROUND_COLOR), loop = true)
                 }
+
+                // If all per-property configs were 'none', no animations were queued.
+                // Fire onTransitionEnd immediately to match the scalar 'none' contract.
+                if (pendingBatchAnimationCount == 0) {
+                    onTransitionEnd?.invoke(true)
+                }
             } else {
                 // No initial animation — set target values directly (skip non-animated)
                 if (mask and MASK_OPACITY != 0) this.alpha = opacity
@@ -365,9 +371,15 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             onTransitionEnd?.invoke(true)
         } else {
             // Subsequent updates: animate changed properties (skip non-animated)
+            var anyPropertyChanged = false
+
             if (prevOpacity != null && mask and MASK_OPACITY != 0 && prevOpacity != opacity) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_OPACITY)
                 if (config.type == "none") {
+                    cancelSpringForProperty("alpha")
+                    runningAnimators["alpha"]?.cancel()
+                    runningAnimators.remove("alpha")
                     this.alpha = opacity
                 } else {
                     val from = getCurrentValue("alpha")
@@ -376,8 +388,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevTranslateX != null && mask and MASK_TRANSLATE_X != 0 && prevTranslateX != translateX) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_X)
                 if (config.type == "none") {
+                    cancelSpringForProperty("translationX")
+                    runningAnimators["translationX"]?.cancel()
+                    runningAnimators.remove("translationX")
                     this.translationX = translateX
                 } else {
                     val from = getCurrentValue("translationX")
@@ -386,8 +402,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevTranslateY != null && mask and MASK_TRANSLATE_Y != 0 && prevTranslateY != translateY) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_Y)
                 if (config.type == "none") {
+                    cancelSpringForProperty("translationY")
+                    runningAnimators["translationY"]?.cancel()
+                    runningAnimators.remove("translationY")
                     this.translationY = translateY
                 } else {
                     val from = getCurrentValue("translationY")
@@ -396,8 +416,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevScaleX != null && mask and MASK_SCALE_X != 0 && prevScaleX != scaleX) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_SCALE_X)
                 if (config.type == "none") {
+                    cancelSpringForProperty("scaleX")
+                    runningAnimators["scaleX"]?.cancel()
+                    runningAnimators.remove("scaleX")
                     this.scaleX = scaleX
                 } else {
                     val from = getCurrentValue("scaleX")
@@ -406,8 +430,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevScaleY != null && mask and MASK_SCALE_Y != 0 && prevScaleY != scaleY) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_SCALE_Y)
                 if (config.type == "none") {
+                    cancelSpringForProperty("scaleY")
+                    runningAnimators["scaleY"]?.cancel()
+                    runningAnimators.remove("scaleY")
                     this.scaleY = scaleY
                 } else {
                     val from = getCurrentValue("scaleY")
@@ -416,8 +444,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevRotate != null && mask and MASK_ROTATE != 0 && prevRotate != rotate) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE)
                 if (config.type == "none") {
+                    cancelSpringForProperty("rotation")
+                    runningAnimators["rotation"]?.cancel()
+                    runningAnimators.remove("rotation")
                     this.rotation = rotate
                 } else {
                     val from = getCurrentValue("rotation")
@@ -426,8 +458,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevRotateX != null && mask and MASK_ROTATE_X != 0 && prevRotateX != rotateX) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE_X)
                 if (config.type == "none") {
+                    cancelSpringForProperty("rotationX")
+                    runningAnimators["rotationX"]?.cancel()
+                    runningAnimators.remove("rotationX")
                     this.rotationX = rotateX
                 } else {
                     val from = getCurrentValue("rotationX")
@@ -436,8 +472,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevRotateY != null && mask and MASK_ROTATE_Y != 0 && prevRotateY != rotateY) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE_Y)
                 if (config.type == "none") {
+                    cancelSpringForProperty("rotationY")
+                    runningAnimators["rotationY"]?.cancel()
+                    runningAnimators.remove("rotationY")
                     this.rotationY = rotateY
                 } else {
                     val from = getCurrentValue("rotationY")
@@ -446,8 +486,11 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevBorderRadius != null && mask and MASK_BORDER_RADIUS != 0 && prevBorderRadius != borderRadius) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_BORDER_RADIUS)
                 if (config.type == "none") {
+                    runningAnimators["animateBorderRadius"]?.cancel()
+                    runningAnimators.remove("animateBorderRadius")
                     setAnimateBorderRadius(borderRadius)
                 } else {
                     val from = getCurrentValue("animateBorderRadius")
@@ -456,12 +499,21 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             if (prevBackgroundColor != null && mask and MASK_BACKGROUND_COLOR != 0 && prevBackgroundColor != backgroundColor) {
+                anyPropertyChanged = true
                 val config = getTransitionConfigForProperty(PROP_INDEX_BACKGROUND_COLOR)
                 if (config.type == "none") {
+                    runningAnimators["backgroundColor"]?.cancel()
+                    runningAnimators.remove("backgroundColor")
                     applyBackgroundColor(backgroundColor)
                 } else {
                     animateBackgroundColor(getCurrentBackgroundColor(), backgroundColor, config)
                 }
+            }
+
+            // If per-property arrays are populated and all changed properties resolved
+            // to 'none', no animations were queued. Fire onTransitionEnd immediately.
+            if (hasPerPropertyArrays() && anyPropertyChanged && pendingBatchAnimationCount == 0) {
+                onTransitionEnd?.invoke(true)
             }
         }
 
@@ -554,6 +606,17 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         config: TransitionConfig,
         loop: Boolean = false
     ) {
+        if (config.type == "none") {
+            // Set immediately — cancel any running animation for this property
+            cancelSpringForProperty(propertyName)
+            runningAnimators[propertyName]?.cancel()
+            runningAnimators.remove(propertyName)
+            ObjectAnimator.ofFloat(this, propertyName, toValue).apply {
+                duration = 0
+                start()
+            }
+            return
+        }
         if (config.type == "spring" && viewProperty != null) {
             animateSpring(viewProperty, toValue, config)
         } else {
@@ -613,11 +676,13 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     private fun animateSpring(viewProperty: DynamicAnimation.ViewProperty, toValue: Float, config: TransitionConfig) {
         cancelTimingForViewProperty(viewProperty)
 
-        val existingSpring = runningSpringAnimations[viewProperty]
-        if (existingSpring != null && existingSpring.isRunning) {
-            existingSpring.animateToFinalPosition(toValue)
-            return
+        // Cancel any existing spring so we get a fresh end listener with the current batchId.
+        runningSpringAnimations[viewProperty]?.let { existing ->
+            if (existing.isRunning) {
+                existing.cancel()
+            }
         }
+        runningSpringAnimations.remove(viewProperty)
 
         val batchId = animationBatchId
         pendingBatchAnimationCount++
