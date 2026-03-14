@@ -194,6 +194,11 @@ static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
                                                    toValue:toValue
                                                      props:props
                                                       loop:loop];
+  if (props.transitionDelay > 0) {
+    animation.beginTime =
+        CACurrentMediaTime() + (props.transitionDelay / 1000.0);
+    animation.fillMode = kCAFillModeBackwards;
+  }
   [animation setValue:@(_animationBatchId) forKey:@"easeBatchId"];
   animation.delegate = self;
   [self.layer addAnimation:animation forKey:animationKey];

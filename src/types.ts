@@ -20,6 +20,8 @@ export type TimingTransition = {
   easing?: EasingType;
   /** Loop mode — 'repeat' restarts from the beginning, 'reverse' alternates direction. */
   loop?: 'repeat' | 'reverse';
+  /** Delay in milliseconds before the animation starts. @default 0 */
+  delay?: number;
 };
 
 /** Physics-based spring transition. */
@@ -31,6 +33,8 @@ export type SpringTransition = {
   stiffness?: number;
   /** Mass of the object — higher values mean slower, more momentum. @default 1 */
   mass?: number;
+  /** Delay in milliseconds before the animation starts. @default 0 */
+  delay?: number;
 };
 
 /** No transition — values are applied immediately without animation. */

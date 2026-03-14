@@ -52,6 +52,7 @@ export interface NativeProps extends ViewProps {
     'none' | 'repeat' | 'reverse',
     'none'
   >;
+  transitionDelay?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
 
   // Transform origin (0–1 fractions, default center)
   transformOriginX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;

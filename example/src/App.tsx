@@ -369,6 +369,28 @@ function BackgroundColorDemo() {
   );
 }
 
+function DelayDemo() {
+  const [active, setActive] = useState(false);
+  return (
+    <Section title="Delay">
+      <EaseView
+        animate={{ opacity: active ? 1 : 0.3, translateX: active ? 100 : 0 }}
+        transition={{
+          type: 'timing',
+          duration: 400,
+          delay: 500,
+          easing: 'easeOut',
+        }}
+        style={styles.box}
+      />
+      <Button
+        label={active ? 'Reset' : 'Delayed Move'}
+        onPress={() => setActive((v) => !v)}
+      />
+    </Section>
+  );
+}
+
 function CombinedDemo() {
   const [active, setActive] = useState(false);
   return (
@@ -443,6 +465,7 @@ function DemosScreen() {
       <StyledCardDemo />
       <BorderRadiusDemo />
       <BackgroundColorDemo />
+      <DelayDemo />
       <CustomEasingDemo />
       <CombinedDemo />
       <StyleReRenderDemo />

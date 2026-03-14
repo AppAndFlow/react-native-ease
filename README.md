@@ -198,6 +198,8 @@ When `borderRadius` is in `animate`, any `borderRadius` in `style` is automatica
 
 On Android, background color uses `ValueAnimator.ofArgb()` (timing only — spring is not supported for colors). On iOS, it uses `CAAnimation` on the `backgroundColor` layer key path and supports both timing and spring transitions.
 
+> **Note:** On Android, background color animation uses `ValueAnimator.ofArgb()` which only supports timing transitions. Spring transitions for `backgroundColor` are not supported on Android and will fall back to timing with the default duration. On iOS, both timing and spring transitions work for background color.
+
 When `backgroundColor` is in `animate`, any `backgroundColor` in `style` is automatically stripped to avoid conflicts.
 
 ### Animatable Properties

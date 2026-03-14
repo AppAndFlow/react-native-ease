@@ -173,6 +173,11 @@ class EaseViewManager : ReactViewManager() {
         view.transitionLoop = value ?: "none"
     }
 
+    @ReactProp(name = "transitionDelay", defaultInt = 0)
+    fun setTransitionDelay(view: EaseView, value: Int) {
+        view.transitionDelay = value.toLong()
+    }
+
     // --- Border radius ---
 
     @ReactProp(name = "animateBorderRadius", defaultFloat = 0f)
