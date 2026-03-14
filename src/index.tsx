@@ -4,6 +4,8 @@ export type {
   AnimateProps,
   CubicBezier,
   Transition,
+  SingleTransition,
+  TransitionMap,
   TimingTransition,
   SpringTransition,
   NoneTransition,

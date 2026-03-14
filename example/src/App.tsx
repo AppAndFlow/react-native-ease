@@ -369,6 +369,32 @@ function BackgroundColorDemo() {
   );
 }
 
+function PerPropertyTransitionDemo() {
+  const [active, setActive] = useState(false);
+  return (
+    <Section title="Per-Property Transitions">
+      <Text style={styles.reRenderHint}>
+        Opacity fades with timing 150ms, translateX springs independently
+      </Text>
+      <EaseView
+        animate={{
+          opacity: active ? 1 : 0.3,
+          translateX: active ? 150 : 0,
+        }}
+        transition={{
+          opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
+          translateX: { type: 'spring', damping: 12, stiffness: 200 },
+        }}
+        style={styles.box}
+      />
+      <Button
+        label={active ? 'Reset' : 'Animate'}
+        onPress={() => setActive((v) => !v)}
+      />
+    </Section>
+  );
+}
+
 function CombinedDemo() {
   const [active, setActive] = useState(false);
   return (
@@ -443,6 +469,7 @@ function DemosScreen() {
       <StyledCardDemo />
       <BorderRadiusDemo />
       <BackgroundColorDemo />
+      <PerPropertyTransitionDemo />
       <CustomEasingDemo />
       <CombinedDemo />
       <StyleReRenderDemo />
