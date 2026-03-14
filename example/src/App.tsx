@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -421,6 +421,64 @@ function StyleReRenderDemo() {
   );
 }
 
+const STAGGER_CARDS = [
+  { color: '#4a90d9', label: 'Card 1', delay: 0 },
+  { color: '#e06c75', label: 'Card 2', delay: 150 },
+  { color: '#98c379', label: 'Card 3', delay: 300 },
+  { color: '#d19a66', label: 'Card 4', delay: 450 },
+];
+
+function StaggeredCardsDemo() {
+  const [mountKey, setMountKey] = useState(0);
+
+  return (
+    <Section title="Staggered Cards">
+      <StaggeredCards key={mountKey} />
+      <Button label="Replay" onPress={() => setMountKey((k) => k + 1)} />
+    </Section>
+  );
+}
+
+function StaggeredCards() {
+  const [visible, setVisible] = useState<boolean[]>(() =>
+    STAGGER_CARDS.map(() => false),
+  );
+
+  const showCard = useCallback((index: number) => {
+    setVisible((prev) => {
+      const next = [...prev];
+      next[index] = true;
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const timers = STAGGER_CARDS.map((card, i) =>
+      setTimeout(() => showCard(i), card.delay),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [showCard]);
+
+  return (
+    <View style={styles.staggerRow}>
+      {STAGGER_CARDS.map((card, i) => (
+        <EaseView
+          key={card.label}
+          initialAnimate={{ opacity: 0, translateY: 30 }}
+          animate={{
+            opacity: visible[i] ? 1 : 0,
+            translateY: visible[i] ? 0 : 30,
+          }}
+          transition={{ type: 'timing', duration: 400, easing: 'easeOut' }}
+          style={[styles.staggerCard, { backgroundColor: card.color }]}
+        >
+          <Text style={styles.staggerCardText}>{card.label}</Text>
+        </EaseView>
+      ))}
+    </View>
+  );
+}
+
 function DemosScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -446,6 +504,7 @@ function DemosScreen() {
       <CustomEasingDemo />
       <CombinedDemo />
       <StyleReRenderDemo />
+      <StaggeredCardsDemo />
     </ScrollView>
   );
 }
@@ -602,6 +661,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bgColorText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  staggerRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  staggerCard: {
+    flex: 1,
+    height: 100,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  staggerCardText: {
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
