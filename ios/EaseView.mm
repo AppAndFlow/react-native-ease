@@ -409,41 +409,66 @@ static int lowestTransformPropertyIndex(int mask) {
                 newViewProps.initialAnimateBackgroundColor)
                 .CGColor;
 
-      // Animate from initial to target
+      // Animate from initial to target (skip if config is 'none')
       if (hasInitialOpacity) {
         EaseTransitionConfig opacityConfig =
             transitionConfigForPropertyIndex(kPropIndexOpacity, newViewProps);
         self.layer.opacity = newViewProps.animateOpacity;
-        [self applyAnimationForKeyPath:@"opacity"
-                          animationKey:kAnimKeyOpacity
-                             fromValue:@(newViewProps.initialAnimateOpacity)
-                               toValue:@(newViewProps.animateOpacity)
-                                config:opacityConfig
-                                  loop:YES];
+        if (opacityConfig.type != EaseViewTransitionType::None) {
+          [self applyAnimationForKeyPath:@"opacity"
+                            animationKey:kAnimKeyOpacity
+                               fromValue:@(newViewProps.initialAnimateOpacity)
+                                 toValue:@(newViewProps.animateOpacity)
+                                  config:opacityConfig
+                                    loop:YES];
+        }
       }
       if (hasInitialTransform) {
-        int transformIdx = lowestTransformPropertyIndex(mask);
+        // Build mask of which transform sub-properties actually changed
+        int changedInitTransform = 0;
+        if (newViewProps.initialAnimateTranslateX !=
+            newViewProps.animateTranslateX)
+          changedInitTransform |= kMaskTranslateX;
+        if (newViewProps.initialAnimateTranslateY !=
+            newViewProps.animateTranslateY)
+          changedInitTransform |= kMaskTranslateY;
+        if (newViewProps.initialAnimateScaleX != newViewProps.animateScaleX)
+          changedInitTransform |= kMaskScaleX;
+        if (newViewProps.initialAnimateScaleY != newViewProps.animateScaleY)
+          changedInitTransform |= kMaskScaleY;
+        if (newViewProps.initialAnimateRotate != newViewProps.animateRotate)
+          changedInitTransform |= kMaskRotate;
+        if (newViewProps.initialAnimateRotateX != newViewProps.animateRotateX)
+          changedInitTransform |= kMaskRotateX;
+        if (newViewProps.initialAnimateRotateY != newViewProps.animateRotateY)
+          changedInitTransform |= kMaskRotateY;
+        int transformIdx = lowestTransformPropertyIndex(changedInitTransform);
         EaseTransitionConfig transformConfig =
             transitionConfigForPropertyIndex(transformIdx, newViewProps);
         self.layer.transform = targetT;
-        [self applyAnimationForKeyPath:@"transform"
+        if (transformConfig.type != EaseViewTransitionType::None) {
+          [self
+              applyAnimationForKeyPath:@"transform"
                           animationKey:kAnimKeyTransform
                              fromValue:[NSValue valueWithCATransform3D:initialT]
                                toValue:[NSValue valueWithCATransform3D:targetT]
                                 config:transformConfig
                                   loop:YES];
+        }
       }
       if (hasInitialBorderRadius) {
         EaseTransitionConfig brConfig = transitionConfigForPropertyIndex(
             kPropIndexBorderRadius, newViewProps);
         self.layer.cornerRadius = newViewProps.animateBorderRadius;
-        [self
-            applyAnimationForKeyPath:@"cornerRadius"
-                        animationKey:kAnimKeyCornerRadius
-                           fromValue:@(newViewProps.initialAnimateBorderRadius)
-                             toValue:@(newViewProps.animateBorderRadius)
-                              config:brConfig
-                                loop:YES];
+        if (brConfig.type != EaseViewTransitionType::None) {
+          [self applyAnimationForKeyPath:@"cornerRadius"
+                            animationKey:kAnimKeyCornerRadius
+                               fromValue:@(newViewProps
+                                               .initialAnimateBorderRadius)
+                                 toValue:@(newViewProps.animateBorderRadius)
+                                  config:brConfig
+                                    loop:YES];
+        }
       }
       if (hasInitialBackgroundColor) {
         EaseTransitionConfig bgConfig = transitionConfigForPropertyIndex(
@@ -451,7 +476,9 @@ static int lowestTransformPropertyIndex(int mask) {
         self.layer.backgroundColor =
             RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
                 .CGColor;
-        [self applyAnimationForKeyPath:@"backgroundColor"
+        if (bgConfig.type != EaseViewTransitionType::None) {
+          [self
+              applyAnimationForKeyPath:@"backgroundColor"
                           animationKey:kAnimKeyBackgroundColor
                              fromValue:(__bridge id)RCTUIColorFromSharedColor(
                                            newViewProps
@@ -462,6 +489,17 @@ static int lowestTransformPropertyIndex(int mask) {
                                            .CGColor
                                 config:bgConfig
                                   loop:YES];
+        }
+      }
+
+      // If all per-property configs were 'none', no animations were queued.
+      // Fire onTransitionEnd immediately to match the scalar 'none' contract.
+      if (_pendingAnimationCount == 0 && _eventEmitter) {
+        auto emitter =
+            std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
+        emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
+            .finished = true,
+        });
       }
     } else {
       // No initial animation — set target values directly
@@ -505,9 +543,11 @@ static int lowestTransformPropertyIndex(int mask) {
     // Subsequent updates: animate changed properties
     const auto &oldViewProps =
         *std::static_pointer_cast<const EaseViewProps>(oldProps);
+    BOOL anyPropertyChanged = NO;
 
     if ((mask & kMaskOpacity) &&
         oldViewProps.animateOpacity != newViewProps.animateOpacity) {
+      anyPropertyChanged = YES;
       EaseTransitionConfig opacityConfig =
           transitionConfigForPropertyIndex(kPropIndexOpacity, newViewProps);
       if (opacityConfig.type == EaseViewTransitionType::None) {
@@ -538,6 +578,7 @@ static int lowestTransformPropertyIndex(int mask) {
           oldViewProps.animateRotateY != newViewProps.animateRotateY;
 
       if (anyTransformChanged) {
+        anyPropertyChanged = YES;
         // Determine which transform sub-properties changed for config selection
         int changedTransformMask = 0;
         if (oldViewProps.animateTranslateX != newViewProps.animateTranslateX)
@@ -578,6 +619,7 @@ static int lowestTransformPropertyIndex(int mask) {
 
     if ((mask & kMaskBorderRadius) &&
         oldViewProps.animateBorderRadius != newViewProps.animateBorderRadius) {
+      anyPropertyChanged = YES;
       EaseTransitionConfig brConfig = transitionConfigForPropertyIndex(
           kPropIndexBorderRadius, newViewProps);
       self.layer.cornerRadius = newViewProps.animateBorderRadius;
@@ -598,6 +640,7 @@ static int lowestTransformPropertyIndex(int mask) {
     if ((mask & kMaskBackgroundColor) &&
         oldViewProps.animateBackgroundColor !=
             newViewProps.animateBackgroundColor) {
+      anyPropertyChanged = YES;
       EaseTransitionConfig bgConfig = transitionConfigForPropertyIndex(
           kPropIndexBackgroundColor, newViewProps);
       CGColorRef toColor =
@@ -616,6 +659,17 @@ static int lowestTransformPropertyIndex(int mask) {
                                 config:bgConfig
                                   loop:NO];
       }
+    }
+
+    // If per-property arrays are populated and all changed properties resolved
+    // to 'none', no animations were queued. Fire onTransitionEnd immediately.
+    if (perProp && anyPropertyChanged && _pendingAnimationCount == 0 &&
+        _eventEmitter) {
+      auto emitter =
+          std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
+      emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
+          .finished = true,
+      });
     }
   }
 
