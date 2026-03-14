@@ -219,6 +219,10 @@ export function EaseView({
     transition?.type === 'spring' ? transition.mass ?? 1 : 1;
   const transitionLoop =
     transition?.type === 'timing' ? transition.loop ?? 'none' : 'none';
+  const transitionDelay =
+    transition?.type === 'timing' || transition?.type === 'spring'
+      ? transition.delay ?? 0
+      : 0;
 
   const handleTransitionEnd = onTransitionEnd
     ? (event: { nativeEvent: { finished: boolean } }) =>
@@ -257,6 +261,7 @@ export function EaseView({
       transitionStiffness={transitionStiffness}
       transitionMass={transitionMass}
       transitionLoop={transitionLoop}
+      transitionDelay={transitionDelay}
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}
       transformOriginY={transformOrigin?.y ?? 0.5}
