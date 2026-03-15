@@ -5,7 +5,7 @@ import {
   Text,
   Pressable,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { EaseView, type TransitionEndEvent } from 'react-native-ease';
@@ -14,10 +14,6 @@ import ComparisonScreen from './ComparisonScreen';
 import { Section } from './components/Section';
 import { TabBar, type Screen } from './components/TabBar';
 import { Button } from './components/Button';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// 20px scrollContent padding + 20px section padding on each side
-const BANNER_WIDTH = SCREEN_WIDTH - 80;
 
 function ButtonDemo() {
   const [pressed, setPressed] = useState(false);
@@ -46,9 +42,25 @@ function ButtonDemo() {
 
 function BannerDemo() {
   const [playing, setPlaying] = useState(false);
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const BANNER_WIDTH = SCREEN_WIDTH - 80;
+  const bannerContainerStyle = {
+    width: BANNER_WIDTH,
+    height: 60,
+    overflow: 'hidden' as const,
+    borderRadius: 12,
+  };
+  const bannerTrackStyle = { flexDirection: 'row' as const, height: 60 };
+  const bannerSlideStyle = {
+    width: BANNER_WIDTH,
+    height: 60,
+    backgroundColor: '#4a90d9',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  };
   return (
     <Section title="Scrolling Banner">
-      <View style={styles.bannerContainer}>
+      <View style={bannerContainerStyle}>
         {playing && (
           <EaseView
             initialAnimate={{ translateX: 0 }}
@@ -59,13 +71,13 @@ function BannerDemo() {
               easing: 'linear',
               loop: 'repeat',
             }}
-            style={styles.bannerTrack}
+            style={bannerTrackStyle}
             useHardwareLayer={false}
           >
-            <View style={styles.bannerSlide}>
+            <View style={bannerSlideStyle}>
               <Text style={styles.bannerText}>react-native-ease</Text>
             </View>
-            <View style={styles.bannerSlide}>
+            <View style={bannerSlideStyle}>
               <Text style={styles.bannerText}>react-native-ease</Text>
             </View>
           </EaseView>
@@ -595,23 +607,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  bannerContainer: {
-    width: BANNER_WIDTH,
-    height: 60,
-    overflow: 'hidden',
-    borderRadius: 12,
-  },
-  bannerTrack: {
-    flexDirection: 'row',
-    height: 60,
-  },
-  bannerSlide: {
-    width: BANNER_WIDTH,
-    height: 60,
-    backgroundColor: '#4a90d9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   bannerText: {
     color: '#fff',
     fontSize: 16,
