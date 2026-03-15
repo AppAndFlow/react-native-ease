@@ -177,7 +177,6 @@ export function EaseView({
           : null;
       el.style.transition = springTransition ?? transitionCss;
     }
-    el.style.willChange = 'transform, opacity';
     el.style.transformOrigin = `${originX}% ${originY}%`;
   });
 
