@@ -111,3 +111,39 @@ Use conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, etc.
 - **Spring damping ratio on Android is derived** from `damping`, `stiffness`, and `mass` using: `dampingRatio = damping / (2 * sqrt(stiffness * mass))`. iOS passes these values directly to `CASpringAnimation`.
 - **Animation batching:** Both platforms track animation batches with a generation ID. When new animations start, any pending old-batch callbacks are fired as interrupted (`finished: false`).
 - **Loop only works with timing animations**, not springs. Loop requires `initialAnimate` to define the start value.
+
+## Android UI Automation (agent-device)
+
+The example app has looping animations (Pulse, Banner) that prevent Android's `uiautomator` from reaching idle state, which breaks `agent-device snapshot` and `find` commands.
+
+### Workaround
+Before using `agent-device snapshot -i` or `find` on Android, either:
+
+1. **Stop looping animations in the app** — tap the Stop button on Pulse and Banner demos, OR
+2. **Disable system animations** (less ideal — also affects recording):
+   ```bash
+   adb shell settings put global window_animation_scale 0
+   adb shell settings put global transition_animation_scale 0
+   adb shell settings put global animator_duration_scale 0
+   # Re-enable after: set all back to 1
+   ```
+
+### iOS
+No workaround needed — `agent-device` uses XCTest accessibility on iOS which doesn't require idle state.
+
+### Android validation flow
+```bash
+# 1. Open app
+agent-device open ease.example --platform android --device "SM G996W"
+
+# 2. Stop looping demos (tap Stop buttons) or disable system animations
+
+# 3. Now snapshot works
+agent-device snapshot -i
+
+# 4. Navigate and interact by ref
+agent-device press @e9  # e.g. Replay button
+
+# 5. Screenshot/record
+agent-device screenshot /tmp/screenshot.png
+```
