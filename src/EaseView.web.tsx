@@ -127,7 +127,7 @@ export function EaseView({
   const hasInitial = initialAnimate != null;
   const [mounted, setMounted] = useState(!hasInitial);
   // On web, View ref gives us the underlying DOM element.
-  const viewRef = useRef<View>(null);
+  const viewRef = useRef<React.ComponentRef<typeof View>>(null);
   const animationNameRef = useRef<string | null>(null);
 
   const getElement = useCallback(
