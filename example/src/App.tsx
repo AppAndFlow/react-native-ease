@@ -392,7 +392,7 @@ function DelayDemo() {
         transition={{
           type: 'timing',
           duration: 400,
-          delay: 500,
+          delay: 2000,
           easing: 'easeOut',
         }}
         style={styles.box}
