@@ -10,10 +10,14 @@
     "build:ios": "react-native build-ios --mode Debug"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~55.0.6",
+    "expo": "~55.0.0",
     "react": "19.2.0",
+    "react-dom": "19.2.0",
     "react-native": "0.83.0",
     "react-native-reanimated": "^4.2.2",
     "react-native-safe-area-context": "^5.7.0",
+    "react-native-web": "^0.21.0",
     "react-native-worklets": "^0.7.4"
   },
   "devDependencies": {
@@ -27,6 +31,9 @@
     "@react-native/metro-config": "0.83.0",
     "@react-native/typescript-config": "0.83.0",
     "@types/react": "^19.2.0",
+    "@types/react-dom": "^19",
+    "@types/react-native-web": "^0",
+    "babel-preset-expo": "~55.0.8",
     "react-native-builder-bob": "^0.40.18",
     "react-native-monorepo-config": "^0.3.3"
   },

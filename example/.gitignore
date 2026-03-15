@@ -1,0 +1,5 @@
+
+# Expo
+.expo
+dist/
+web-build/
