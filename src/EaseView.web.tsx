@@ -1,6 +1,5 @@
-/// <reference lib="dom" />
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { StyleSheet } from 'react-native';
+import { View, type ViewStyle, type StyleProp } from 'react-native';
 import type {
   AnimateProps,
   CubicBezier,
@@ -30,13 +29,6 @@ const EASING_PRESETS: Record<string, CubicBezier> = {
   easeInOut: [0.42, 0, 0.58, 1],
 };
 
-/** Flatten React Native StyleProp (number IDs, arrays, or objects) to a plain CSS object. */
-function flattenStyle(style: any): React.CSSProperties {
-  if (!style) return {};
-  // Use RN's StyleSheet.flatten to resolve numeric IDs and arrays to plain objects.
-  return (StyleSheet.flatten(style) as React.CSSProperties) ?? {};
-}
-
 export type EaseViewProps = {
   animate?: AnimateProps;
   initialAnimate?: AnimateProps;
@@ -45,9 +37,9 @@ export type EaseViewProps = {
   /** No-op on web. */
   useHardwareLayer?: boolean;
   transformOrigin?: TransformOrigin;
-  style?: React.CSSProperties | Record<string, any> | any[];
+  style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
-} & Omit<React.HTMLAttributes<HTMLDivElement>, 'style'>;
+};
 
 function resolveAnimateValues(props: AnimateProps | undefined): Required<
   Omit<AnimateProps, 'scale' | 'backgroundColor'>
@@ -104,9 +96,6 @@ function resolveDuration(transition: Transition | undefined): number {
   if (!transition) return 300;
   if (transition.type === 'timing') return transition.duration ?? 300;
   if (transition.type === 'none') return 0;
-  // Spring type: approximate duration from damping/stiffness/mass.
-  // A critically-damped spring settles in ~4-5 time constants.
-  // tau = 2 * mass / damping, settle ~ 4 * tau
   const damping = transition.damping ?? 15;
   const mass = transition.mass ?? 1;
   const tau = (2 * mass) / damping;
@@ -133,52 +122,39 @@ export function EaseView({
   transformOrigin,
   style,
   children,
-  ...rest
 }: EaseViewProps) {
   const resolved = resolveAnimateValues(animate);
   const hasInitial = initialAnimate != null;
   const [mounted, setMounted] = useState(!hasInitial);
-  const divRef = useRef<HTMLDivElement>(null);
+  // On web, View ref gives us the underlying DOM element.
+  const viewRef = useRef<View>(null);
   const animationNameRef = useRef<string | null>(null);
+
+  const getElement = useCallback(
+    () => viewRef.current as unknown as HTMLElement | null,
+    [],
+  );
 
   // For initialAnimate: render initial values first, then animate on mount.
   useEffect(() => {
     if (hasInitial) {
-      // Force a layout read to flush initial styles before enabling transitions.
-      divRef.current?.getBoundingClientRect();
+      getElement()?.getBoundingClientRect();
       setMounted(true);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle transitionend event.
-  const handleTransitionEnd = useCallback(
-    (e: React.TransitionEvent<HTMLDivElement>) => {
-      // Only fire for our own transitions, not children bubbling up.
-      if (e.target !== e.currentTarget) return;
-      // Fire once per batch — use opacity as the sentinel property.
-      if (e.propertyName !== 'opacity' && e.propertyName !== 'transform')
-        return;
-      onTransitionEnd?.({ finished: true });
-    },
-    [onTransitionEnd],
-  );
-
-  // Determine which values to render.
   const displayValues =
     !mounted && hasInitial ? resolveAnimateValues(initialAnimate) : resolved;
 
   const duration = resolveDuration(transition);
   const easing = resolveEasing(transition);
 
-  // Build computed styles.
-  const transformStr = buildTransform(displayValues);
   const originX = ((transformOrigin?.x ?? 0.5) * 100).toFixed(1);
   const originY = ((transformOrigin?.y ?? 0.5) * 100).toFixed(1);
 
   const transitionType = transition?.type ?? 'timing';
   const loopMode = transition?.type === 'timing' ? transition.loop : undefined;
 
-  // Build CSS transition string.
   const transitionCss =
     transitionType === 'none' || (!mounted && hasInitial)
       ? 'none'
@@ -186,13 +162,48 @@ export function EaseView({
           ', ',
         );
 
+  // Apply CSS transition/animation properties imperatively (not in RN style spec).
+  useEffect(() => {
+    const el = getElement();
+    if (!el) return;
+
+    if (!loopMode) {
+      const springTransition =
+        transitionType === 'spring'
+          ? TRANSITION_PROPS.map(
+              (prop) =>
+                `${prop} ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+            ).join(', ')
+          : null;
+      el.style.transition = springTransition ?? transitionCss;
+    }
+    el.style.willChange = 'transform, opacity';
+    el.style.transformOrigin = `${originX}% ${originY}%`;
+  });
+
+  // Handle transitionend event via DOM listener.
+  useEffect(() => {
+    const el = getElement();
+    if (!el || !onTransitionEnd) return;
+
+    const handler = (e: TransitionEvent) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.propertyName !== 'opacity' && e.propertyName !== 'transform')
+        return;
+      onTransitionEnd({ finished: true });
+    };
+
+    el.addEventListener('transitionend', handler);
+    return () => el.removeEventListener('transitionend', handler);
+  }, [onTransitionEnd, getElement]);
+
   // Handle loop animations via CSS @keyframes.
   useEffect(() => {
-    const el = divRef.current;
+    const el = getElement();
     if (!loopMode || !el) {
-      // Clean up any existing animation.
-      if (animationNameRef.current && el) {
-        el.style.animation = '';
+      if (animationNameRef.current) {
+        const cleanEl = getElement();
+        if (cleanEl) cleanEl.style.animation = '';
         animationNameRef.current = null;
       }
       return;
@@ -238,6 +249,7 @@ export function EaseView({
     document.head.appendChild(styleEl);
 
     const direction = loopMode === 'reverse' ? 'alternate' : 'normal';
+    el.style.transition = 'none';
     el.style.animation = `${name} ${duration}ms ${easing} infinite ${direction}`;
 
     return () => {
@@ -245,44 +257,32 @@ export function EaseView({
       el.style.animation = '';
       animationNameRef.current = null;
     };
-  }, [loopMode, animate, initialAnimate, duration, easing]);
+  }, [loopMode, animate, initialAnimate, duration, easing, getElement]);
 
-  const flatStyle = flattenStyle(style);
-
-  const computedStyle: React.CSSProperties = {
-    ...flatStyle,
+  // Build animated style using RN transform array format.
+  // react-native-web converts these to CSS transform strings.
+  const animatedStyle: ViewStyle = {
     opacity: displayValues.opacity,
-    transform: transformStr,
-    transformOrigin: `${originX}% ${originY}%`,
-    borderRadius:
-      displayValues.borderRadius > 0
-        ? displayValues.borderRadius
-        : flatStyle?.borderRadius,
-    backgroundColor:
-      displayValues.backgroundColor ?? flatStyle?.backgroundColor,
-    transition: loopMode ? 'none' : transitionCss,
-    // Spring approximation: use the same CSS transition with estimated duration.
-    // CSS does not natively support spring physics, so this is a best-effort
-    // timing approximation using an ease-out curve for a spring-like feel.
-    ...(transitionType === 'spring' && !loopMode
-      ? {
-          transition: TRANSITION_PROPS.map(
-            (prop) =>
-              `${prop} ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
-          ).join(', '),
-        }
+    transform: [
+      { translateX: displayValues.translateX },
+      { translateY: displayValues.translateY },
+      { scaleX: displayValues.scaleX },
+      { scaleY: displayValues.scaleY },
+      { rotate: `${displayValues.rotate}deg` },
+      { rotateX: `${displayValues.rotateX}deg` },
+      { rotateY: `${displayValues.rotateY}deg` },
+    ],
+    ...(displayValues.borderRadius > 0
+      ? { borderRadius: displayValues.borderRadius }
       : {}),
-    willChange: 'transform, opacity',
+    ...(displayValues.backgroundColor
+      ? { backgroundColor: displayValues.backgroundColor }
+      : {}),
   };
 
   return (
-    <div
-      ref={divRef}
-      style={computedStyle}
-      onTransitionEnd={onTransitionEnd ? handleTransitionEnd : undefined}
-      {...rest}
-    >
+    <View ref={viewRef} style={[style, animatedStyle]}>
       {children}
-    </div>
+    </View>
   );
 }

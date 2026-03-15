@@ -85,3 +85,4 @@ android/generated
 # React Native Nitro Modules
 nitrogen/
 .playwright-cli/
+*.png
