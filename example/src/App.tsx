@@ -45,7 +45,7 @@ function ButtonDemo() {
 }
 
 function BannerDemo() {
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   return (
     <Section title="Scrolling Banner">
       <View style={styles.bannerContainer}>
@@ -80,7 +80,7 @@ function BannerDemo() {
 }
 
 function PulseDemo() {
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   return (
     <Section title="Pulse (Reverse Loop)">
       {playing && (
