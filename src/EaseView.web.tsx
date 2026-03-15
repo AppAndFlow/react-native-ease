@@ -220,11 +220,19 @@ export function EaseView({
     const name = `ease-loop-${++keyframeCounter}`;
     animationNameRef.current = name;
 
+    // Only include border-radius/background-color in keyframes when explicitly
+    // set by the user, to avoid overriding values from the style prop.
+    const hasBorderRadius =
+      initialAnimate?.borderRadius != null || animate?.borderRadius != null;
+    const hasBgColor =
+      initialAnimate?.backgroundColor != null ||
+      animate?.backgroundColor != null;
+
     const fromBlock = [
       `opacity: ${fromValues.opacity}`,
       `transform: ${fromTransform}`,
-      `border-radius: ${fromValues.borderRadius}px`,
-      fromValues.backgroundColor
+      hasBorderRadius ? `border-radius: ${fromValues.borderRadius}px` : '',
+      hasBgColor && fromValues.backgroundColor
         ? `background-color: ${fromValues.backgroundColor}`
         : '',
     ]
@@ -234,8 +242,8 @@ export function EaseView({
     const toBlock = [
       `opacity: ${toValues.opacity}`,
       `transform: ${toTransform}`,
-      `border-radius: ${toValues.borderRadius}px`,
-      toValues.backgroundColor
+      hasBorderRadius ? `border-radius: ${toValues.borderRadius}px` : '',
+      hasBgColor && toValues.backgroundColor
         ? `background-color: ${toValues.backgroundColor}`
         : '',
     ]
