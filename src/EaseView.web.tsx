@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { StyleSheet } from 'react-native';
 import type {
   AnimateProps,
   CubicBezier,
@@ -29,6 +30,13 @@ const EASING_PRESETS: Record<string, CubicBezier> = {
   easeInOut: [0.42, 0, 0.58, 1],
 };
 
+/** Flatten React Native StyleProp (number IDs, arrays, or objects) to a plain CSS object. */
+function flattenStyle(style: any): React.CSSProperties {
+  if (!style) return {};
+  // Use RN's StyleSheet.flatten to resolve numeric IDs and arrays to plain objects.
+  return (StyleSheet.flatten(style) as React.CSSProperties) ?? {};
+}
+
 export type EaseViewProps = {
   animate?: AnimateProps;
   initialAnimate?: AnimateProps;
@@ -37,7 +45,7 @@ export type EaseViewProps = {
   /** No-op on web. */
   useHardwareLayer?: boolean;
   transformOrigin?: TransformOrigin;
-  style?: React.CSSProperties;
+  style?: React.CSSProperties | Record<string, any> | any[];
   children?: React.ReactNode;
 } & Omit<React.HTMLAttributes<HTMLDivElement>, 'style'>;
 
@@ -239,16 +247,19 @@ export function EaseView({
     };
   }, [loopMode, animate, initialAnimate, duration, easing]);
 
+  const flatStyle = flattenStyle(style);
+
   const computedStyle: React.CSSProperties = {
-    ...style,
+    ...flatStyle,
     opacity: displayValues.opacity,
     transform: transformStr,
     transformOrigin: `${originX}% ${originY}%`,
     borderRadius:
       displayValues.borderRadius > 0
         ? displayValues.borderRadius
-        : style?.borderRadius,
-    backgroundColor: displayValues.backgroundColor ?? style?.backgroundColor,
+        : flatStyle?.borderRadius,
+    backgroundColor:
+      displayValues.backgroundColor ?? flatStyle?.backgroundColor,
     transition: loopMode ? 'none' : transitionCss,
     // Spring approximation: use the same CSS transition with estimated duration.
     // CSS does not natively support spring physics, so this is a best-effort
