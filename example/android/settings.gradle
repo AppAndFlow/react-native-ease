@@ -1,4 +1,4 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") 
+pluginManagement {
   def expoPluginsPath = new File(
     providers.exec {
       workingDir(rootDir)
@@ -16,3 +16,4 @@ rootProject.name = 'ease.example'
 include ':app'
 expoAutolinking.useExpoModules()
 expoAutolinking.useExpoVersionCatalog()
+includeBuild(expoAutolinking.reactNativeGradlePlugin)
