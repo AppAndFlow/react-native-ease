@@ -1,0 +1,11 @@
+[     198ms] TypeError: Failed to set an indexed property [0] on 'CSSStyleDeclaration': Indexed property setter is not supported.
+    at setValueForStyle (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:2294:391)
+    at setValueForStyles (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:2302:84)
+    at setProp (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:9077:9)
+    at setInitialProperties (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:9461:120)
+    at completeWork (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:6259:24)
+    at completeUnitOfWork (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:8161:18)
+    at performUnitOfWork (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:8107:21)
+    at workLoopSync (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:8009:38)
+    at renderRootSync (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:7994:7)
+    at performWorkOnRoot (http://localhost:8081/example/index.bundle?platform=web&dev=false&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:7768:42)
