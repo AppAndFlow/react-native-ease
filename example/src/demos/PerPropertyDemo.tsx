@@ -10,16 +10,17 @@ export function PerPropertyDemo() {
   return (
     <Section title="Per-Property Transitions">
       <Text style={styles.hint}>
-        Opacity fades with timing 150ms, translateX springs independently
+        Opacity fades slowly (1.5s timing), translateX slides with a bouncy
+        spring — each property animates independently
       </Text>
       <EaseView
         animate={{
-          opacity: active ? 1 : 0.3,
-          translateX: active ? 150 : 0,
+          opacity: active ? 1 : 0.2,
+          translateX: active ? 200 : 0,
         }}
         transition={{
-          opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
-          translateX: { type: 'spring', damping: 12, stiffness: 200 },
+          opacity: { type: 'timing', duration: 1500, easing: 'easeInOut' },
+          translateX: { type: 'spring', damping: 8, stiffness: 120, mass: 1 },
         }}
         style={styles.box}
       />
