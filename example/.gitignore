@@ -3,3 +3,7 @@
 .expo
 dist/
 web-build/
+
+# Expo prebuild generated dirs
+android/
+ios/

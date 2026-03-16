@@ -4,16 +4,30 @@
   "expo": {
     "name": "EaseExample",
     "slug": "ease-example",
+    "scheme": "ease-example",
     "version": "1.0.0",
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "root": "./app"
+        }
+      ]
+    ],
     "web": {
       "bundler": "metro",
-      "output": "single",
-      "entry": "./index.js"
+      "output": "single"
     },
     "platforms": [
       "ios",
       "android",
       "web"
-    ]
+    ],
+    "android": {
+      "package": "com.janic.easeexample"
+    },
+    "ios": {
+      "bundleIdentifier": "com.janic.easeexample"
+    }
   }
 }
