@@ -13,6 +13,7 @@ import android.view.animation.PathInterpolator
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.views.view.ReactViewGroup
 import kotlin.math.sqrt
 
@@ -34,24 +35,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     // --- First mount tracking ---
     private var isFirstMount: Boolean = true
 
-    // --- Transition config (set by ViewManager) ---
-    var transitionType: String = "timing"
-    var transitionDuration: Int = 300
-    var transitionEasingBezier: FloatArray = floatArrayOf(0.42f, 0f, 0.58f, 1.0f)
-    var transitionDamping: Float = 15.0f
-    var transitionStiffness: Float = 120.0f
-    var transitionMass: Float = 1.0f
-    var transitionLoop: String = "none"
-    var transitionDelay: Long = 0L
-
-    // --- Per-property transition arrays (set by ViewManager) ---
-    var perPropertyTransitionTypes: Array<String>? = null
-    var perPropertyTransitionDurations: IntArray? = null
-    var perPropertyTransitionDampings: FloatArray? = null
-    var perPropertyTransitionStiffnesses: FloatArray? = null
-    var perPropertyTransitionMasses: FloatArray? = null
-    var perPropertyTransitionLoops: Array<String>? = null
-    var perPropertyTransitionEasingBeziers: FloatArray? = null
+    // --- Transition configs (set by ViewManager via ReadableMap) ---
+    private var transitionConfigs: Map<String, TransitionConfig> = emptyMap()
 
     data class TransitionConfig(
         val type: String,
@@ -60,49 +45,57 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val damping: Float,
         val stiffness: Float,
         val mass: Float,
-        val loop: String
+        val loop: String,
+        val delay: Long
     )
 
-    fun getTransitionConfigForProperty(index: Int): TransitionConfig {
-        val types = perPropertyTransitionTypes
-        if (types != null && index < types.size) {
-            val durations = perPropertyTransitionDurations
-            val dampings = perPropertyTransitionDampings
-            val stiffnesses = perPropertyTransitionStiffnesses
-            val masses = perPropertyTransitionMasses
-            val loops = perPropertyTransitionLoops
-            val beziers = perPropertyTransitionEasingBeziers
-
-            val bIdx = index * 4
-            val bezier = if (beziers != null && bIdx + 3 < beziers.size) {
-                floatArrayOf(beziers[bIdx], beziers[bIdx + 1], beziers[bIdx + 2], beziers[bIdx + 3])
-            } else {
-                floatArrayOf(0.42f, 0f, 0.58f, 1.0f)
-            }
-
-            return TransitionConfig(
-                type = types[index],
-                duration = if (durations != null && index < durations.size) durations[index] else 300,
-                easingBezier = bezier,
-                damping = if (dampings != null && index < dampings.size) dampings[index] else 15.0f,
-                stiffness = if (stiffnesses != null && index < stiffnesses.size) stiffnesses[index] else 120.0f,
-                mass = if (masses != null && index < masses.size) masses[index] else 1.0f,
-                loop = if (loops != null && index < loops.size) loops[index] else "none"
-            )
+    fun setTransitionsFromMap(map: ReadableMap?) {
+        if (map == null) {
+            transitionConfigs = emptyMap()
+            return
         }
-        // Fallback to scalar props
-        return TransitionConfig(
-            type = transitionType,
-            duration = transitionDuration,
-            easingBezier = transitionEasingBezier,
-            damping = transitionDamping,
-            stiffness = transitionStiffness,
-            mass = transitionMass,
-            loop = transitionLoop
-        )
+        val configs = mutableMapOf<String, TransitionConfig>()
+        val keys = listOf("defaultConfig", "opacity", "translateX", "translateY", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "borderRadius", "backgroundColor")
+        for (key in keys) {
+            if (map.hasKey(key)) {
+                val configMap = map.getMap(key) ?: continue
+                val bezierArray = configMap.getArray("easingBezier")
+                val bezier = if (bezierArray != null && bezierArray.size() == 4) {
+                    floatArrayOf(
+                        bezierArray.getDouble(0).toFloat(),
+                        bezierArray.getDouble(1).toFloat(),
+                        bezierArray.getDouble(2).toFloat(),
+                        bezierArray.getDouble(3).toFloat()
+                    )
+                } else {
+                    floatArrayOf(0.42f, 0f, 0.58f, 1.0f)
+                }
+                configs[key] = TransitionConfig(
+                    type = configMap.getString("type") ?: "timing",
+                    duration = if (configMap.hasKey("duration")) configMap.getInt("duration") else 300,
+                    easingBezier = bezier,
+                    damping = if (configMap.hasKey("damping")) configMap.getDouble("damping").toFloat() else 15.0f,
+                    stiffness = if (configMap.hasKey("stiffness")) configMap.getDouble("stiffness").toFloat() else 120.0f,
+                    mass = if (configMap.hasKey("mass")) configMap.getDouble("mass").toFloat() else 1.0f,
+                    loop = configMap.getString("loop") ?: "none",
+                    delay = if (configMap.hasKey("delay")) configMap.getInt("delay").toLong() else 0L
+                )
+            }
+        }
+        transitionConfigs = configs
     }
 
-    // Property indices matching JS constants
+    fun getTransitionConfig(name: String): TransitionConfig {
+        return transitionConfigs[name]
+            ?: transitionConfigs["defaultConfig"]
+            ?: TransitionConfig("timing", 300, floatArrayOf(0.42f, 0f, 0.58f, 1.0f), 15.0f, 120.0f, 1.0f, "none", 0L)
+    }
+
+    private fun allTransitionsNone(): Boolean {
+        val keys = listOf("opacity", "translateX", "translateY", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "borderRadius", "backgroundColor")
+        return keys.all { getTransitionConfig(it).type == "none" }
+    }
+
     companion object {
         // Bitmask flags — must match JS constants
         const val MASK_OPACITY = 1 shl 0
@@ -115,17 +108,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         const val MASK_ROTATE_Y = 1 shl 7
         const val MASK_BORDER_RADIUS = 1 shl 8
         const val MASK_BACKGROUND_COLOR = 1 shl 9
-
-        const val PROP_INDEX_OPACITY = 0
-        const val PROP_INDEX_TRANSLATE_X = 1
-        const val PROP_INDEX_TRANSLATE_Y = 2
-        const val PROP_INDEX_SCALE_X = 3
-        const val PROP_INDEX_SCALE_Y = 4
-        const val PROP_INDEX_ROTATE = 5
-        const val PROP_INDEX_ROTATE_X = 6
-        const val PROP_INDEX_ROTATE_Y = 7
-        const val PROP_INDEX_BORDER_RADIUS = 8
-        const val PROP_INDEX_BACKGROUND_COLOR = 9
     }
 
     // --- Transform origin (0–1 fractions) ---
@@ -201,8 +183,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
     // --- Animated properties bitmask (set by ViewManager) ---
     var animatedProperties: Int = 0
-
-    private fun hasPerPropertyArrays(): Boolean = perPropertyTransitionTypes != null
 
     init {
         // Set camera distance for 3D perspective rotations (rotateX/rotateY)
@@ -307,34 +287,34 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
                 // Animate properties that differ from initial to target
                 if (mask and MASK_OPACITY != 0 && initialAnimateOpacity != opacity) {
-                    animateProperty("alpha", DynamicAnimation.ALPHA, initialAnimateOpacity, opacity, getTransitionConfigForProperty(PROP_INDEX_OPACITY), loop = true)
+                    animateProperty("alpha", DynamicAnimation.ALPHA, initialAnimateOpacity, opacity, getTransitionConfig("opacity"), loop = true)
                 }
                 if (mask and MASK_TRANSLATE_X != 0 && initialAnimateTranslateX != translateX) {
-                    animateProperty("translationX", DynamicAnimation.TRANSLATION_X, initialAnimateTranslateX, translateX, getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_X), loop = true)
+                    animateProperty("translationX", DynamicAnimation.TRANSLATION_X, initialAnimateTranslateX, translateX, getTransitionConfig("translateX"), loop = true)
                 }
                 if (mask and MASK_TRANSLATE_Y != 0 && initialAnimateTranslateY != translateY) {
-                    animateProperty("translationY", DynamicAnimation.TRANSLATION_Y, initialAnimateTranslateY, translateY, getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_Y), loop = true)
+                    animateProperty("translationY", DynamicAnimation.TRANSLATION_Y, initialAnimateTranslateY, translateY, getTransitionConfig("translateY"), loop = true)
                 }
                 if (mask and MASK_SCALE_X != 0 && initialAnimateScaleX != scaleX) {
-                    animateProperty("scaleX", DynamicAnimation.SCALE_X, initialAnimateScaleX, scaleX, getTransitionConfigForProperty(PROP_INDEX_SCALE_X), loop = true)
+                    animateProperty("scaleX", DynamicAnimation.SCALE_X, initialAnimateScaleX, scaleX, getTransitionConfig("scaleX"), loop = true)
                 }
                 if (mask and MASK_SCALE_Y != 0 && initialAnimateScaleY != scaleY) {
-                    animateProperty("scaleY", DynamicAnimation.SCALE_Y, initialAnimateScaleY, scaleY, getTransitionConfigForProperty(PROP_INDEX_SCALE_Y), loop = true)
+                    animateProperty("scaleY", DynamicAnimation.SCALE_Y, initialAnimateScaleY, scaleY, getTransitionConfig("scaleY"), loop = true)
                 }
                 if (mask and MASK_ROTATE != 0 && initialAnimateRotate != rotate) {
-                    animateProperty("rotation", DynamicAnimation.ROTATION, initialAnimateRotate, rotate, getTransitionConfigForProperty(PROP_INDEX_ROTATE), loop = true)
+                    animateProperty("rotation", DynamicAnimation.ROTATION, initialAnimateRotate, rotate, getTransitionConfig("rotate"), loop = true)
                 }
                 if (mask and MASK_ROTATE_X != 0 && initialAnimateRotateX != rotateX) {
-                    animateProperty("rotationX", DynamicAnimation.ROTATION_X, initialAnimateRotateX, rotateX, getTransitionConfigForProperty(PROP_INDEX_ROTATE_X), loop = true)
+                    animateProperty("rotationX", DynamicAnimation.ROTATION_X, initialAnimateRotateX, rotateX, getTransitionConfig("rotateX"), loop = true)
                 }
                 if (mask and MASK_ROTATE_Y != 0 && initialAnimateRotateY != rotateY) {
-                    animateProperty("rotationY", DynamicAnimation.ROTATION_Y, initialAnimateRotateY, rotateY, getTransitionConfigForProperty(PROP_INDEX_ROTATE_Y), loop = true)
+                    animateProperty("rotationY", DynamicAnimation.ROTATION_Y, initialAnimateRotateY, rotateY, getTransitionConfig("rotateY"), loop = true)
                 }
                 if (mask and MASK_BORDER_RADIUS != 0 && initialAnimateBorderRadius != borderRadius) {
-                    animateProperty("animateBorderRadius", null, initialAnimateBorderRadius, borderRadius, getTransitionConfigForProperty(PROP_INDEX_BORDER_RADIUS), loop = true)
+                    animateProperty("animateBorderRadius", null, initialAnimateBorderRadius, borderRadius, getTransitionConfig("borderRadius"), loop = true)
                 }
                 if (mask and MASK_BACKGROUND_COLOR != 0 && initialAnimateBackgroundColor != backgroundColor) {
-                    animateBackgroundColor(initialAnimateBackgroundColor, backgroundColor, getTransitionConfigForProperty(PROP_INDEX_BACKGROUND_COLOR), loop = true)
+                    animateBackgroundColor(initialAnimateBackgroundColor, backgroundColor, getTransitionConfig("backgroundColor"), loop = true)
                 }
 
                 // If all per-property configs were 'none', no animations were queued.
@@ -355,7 +335,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_BORDER_RADIUS != 0) setAnimateBorderRadius(borderRadius)
                 if (mask and MASK_BACKGROUND_COLOR != 0) applyBackgroundColor(backgroundColor)
             }
-        } else if (!hasPerPropertyArrays() && transitionType == "none") {
+        } else if (allTransitionsNone()) {
             // No transition (scalar) — set values immediately, cancel running animations
             cancelAllAnimations()
             if (mask and MASK_OPACITY != 0) this.alpha = opacity
@@ -375,7 +355,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevOpacity != null && mask and MASK_OPACITY != 0 && prevOpacity != opacity) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_OPACITY)
+                val config = getTransitionConfig("opacity")
                 if (config.type == "none") {
                     cancelSpringForProperty("alpha")
                     runningAnimators["alpha"]?.cancel()
@@ -389,7 +369,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevTranslateX != null && mask and MASK_TRANSLATE_X != 0 && prevTranslateX != translateX) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_X)
+                val config = getTransitionConfig("translateX")
                 if (config.type == "none") {
                     cancelSpringForProperty("translationX")
                     runningAnimators["translationX"]?.cancel()
@@ -403,7 +383,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevTranslateY != null && mask and MASK_TRANSLATE_Y != 0 && prevTranslateY != translateY) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_TRANSLATE_Y)
+                val config = getTransitionConfig("translateY")
                 if (config.type == "none") {
                     cancelSpringForProperty("translationY")
                     runningAnimators["translationY"]?.cancel()
@@ -417,7 +397,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevScaleX != null && mask and MASK_SCALE_X != 0 && prevScaleX != scaleX) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_SCALE_X)
+                val config = getTransitionConfig("scaleX")
                 if (config.type == "none") {
                     cancelSpringForProperty("scaleX")
                     runningAnimators["scaleX"]?.cancel()
@@ -431,7 +411,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevScaleY != null && mask and MASK_SCALE_Y != 0 && prevScaleY != scaleY) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_SCALE_Y)
+                val config = getTransitionConfig("scaleY")
                 if (config.type == "none") {
                     cancelSpringForProperty("scaleY")
                     runningAnimators["scaleY"]?.cancel()
@@ -445,7 +425,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevRotate != null && mask and MASK_ROTATE != 0 && prevRotate != rotate) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE)
+                val config = getTransitionConfig("rotate")
                 if (config.type == "none") {
                     cancelSpringForProperty("rotation")
                     runningAnimators["rotation"]?.cancel()
@@ -459,7 +439,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevRotateX != null && mask and MASK_ROTATE_X != 0 && prevRotateX != rotateX) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE_X)
+                val config = getTransitionConfig("rotateX")
                 if (config.type == "none") {
                     cancelSpringForProperty("rotationX")
                     runningAnimators["rotationX"]?.cancel()
@@ -473,7 +453,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevRotateY != null && mask and MASK_ROTATE_Y != 0 && prevRotateY != rotateY) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_ROTATE_Y)
+                val config = getTransitionConfig("rotateY")
                 if (config.type == "none") {
                     cancelSpringForProperty("rotationY")
                     runningAnimators["rotationY"]?.cancel()
@@ -487,7 +467,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevBorderRadius != null && mask and MASK_BORDER_RADIUS != 0 && prevBorderRadius != borderRadius) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_BORDER_RADIUS)
+                val config = getTransitionConfig("borderRadius")
                 if (config.type == "none") {
                     runningAnimators["animateBorderRadius"]?.cancel()
                     runningAnimators.remove("animateBorderRadius")
@@ -500,7 +480,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
             if (prevBackgroundColor != null && mask and MASK_BACKGROUND_COLOR != 0 && prevBackgroundColor != backgroundColor) {
                 anyPropertyChanged = true
-                val config = getTransitionConfigForProperty(PROP_INDEX_BACKGROUND_COLOR)
+                val config = getTransitionConfig("backgroundColor")
                 if (config.type == "none") {
                     runningAnimators["backgroundColor"]?.cancel()
                     runningAnimators.remove("backgroundColor")
@@ -510,9 +490,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 }
             }
 
-            // If per-property arrays are populated and all changed properties resolved
-            // to 'none', no animations were queued. Fire onTransitionEnd immediately.
-            if (hasPerPropertyArrays() && anyPropertyChanged && pendingBatchAnimationCount == 0) {
+            // If all changed properties resolved to 'none', no animations were queued.
+            // Fire onTransitionEnd immediately.
+            if (anyPropertyChanged && pendingBatchAnimationCount == 0) {
                 onTransitionEnd?.invoke(true)
             }
         }
@@ -558,9 +538,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         pendingBatchAnimationCount++
 
         val animator = ValueAnimator.ofArgb(fromColor, toColor).apply {
-            duration = transitionDuration.toLong()
-            startDelay = transitionDelay
             duration = config.duration.toLong()
+            startDelay = config.delay
 
             interpolator = PathInterpolator(
                 config.easingBezier[0], config.easingBezier[1],
@@ -632,9 +611,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         pendingBatchAnimationCount++
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
-            duration = transitionDuration.toLong()
-            startDelay = transitionDelay
             duration = config.duration.toLong()
+            startDelay = config.delay
 
             interpolator = PathInterpolator(
                 config.easingBezier[0], config.easingBezier[1],
@@ -715,10 +693,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         onEaseAnimationStart()
         runningSpringAnimations[viewProperty] = spring
-        if (transitionDelay > 0) {
+        if (config.delay > 0) {
             val runnable = Runnable { spring.start() }
             pendingDelayedRunnables.add(runnable)
-            postDelayed(runnable, transitionDelay)
+            postDelayed(runnable, config.delay)
         } else {
             spring.start()
         }
@@ -822,14 +800,6 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         applyBackgroundColor(Color.TRANSPARENT)
 
         isFirstMount = true
-        transitionLoop = "none"
-
-        perPropertyTransitionTypes = null
-        perPropertyTransitionDurations = null
-        perPropertyTransitionDampings = null
-        perPropertyTransitionStiffnesses = null
-        perPropertyTransitionMasses = null
-        perPropertyTransitionLoops = null
-        perPropertyTransitionEasingBeziers = null
+        transitionConfigs = emptyMap()
     }
 }

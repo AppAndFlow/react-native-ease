@@ -59,8 +59,8 @@ const EASING_PRESETS: Record<string, CubicBezier> = {
   easeInOut: [0.42, 0, 0.58, 1],
 };
 
-/** Property index order for per-property arrays. */
-const PROPERTY_KEYS: (keyof AnimateProps)[] = [
+/** Transition struct field names (matches NativeTransitions keys). */
+const TRANSITION_KEYS = [
   'opacity',
   'translateX',
   'translateY',
@@ -71,111 +71,190 @@ const PROPERTY_KEYS: (keyof AnimateProps)[] = [
   'rotateY',
   'borderRadius',
   'backgroundColor',
-];
+] as const;
 
-const PROPERTY_COUNT = PROPERTY_KEYS.length;
+type TransitionKey = (typeof TRANSITION_KEYS)[number];
+
+/** Transform property keys (indices 1-7) get spring defaults; others get timing. */
+const TRANSFORM_KEYS = new Set<TransitionKey>([
+  'translateX',
+  'translateY',
+  'scaleX',
+  'scaleY',
+  'rotate',
+  'rotateX',
+  'rotateY',
+]);
 
 /** Returns true if the transition is a SingleTransition (has a `type` field). */
 function isSingleTransition(t: Transition): t is SingleTransition {
   return 'type' in t;
 }
 
-/** Library defaults: spring for transforms (indices 1-7), timing 300ms easeInOut for others. */
-const TIMING_DEFAULT: SingleTransition = {
+/** Resolved native transition config for a single property. */
+type NativeTransitionConfig = {
+  type: string;
+  duration: number;
+  easingBezier: number[];
+  damping: number;
+  stiffness: number;
+  mass: number;
+  loop: string;
+  delay: number;
+};
+
+/** Full transitions struct passed to native. */
+type NativeTransitions = {
+  defaultConfig: NativeTransitionConfig;
+  opacity: NativeTransitionConfig;
+  translateX: NativeTransitionConfig;
+  translateY: NativeTransitionConfig;
+  scaleX: NativeTransitionConfig;
+  scaleY: NativeTransitionConfig;
+  rotate: NativeTransitionConfig;
+  rotateX: NativeTransitionConfig;
+  rotateY: NativeTransitionConfig;
+  borderRadius: NativeTransitionConfig;
+  backgroundColor: NativeTransitionConfig;
+};
+
+/** Library defaults: spring for transforms, timing 300ms easeInOut for others. */
+const TIMING_DEFAULT_CONFIG: NativeTransitionConfig = {
   type: 'timing',
   duration: 300,
-  easing: 'easeInOut',
-};
-const SPRING_DEFAULT: SingleTransition = {
-  type: 'spring',
+  easingBezier: [0.42, 0, 0.58, 1],
   damping: 15,
   stiffness: 120,
   mass: 1,
+  loop: 'none',
+  delay: 0,
 };
 
-function getLibraryDefault(index: number): SingleTransition {
-  // Indices 1-7 are transforms → spring default
-  // Indices 0,8,9 are opacity, borderRadius, backgroundColor → timing default
-  return index >= 1 && index <= 7 ? SPRING_DEFAULT : TIMING_DEFAULT;
+const SPRING_DEFAULT_CONFIG: NativeTransitionConfig = {
+  type: 'spring',
+  duration: 300,
+  easingBezier: [0.42, 0, 0.58, 1],
+  damping: 15,
+  stiffness: 120,
+  mass: 1,
+  loop: 'none',
+  delay: 0,
+};
+
+function getLibraryDefault(key: TransitionKey): NativeTransitionConfig {
+  return TRANSFORM_KEYS.has(key)
+    ? SPRING_DEFAULT_CONFIG
+    : TIMING_DEFAULT_CONFIG;
 }
 
-/** Resolve a SingleTransition into flat scalar values. */
-function resolveSingleConfig(config: SingleTransition) {
-  const type = config.type as 'timing' | 'spring' | 'none';
+/** Resolve a SingleTransition into a native config object. */
+function resolveSingleConfig(config: SingleTransition): NativeTransitionConfig {
+  const type = config.type as string;
   const duration = config.type === 'timing' ? config.duration ?? 300 : 300;
   const rawEasing =
     config.type === 'timing' ? config.easing ?? 'easeInOut' : 'easeInOut';
-  const bezier: CubicBezier = Array.isArray(rawEasing)
+  if (__DEV__) {
+    if (Array.isArray(rawEasing)) {
+      if ((rawEasing as number[]).length !== 4) {
+        console.warn(
+          'react-native-ease: Custom easing must be a [x1, y1, x2, y2] tuple (got length ' +
+            (rawEasing as number[]).length +
+            ').',
+        );
+      }
+      if (
+        rawEasing[0] < 0 ||
+        rawEasing[0] > 1 ||
+        rawEasing[2] < 0 ||
+        rawEasing[2] > 1
+      ) {
+        console.warn(
+          'react-native-ease: Easing x-values (x1, x2) must be between 0 and 1.',
+        );
+      }
+    }
+  }
+  const easingBezier: number[] = Array.isArray(rawEasing)
     ? rawEasing
     : EASING_PRESETS[rawEasing]!;
   const damping = config.type === 'spring' ? config.damping ?? 15 : 15;
   const stiffness = config.type === 'spring' ? config.stiffness ?? 120 : 120;
   const mass = config.type === 'spring' ? config.mass ?? 1 : 1;
-  const loop: 'none' | 'repeat' | 'reverse' =
+  const loop: string =
     config.type === 'timing' ? config.loop ?? 'none' : 'none';
-  return { type, duration, bezier, damping, stiffness, mass, loop };
-}
-
-interface PerPropertyArrays {
-  types: string[];
-  durations: number[];
-  dampings: number[];
-  stiffnesses: number[];
-  masses: number[];
-  loops: string[];
-  easingBeziers: number[];
-}
-
-function resolvePerPropertyTransitions(
-  transitionMap: Exclude<Transition, SingleTransition>,
-): {
-  scalars: ReturnType<typeof resolveSingleConfig>;
-  arrays: PerPropertyArrays;
-} {
-  const arrays: PerPropertyArrays = {
-    types: [],
-    durations: [],
-    dampings: [],
-    stiffnesses: [],
-    masses: [],
-    loops: [],
-    easingBeziers: [],
+  const delay =
+    config.type === 'timing' || config.type === 'spring'
+      ? config.delay ?? 0
+      : 0;
+  return {
+    type,
+    duration,
+    easingBezier,
+    damping,
+    stiffness,
+    mass,
+    loop,
+    delay,
   };
+}
 
-  const defaultConfig = transitionMap.default;
+/** Resolve the transition prop into a fully-populated NativeTransitions struct. */
+function resolveTransitions(transition?: Transition): NativeTransitions {
+  // Single transition: apply the same config to all 11 slots
+  if (transition != null && isSingleTransition(transition)) {
+    const config = resolveSingleConfig(transition);
+    const result = { defaultConfig: config } as Record<
+      string,
+      NativeTransitionConfig
+    >;
+    for (const key of TRANSITION_KEYS) {
+      result[key] = config;
+    }
+    return result as unknown as NativeTransitions;
+  }
 
-  for (let i = 0; i < PROPERTY_COUNT; i++) {
-    const key = PROPERTY_KEYS[i]!;
-    // Resolution order: specific key → scale shorthand (for scaleX/scaleY) → default → library default
-    let config: SingleTransition;
-    if (transitionMap[key] != null) {
-      config = transitionMap[key]!;
+  // No transition: use library defaults per category
+  if (transition == null) {
+    const result = { defaultConfig: TIMING_DEFAULT_CONFIG } as Record<
+      string,
+      NativeTransitionConfig
+    >;
+    for (const key of TRANSITION_KEYS) {
+      result[key] = getLibraryDefault(key);
+    }
+    return result as unknown as NativeTransitions;
+  }
+
+  // TransitionMap: resolve per property
+  const transitionMap = transition;
+  const defaultSingle = transitionMap.default;
+  const defaultNative = defaultSingle
+    ? resolveSingleConfig(defaultSingle)
+    : undefined;
+
+  const result = {
+    defaultConfig: defaultNative ?? TIMING_DEFAULT_CONFIG,
+  } as Record<string, NativeTransitionConfig>;
+
+  for (const key of TRANSITION_KEYS) {
+    const specific = transitionMap[key as keyof typeof transitionMap] as
+      | SingleTransition
+      | undefined;
+    if (specific != null) {
+      result[key] = resolveSingleConfig(specific);
     } else if (
       (key === 'scaleX' || key === 'scaleY') &&
       transitionMap.scale != null
     ) {
-      config = transitionMap.scale!;
-    } else if (defaultConfig != null) {
-      config = defaultConfig;
+      result[key] = resolveSingleConfig(transitionMap.scale!);
+    } else if (defaultNative) {
+      result[key] = defaultNative;
     } else {
-      config = getLibraryDefault(i);
+      result[key] = getLibraryDefault(key);
     }
-
-    const resolved = resolveSingleConfig(config);
-    arrays.types.push(resolved.type);
-    arrays.durations.push(resolved.duration);
-    arrays.dampings.push(resolved.damping);
-    arrays.stiffnesses.push(resolved.stiffness);
-    arrays.masses.push(resolved.mass);
-    arrays.loops.push(resolved.loop);
-    arrays.easingBeziers.push(...resolved.bezier);
   }
 
-  // Scalar props = default key values (or library defaults for opacity category)
-  const scalarConfig = defaultConfig ?? TIMING_DEFAULT;
-  const scalars = resolveSingleConfig(scalarConfig);
-
-  return { scalars, arrays };
+  return result as unknown as NativeTransitions;
 }
 
 export type EaseViewProps = ViewProps & {
@@ -299,81 +378,8 @@ export function EaseView({
     }
   }
 
-  // Resolve transition config — single config or per-property map
-  const isMap = transition != null && !isSingleTransition(transition);
-  const singleTransition = transition == null || isMap ? undefined : transition;
-
-  // Single config resolution (used when single transition or as scalars for map)
-  let transitionType: 'timing' | 'spring' | 'none';
-  let transitionDuration: number;
-  let bezier: CubicBezier;
-  let transitionDamping: number;
-  let transitionStiffness: number;
-  let transitionMass: number;
-  let transitionLoop: 'none' | 'repeat' | 'reverse';
-  let perPropertyArrays: PerPropertyArrays | undefined;
-
-  if (isMap) {
-    const { scalars, arrays } = resolvePerPropertyTransitions(transition);
-    transitionType = scalars.type;
-    transitionDuration = scalars.duration;
-    bezier = scalars.bezier;
-    transitionDamping = scalars.damping;
-    transitionStiffness = scalars.stiffness;
-    transitionMass = scalars.mass;
-    transitionLoop = scalars.loop;
-    perPropertyArrays = arrays;
-  } else {
-    transitionType = singleTransition?.type ?? 'timing';
-    transitionDuration =
-      singleTransition?.type === 'timing'
-        ? singleTransition.duration ?? 300
-        : 300;
-    const rawEasing =
-      singleTransition?.type === 'timing'
-        ? singleTransition.easing ?? 'easeInOut'
-        : 'easeInOut';
-    if (__DEV__) {
-      if (Array.isArray(rawEasing)) {
-        if ((rawEasing as number[]).length !== 4) {
-          console.warn(
-            'react-native-ease: Custom easing must be a [x1, y1, x2, y2] tuple (got length ' +
-              (rawEasing as number[]).length +
-              ').',
-          );
-        }
-        if (
-          rawEasing[0] < 0 ||
-          rawEasing[0] > 1 ||
-          rawEasing[2] < 0 ||
-          rawEasing[2] > 1
-        ) {
-          console.warn(
-            'react-native-ease: Easing x-values (x1, x2) must be between 0 and 1.',
-          );
-        }
-      }
-    }
-    bezier = Array.isArray(rawEasing) ? rawEasing : EASING_PRESETS[rawEasing]!;
-    transitionDamping =
-      singleTransition?.type === 'spring' ? singleTransition.damping ?? 15 : 15;
-    transitionStiffness =
-      singleTransition?.type === 'spring'
-        ? singleTransition.stiffness ?? 120
-        : 120;
-    transitionMass =
-      singleTransition?.type === 'spring' ? singleTransition.mass ?? 1 : 1;
-    transitionLoop =
-      singleTransition?.type === 'timing'
-        ? singleTransition.loop ?? 'none'
-        : 'none';
-  }
-  const singleTrans =
-    transition && 'type' in transition ? transition : undefined;
-  const transitionDelay =
-    singleTrans?.type === 'timing' || singleTrans?.type === 'spring'
-      ? singleTrans.delay ?? 0
-      : 0;
+  // Resolve transition config into a fully-populated struct
+  const transitions = resolveTransitions(transition);
 
   const handleTransitionEnd = onTransitionEnd
     ? (event: { nativeEvent: { finished: boolean } }) =>
@@ -405,21 +411,7 @@ export function EaseView({
       initialAnimateRotateY={resolvedInitial.rotateY}
       initialAnimateBorderRadius={resolvedInitial.borderRadius}
       initialAnimateBackgroundColor={initialBgColor}
-      transitionType={transitionType}
-      transitionDuration={transitionDuration}
-      transitionEasingBezier={bezier}
-      transitionDamping={transitionDamping}
-      transitionStiffness={transitionStiffness}
-      transitionMass={transitionMass}
-      transitionLoop={transitionLoop}
-      transitionDelay={transitionDelay}
-      perPropertyTransitionTypes={perPropertyArrays?.types}
-      perPropertyTransitionDurations={perPropertyArrays?.durations}
-      perPropertyTransitionDampings={perPropertyArrays?.dampings}
-      perPropertyTransitionStiffnesses={perPropertyArrays?.stiffnesses}
-      perPropertyTransitionMasses={perPropertyArrays?.masses}
-      perPropertyTransitionLoops={perPropertyArrays?.loops}
-      perPropertyTransitionEasingBeziers={perPropertyArrays?.easingBeziers}
+      transitions={transitions}
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}
       transformOriginY={transformOrigin?.y ?? 0.5}

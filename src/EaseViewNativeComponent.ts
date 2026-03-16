@@ -6,6 +6,34 @@ import {
   type ColorValue,
 } from 'react-native';
 
+type Float = CodegenTypes.Float;
+type Int32 = CodegenTypes.Int32;
+
+type NativeTransitionConfig = Readonly<{
+  type: string;
+  duration: Int32;
+  easingBezier: ReadonlyArray<Float>;
+  damping: Float;
+  stiffness: Float;
+  mass: Float;
+  loop: string;
+  delay: Int32;
+}>;
+
+type NativeTransitions = Readonly<{
+  defaultConfig: NativeTransitionConfig;
+  opacity: NativeTransitionConfig;
+  translateX: NativeTransitionConfig;
+  translateY: NativeTransitionConfig;
+  scaleX: NativeTransitionConfig;
+  scaleY: NativeTransitionConfig;
+  rotate: NativeTransitionConfig;
+  rotateX: NativeTransitionConfig;
+  rotateY: NativeTransitionConfig;
+  borderRadius: NativeTransitionConfig;
+  backgroundColor: NativeTransitionConfig;
+}>;
+
 export interface NativeProps extends ViewProps {
   // Bitmask of which properties are animated (0 = none, let style handle all)
   animatedProperties?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
@@ -37,33 +65,8 @@ export interface NativeProps extends ViewProps {
   >;
   initialAnimateBackgroundColor?: ColorValue;
 
-  // Transition config
-  transitionType?: CodegenTypes.WithDefault<
-    'timing' | 'spring' | 'none',
-    'timing'
-  >;
-  transitionDuration?: CodegenTypes.WithDefault<CodegenTypes.Int32, 300>;
-  // Easing cubic bezier control points [x1, y1, x2, y2] (default: easeInOut)
-  transitionEasingBezier?: ReadonlyArray<CodegenTypes.Float>;
-  transitionDamping?: CodegenTypes.WithDefault<CodegenTypes.Float, 15.0>;
-  transitionStiffness?: CodegenTypes.WithDefault<CodegenTypes.Float, 120.0>;
-  transitionMass?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  transitionLoop?: CodegenTypes.WithDefault<
-    'none' | 'repeat' | 'reverse',
-    'none'
-  >;
-  transitionDelay?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
-
-  // Per-property transition arrays (10 elements each, one per animatable property)
-  // Index order: 0=opacity, 1=translateX, 2=translateY, 3=scaleX, 4=scaleY,
-  //              5=rotate, 6=rotateX, 7=rotateY, 8=borderRadius, 9=backgroundColor
-  perPropertyTransitionTypes?: ReadonlyArray<string>;
-  perPropertyTransitionDurations?: ReadonlyArray<CodegenTypes.Int32>;
-  perPropertyTransitionDampings?: ReadonlyArray<CodegenTypes.Float>;
-  perPropertyTransitionStiffnesses?: ReadonlyArray<CodegenTypes.Float>;
-  perPropertyTransitionMasses?: ReadonlyArray<CodegenTypes.Float>;
-  perPropertyTransitionLoops?: ReadonlyArray<string>;
-  perPropertyTransitionEasingBeziers?: ReadonlyArray<CodegenTypes.Float>; // 40 elements (4 per property)
+  // Unified transition config — one struct with per-property configs
+  transitions?: NativeTransitions;
 
   // Transform origin (0–1 fractions, default center)
   transformOriginX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
