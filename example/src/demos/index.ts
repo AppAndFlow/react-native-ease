@@ -38,7 +38,6 @@ export const demos: Record<string, DemoEntry> = {
   'rotate': { component: RotateDemo, title: 'Rotate', section: 'Transform' },
   'scale': { component: ScaleDemo, title: 'Scale', section: 'Transform' },
   'transform-origin': {
-  'per-property': { component: PerPropertyDemo, title: 'Per-Property', section: 'Advanced' },
     component: TransformOriginDemo,
     title: 'Transform Origin',
     section: 'Transform',
@@ -80,6 +79,11 @@ export const demos: Record<string, DemoEntry> = {
   'comparison': {
     component: ComparisonDemo,
     title: 'Comparison',
+    section: 'Advanced',
+  },
+  'per-property': {
+    component: PerPropertyDemo,
+    title: 'Per-Property',
     section: 'Advanced',
   },
   ...(Platform.OS !== 'web'
