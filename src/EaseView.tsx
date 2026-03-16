@@ -370,9 +370,11 @@ export function EaseView({
         ? singleTransition.loop ?? 'none'
         : 'none';
   }
+  const singleTrans =
+    transition && 'type' in transition ? transition : undefined;
   const transitionDelay =
-    transition?.type === 'timing' || transition?.type === 'spring'
-      ? (transition as any).delay ?? 0
+    singleTrans?.type === 'timing' || singleTrans?.type === 'spring'
+      ? singleTrans.delay ?? 0
       : 0;
 
   const handleTransitionEnd = onTransitionEnd

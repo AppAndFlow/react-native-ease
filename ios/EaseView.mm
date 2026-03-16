@@ -303,7 +303,8 @@ static int lowestTransformPropertyIndex(int mask) {
                                                    toValue:toValue
                                                     config:config
                                                       loop:loop];
-  const auto &easeProps = *std::static_pointer_cast<const EaseViewProps>(_props);
+  const auto &easeProps =
+      *std::static_pointer_cast<const EaseViewProps>(_props);
   if (easeProps.transitionDelay > 0) {
     animation.beginTime =
         CACurrentMediaTime() + (easeProps.transitionDelay / 1000.0);

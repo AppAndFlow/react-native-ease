@@ -3,6 +3,7 @@ import { View, type ViewStyle, type StyleProp } from 'react-native';
 import type {
   AnimateProps,
   CubicBezier,
+  SingleTransition,
   Transition,
   TransitionEndEvent,
   TransformOrigin,
@@ -81,7 +82,17 @@ function buildTransform(vals: ReturnType<typeof resolveAnimateValues>): string {
   return parts.length > 0 ? parts.join(' ') : 'none';
 }
 
-function resolveEasing(transition: Transition | undefined): string {
+/** For web, resolve a Transition (which may be a TransitionMap) to a SingleTransition. */
+function resolveSingleTransition(
+  transition: Transition | undefined,
+): SingleTransition | undefined {
+  if (!transition) return undefined;
+  if ('type' in transition) return transition as SingleTransition;
+  // TransitionMap — use the default config
+  return (transition as any).default as SingleTransition | undefined;
+}
+
+function resolveEasing(transition: SingleTransition | undefined): string {
   if (!transition || transition.type !== 'timing') {
     return 'cubic-bezier(0.42, 0, 0.58, 1)';
   }
@@ -92,7 +103,7 @@ function resolveEasing(transition: Transition | undefined): string {
   return `cubic-bezier(${bezier[0]}, ${bezier[1]}, ${bezier[2]}, ${bezier[3]})`;
 }
 
-function resolveDuration(transition: Transition | undefined): number {
+function resolveDuration(transition: SingleTransition | undefined): number {
   if (!transition) return 300;
   if (transition.type === 'timing') return transition.duration ?? 300;
   if (transition.type === 'none') return 0;
@@ -146,14 +157,16 @@ export function EaseView({
   const displayValues =
     !mounted && hasInitial ? resolveAnimateValues(initialAnimate) : resolved;
 
-  const duration = resolveDuration(transition);
-  const easing = resolveEasing(transition);
+  const singleTransition = resolveSingleTransition(transition);
+  const duration = resolveDuration(singleTransition);
+  const easing = resolveEasing(singleTransition);
 
   const originX = ((transformOrigin?.x ?? 0.5) * 100).toFixed(1);
   const originY = ((transformOrigin?.y ?? 0.5) * 100).toFixed(1);
 
-  const transitionType = transition?.type ?? 'timing';
-  const loopMode = transition?.type === 'timing' ? transition.loop : undefined;
+  const transitionType = singleTransition?.type ?? 'timing';
+  const loopMode =
+    singleTransition?.type === 'timing' ? singleTransition.loop : undefined;
 
   const transitionCss =
     transitionType === 'none' || (!mounted && hasInitial)
