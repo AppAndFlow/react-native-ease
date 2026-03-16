@@ -176,6 +176,8 @@ class EaseViewManager : ReactViewManager() {
     @ReactProp(name = "transitionDelay", defaultInt = 0)
     fun setTransitionDelay(view: EaseView, value: Int) {
         view.transitionDelay = value.toLong()
+    }
+
     // --- Per-property transition arrays ---
 
     @ReactProp(name = "perPropertyTransitionTypes")

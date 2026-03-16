@@ -368,22 +368,10 @@ export function EaseView({
         ? singleTransition.loop ?? 'none'
         : 'none';
   }
-  const bezier: CubicBezier = Array.isArray(rawEasing)
-    ? rawEasing
-    : EASING_PRESETS[rawEasing]!;
-  const transitionDamping =
-    transition?.type === 'spring' ? transition.damping ?? 15 : 15;
-  const transitionStiffness =
-    transition?.type === 'spring' ? transition.stiffness ?? 120 : 120;
-  const transitionMass =
-    transition?.type === 'spring' ? transition.mass ?? 1 : 1;
-  const transitionLoop =
-    transition?.type === 'timing' ? transition.loop ?? 'none' : 'none';
   const transitionDelay =
     transition?.type === 'timing' || transition?.type === 'spring'
-      ? transition.delay ?? 0
+      ? (transition as any).delay ?? 0
       : 0;
-
 
   const handleTransitionEnd = onTransitionEnd
     ? (event: { nativeEvent: { finished: boolean } }) =>
@@ -430,7 +418,6 @@ export function EaseView({
       perPropertyTransitionMasses={perPropertyArrays?.masses}
       perPropertyTransitionLoops={perPropertyArrays?.loops}
       perPropertyTransitionEasingBeziers={perPropertyArrays?.easingBeziers}
-
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}
       transformOriginY={transformOrigin?.y ?? 0.5}

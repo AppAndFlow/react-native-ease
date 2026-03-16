@@ -303,9 +303,10 @@ static int lowestTransformPropertyIndex(int mask) {
                                                    toValue:toValue
                                                     config:config
                                                       loop:loop];
-  if (props.transitionDelay > 0) {
+  const auto &easeProps = *std::static_pointer_cast<const EaseViewProps>(_props);
+  if (easeProps.transitionDelay > 0) {
     animation.beginTime =
-        CACurrentMediaTime() + (props.transitionDelay / 1000.0);
+        CACurrentMediaTime() + (easeProps.transitionDelay / 1000.0);
     animation.fillMode = kCAFillModeBackwards;
   }
   [animation setValue:@(_animationBatchId) forKey:@"easeBatchId"];
