@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { SectionList, Text, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getDemoSections } from '../src/demos';
 
@@ -7,12 +8,13 @@ const sections = getDemoSections();
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <SectionList
       sections={sections}
       keyExtractor={(item) => item.key}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
       stickySectionHeadersEnabled={false}
       ListHeaderComponent={
         <View style={styles.header}>
