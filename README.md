@@ -1,22 +1,17 @@
-# 🍃 react-native-ease
+<img width="100%" height="auto" alt="react-native-ease by App & Flow" src="https://github.com/user-attachments/assets/8006ed51-d373-4c97-9e80-9937eb9a569e" />
 
 Lightweight declarative animations powered by platform APIs. Uses Core Animation on iOS and Animator on Android — zero JS overhead.
 
-## Goals
+## About
+App & Flow is a Montreal-based React Native engineering and consulting studio. We partner with the world’s top companies and are recommended by [Expo](https://expo.dev/consultants). Need a hand? Let’s build together. team@appandflow.com
 
-- **Fast** — Animations run entirely on native platform APIs (CAAnimation, ObjectAnimator/SpringAnimation). No JS animation loop, no worklets, no shared values.
-- **Simple** — CSS-transition-like API. Set target values, get smooth animations. One component, a few props.
-- **Lightweight** — Minimal native code, no C++ runtime, no custom animation engine. Just a thin declarative wrapper around what the OS already provides.
-- **Interruptible** — Changing values mid-animation smoothly redirects to the new target. No jumps.
+## Demo
 
-## Non-Goals
+![ease-demo](https://github.com/user-attachments/assets/09658b07-803e-4b7e-a23c-831a6c63df84)
 
-- **Complex gesture-driven animations** — If you need pan/pinch-driven animations, animation worklets, or shared values across components, use [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated).
-- **Layout animations** — Animating width/height/layout changes is not supported.
-- **Shared element transitions** — Use Reanimated or React Navigation's shared element transitions.
-- **Old architecture** — Fabric (new architecture) only.
+## Getting started
 
-## Installation
+### Installation
 
 ```bash
 npm install react-native-ease
@@ -24,7 +19,7 @@ npm install react-native-ease
 yarn add react-native-ease
 ```
 
-## Migration Skill
+### Migration Skill
 
 If you're already using `react-native-reanimated` or React Native's `Animated` API, this project includes an [Agent Skill](https://agentskills.io) that scans your codebase for animations that can be replaced with `react-native-ease` and migrates them automatically.
 
@@ -42,7 +37,7 @@ The skill will:
 4. Let you select which components to migrate
 5. Apply the changes, preserving all non-animation logic
 
-## Quick Start
+### Example
 
 ```tsx
 import { EaseView } from 'react-native-ease';
@@ -62,7 +57,23 @@ function FadeCard({ visible, children }) {
 
 `EaseView` works like a regular `View` — it accepts children, styles, and all standard view props. When values in `animate` change, it smoothly transitions to the new values using native platform animations.
 
-## When to use this vs Reanimated
+## Why
+
+### Goals
+
+- **Fast** — Animations run entirely on native platform APIs (CAAnimation, ObjectAnimator/SpringAnimation). No JS animation loop, no worklets, no shared values.
+- **Simple** — CSS-transition-like API. Set target values, get smooth animations. One component, a few props.
+- **Lightweight** — Minimal native code, no C++ runtime, no custom animation engine. Just a thin declarative wrapper around what the OS already provides.
+- **Interruptible** — Changing values mid-animation smoothly redirects to the new target. No jumps.
+
+### Non-Goals
+
+- **Complex gesture-driven animations** — If you need pan/pinch-driven animations, animation worklets, or shared values across components, use [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated).
+- **Layout animations** — Animating width/height/layout changes is not supported.
+- **Shared element transitions** — Use Reanimated or React Navigation's shared element transitions.
+- **Old architecture** — Fabric (new architecture) only.
+
+### When to use this vs Reanimated
 
 | Use case                               | Ease | Reanimated |
 | -------------------------------------- | ---- | ---------- |
