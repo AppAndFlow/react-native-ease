@@ -127,16 +127,25 @@ describe('EaseView', () => {
   });
 
   describe('transition defaults', () => {
-    it('defaults to timing with standard values', () => {
+    it('uses timing default with spring for transforms when no transition', () => {
       render(<EaseView testID="ease" />);
-      const props = getNativeProps();
-      expect(props.transitionType).toBe('timing');
-      expect(props.transitionDuration).toBe(300);
-      expect(props.transitionEasingBezier).toEqual([0.42, 0, 0.58, 1]);
-      expect(props.transitionLoop).toBe('none');
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(300);
+      expect(t.defaultConfig.easingBezier).toEqual([0.42, 0, 0.58, 1]);
+      expect(t.defaultConfig.loop).toBe('none');
+      expect(t.defaultConfig.delay).toBe(0);
+      // Transform gets spring default
+      expect(t.transform.type).toBe('spring');
+      expect(t.transform.damping).toBe(15);
+      expect(t.transform.stiffness).toBe(120);
+      // Other categories not set
+      expect(t.opacity).toBeUndefined();
+      expect(t.borderRadius).toBeUndefined();
+      expect(t.backgroundColor).toBeUndefined();
     });
 
-    it('resolves timing transition props', () => {
+    it('resolves timing transition to defaultConfig only', () => {
       render(
         <EaseView
           testID="ease"
@@ -148,42 +157,49 @@ describe('EaseView', () => {
           }}
         />,
       );
-      const props = getNativeProps();
-      expect(props.transitionType).toBe('timing');
-      expect(props.transitionDuration).toBe(500);
-      expect(props.transitionEasingBezier).toEqual([0, 0, 1, 1]);
-      expect(props.transitionLoop).toBe('reverse');
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(500);
+      expect(t.defaultConfig.easingBezier).toEqual([0, 0, 1, 1]);
+      expect(t.defaultConfig.loop).toBe('reverse');
+      // No category overrides — native falls back to defaultConfig
+      expect(t.opacity).toBeUndefined();
+      expect(t.transform).toBeUndefined();
     });
 
-    it('resolves spring transition props with timing defaults for unused fields', () => {
+    it('resolves spring transition with defaults for unused fields', () => {
       render(
         <EaseView
           testID="ease"
           transition={{ type: 'spring', damping: 20, stiffness: 200, mass: 2 }}
         />,
       );
-      const props = getNativeProps();
-      expect(props.transitionType).toBe('spring');
-      expect(props.transitionDamping).toBe(20);
-      expect(props.transitionStiffness).toBe(200);
-      expect(props.transitionMass).toBe(2);
-      // Timing-specific fields get defaults (easeInOut bezier)
-      expect(props.transitionDuration).toBe(300);
-      expect(props.transitionEasingBezier).toEqual([0.42, 0, 0.58, 1]);
-      expect(props.transitionLoop).toBe('none');
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('spring');
+      expect(t.defaultConfig.damping).toBe(20);
+      expect(t.defaultConfig.stiffness).toBe(200);
+      expect(t.defaultConfig.mass).toBe(2);
+      // Timing-specific fields get defaults
+      expect(t.defaultConfig.duration).toBe(300);
+      expect(t.defaultConfig.easingBezier).toEqual([0.42, 0, 0.58, 1]);
+      expect(t.defaultConfig.loop).toBe('none');
     });
 
     it('uses spring defaults when only type is specified', () => {
       render(<EaseView testID="ease" transition={{ type: 'spring' }} />);
-      const props = getNativeProps();
-      expect(props.transitionDamping).toBe(15);
-      expect(props.transitionStiffness).toBe(120);
-      expect(props.transitionMass).toBe(1);
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.damping).toBe(15);
+      expect(t.defaultConfig.stiffness).toBe(120);
+      expect(t.defaultConfig.mass).toBe(1);
     });
 
-    it('passes none transition type', () => {
+    it('passes none transition type to defaultConfig', () => {
       render(<EaseView testID="ease" transition={{ type: 'none' }} />);
-      expect(getNativeProps().transitionType).toBe('none');
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('none');
+      // No category overrides
+      expect(t.opacity).toBeUndefined();
+      expect(t.transform).toBeUndefined();
     });
 
     it('passes custom cubic bezier control points', () => {
@@ -197,8 +213,8 @@ describe('EaseView', () => {
           }}
         />,
       );
-      const props = getNativeProps();
-      expect(props.transitionEasingBezier).toEqual([0.25, 0.1, 0.25, 1.0]);
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.easingBezier).toEqual([0.25, 0.1, 0.25, 1.0]);
     });
 
     it('warns for invalid array length', () => {
@@ -233,6 +249,22 @@ describe('EaseView', () => {
         expect.stringContaining('x-values (x1, x2) must be between 0 and 1'),
       );
       spy.mockRestore();
+    });
+
+    it('passes delay for timing transition', () => {
+      render(
+        <EaseView testID="ease" transition={{ type: 'timing', delay: 200 }} />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.delay).toBe(200);
+    });
+
+    it('passes delay for spring transition', () => {
+      render(
+        <EaseView testID="ease" transition={{ type: 'spring', delay: 150 }} />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.delay).toBe(150);
     });
   });
 
@@ -456,6 +488,140 @@ describe('EaseView', () => {
       expect(props.style).toEqual(
         expect.objectContaining({ opacity: 0.5, backgroundColor: 'red' }),
       );
+    });
+  });
+
+  describe('per-property transition map', () => {
+    it('sets only defaultConfig from single transition', () => {
+      render(
+        <EaseView testID="ease" transition={{ type: 'spring', damping: 20 }} />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('spring');
+      expect(t.defaultConfig.damping).toBe(20);
+      // No category overrides — native falls back to defaultConfig
+      expect(t.opacity).toBeUndefined();
+      expect(t.transform).toBeUndefined();
+      expect(t.backgroundColor).toBeUndefined();
+    });
+
+    it('sets defaultConfig with default-only map', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 500, easing: 'linear' },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(500);
+      // No category overrides
+      expect(t.opacity).toBeUndefined();
+      expect(t.transform).toBeUndefined();
+    });
+
+    it('applies category-specific overrides', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 300 },
+            opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
+            transform: { type: 'spring', damping: 20, stiffness: 200 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      // opacity override
+      expect(t.opacity!.type).toBe('timing');
+      expect(t.opacity!.duration).toBe(150);
+      // transform override
+      expect(t.transform!.type).toBe('spring');
+      expect(t.transform!.damping).toBe(20);
+      expect(t.transform!.stiffness).toBe(200);
+      // defaultConfig for non-overridden categories
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(300);
+      // borderRadius/backgroundColor not set — native uses defaultConfig
+      expect(t.borderRadius).toBeUndefined();
+      expect(t.backgroundColor).toBeUndefined();
+    });
+
+    it('preserves spring default for transforms when no default key', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            opacity: { type: 'timing', duration: 150 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      // opacity is explicitly set
+      expect(t.opacity!.type).toBe('timing');
+      expect(t.opacity!.duration).toBe(150);
+      // defaultConfig is timing 300ms (library default)
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(300);
+      // transform gets spring default (no explicit default or transform key)
+      expect(t.transform!.type).toBe('spring');
+      expect(t.transform!.damping).toBe(15);
+      expect(t.transform!.stiffness).toBe(120);
+      // Other categories not set
+      expect(t.borderRadius).toBeUndefined();
+      expect(t.backgroundColor).toBeUndefined();
+    });
+
+    it('does not inject spring transform when default key is provided', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 500 },
+            opacity: { type: 'timing', duration: 150 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      // explicit default overrides library defaults
+      expect(t.defaultConfig.type).toBe('timing');
+      expect(t.defaultConfig.duration).toBe(500);
+      // transform not injected — user opted into explicit default
+      expect(t.transform).toBeUndefined();
+    });
+
+    it('supports per-category delay in transition map', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 300, delay: 100 },
+            opacity: { type: 'timing', duration: 200, delay: 50 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.opacity!.delay).toBe(50);
+      // defaultConfig has delay 100 — native uses this for non-overridden categories
+      expect(t.defaultConfig.delay).toBe(100);
+    });
+
+    it('supports transform category for all transform properties', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 300 },
+            transform: { type: 'spring', damping: 10, stiffness: 100 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.transform!.type).toBe('spring');
+      expect(t.transform!.damping).toBe(10);
+      expect(t.transform!.stiffness).toBe(100);
     });
   });
 });

@@ -176,6 +176,42 @@ Use `{ type: 'none' }` to apply values immediately without animation. Useful for
 
 `onTransitionEnd` fires immediately with `{ finished: true }`.
 
+### Per-Property Transitions
+
+Pass a map instead of a single config to use different transition types per property. This lets you mix timing and spring animations, or use different durations for different properties.
+
+```tsx
+<EaseView
+  animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 30 }}
+  transition={{
+    opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
+    translateY: { type: 'spring', damping: 12, stiffness: 200 },
+  }}
+/>
+```
+
+Use `default` as a fallback for properties not explicitly listed:
+
+```tsx
+<EaseView
+  animate={{ opacity: 1, scale: 1.2, translateY: -20 }}
+  transition={{
+    default: { type: 'spring', damping: 15, stiffness: 120 },
+    opacity: { type: 'timing', duration: 200, easing: 'easeOut' },
+  }}
+/>
+```
+
+The `scale` key applies to both `scaleX` and `scaleY`. A specific `scaleX` or `scaleY` key takes priority over `scale`.
+
+When no `default` key is provided, library defaults apply by category:
+- **Transforms** (translateX/Y, scaleX/Y, rotate, rotateX/Y): spring with damping=15, stiffness=120
+- **Other** (opacity, borderRadius, backgroundColor): timing 300ms easeInOut
+
+> **iOS note:** iOS composes all transform sub-properties into a single `CATransform3D` animation. If your map specifies conflicting configs for different transform properties (e.g. spring for `translateX` and timing for `scaleX`), the config from the lowest-index changed property is used.
+>
+> **Android note:** Android animates `backgroundColor` with `ValueAnimator` (timing only). If a per-property map specifies `type: 'spring'` for `backgroundColor`, it silently falls back to timing 300ms.
+
 ### Border Radius
 
 `borderRadius` can be animated just like other properties. It uses hardware-accelerated platform APIs — `ViewOutlineProvider` + `clipToOutline` on Android and `layer.cornerRadius` + `layer.masksToBounds` on iOS. Unlike RN's style-based `borderRadius` (which uses a Canvas drawable on Android), this clips children properly and is GPU-accelerated.
@@ -410,6 +446,27 @@ Properties not specified in `animate` default to their identity values.
 ```
 
 Applies values instantly with no animation. `onTransitionEnd` fires immediately with `{ finished: true }`.
+
+### `TransitionMap`
+
+```tsx
+{
+  default?: SingleTransition;  // fallback for unlisted properties
+  opacity?: SingleTransition;
+  translateX?: SingleTransition;
+  translateY?: SingleTransition;
+  scale?: SingleTransition;     // shorthand for scaleX + scaleY
+  scaleX?: SingleTransition;
+  scaleY?: SingleTransition;
+  rotate?: SingleTransition;
+  rotateX?: SingleTransition;
+  rotateY?: SingleTransition;
+  borderRadius?: SingleTransition;
+  backgroundColor?: SingleTransition;
+}
+```
+
+`Transition` is `SingleTransition | TransitionMap`. The `transition` prop accepts either form.
 
 ## Hardware Layers (Android)
 

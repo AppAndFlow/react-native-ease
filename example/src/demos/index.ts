@@ -19,6 +19,7 @@ import { SlideDemo } from './SlideDemo';
 import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
+import { PerPropertyDemo } from './PerPropertyDemo';
 
 interface DemoEntry {
   component: ComponentType;
@@ -76,6 +77,11 @@ export const demos: Record<string, DemoEntry> = {
   'comparison': {
     component: ComparisonDemo,
     title: 'Comparison',
+    section: 'Advanced',
+  },
+  'per-property': {
+    component: PerPropertyDemo,
+    title: 'Per-Property',
     section: 'Advanced',
   },
 };

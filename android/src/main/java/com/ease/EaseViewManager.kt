@@ -3,6 +3,7 @@ package com.ease
 import android.graphics.Color
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.PixelUtil
@@ -126,56 +127,11 @@ class EaseViewManager : ReactViewManager() {
         view.initialAnimateBorderRadius = PixelUtil.toPixelFromDIP(value)
     }
 
-    // --- Transition config setters ---
+    // --- Transitions config (single ReadableMap) ---
 
-    @ReactProp(name = "transitionType")
-    fun setTransitionType(view: EaseView, value: String?) {
-        view.transitionType = value ?: "timing"
-    }
-
-    @ReactProp(name = "transitionDuration", defaultInt = 300)
-    fun setTransitionDuration(view: EaseView, value: Int) {
-        view.transitionDuration = value
-    }
-
-    @ReactProp(name = "transitionEasingBezier")
-    fun setTransitionEasingBezier(view: EaseView, value: ReadableArray?) {
-        if (value != null && value.size() == 4) {
-            view.transitionEasingBezier = floatArrayOf(
-                value.getDouble(0).toFloat(),
-                value.getDouble(1).toFloat(),
-                value.getDouble(2).toFloat(),
-                value.getDouble(3).toFloat()
-            )
-        } else {
-            // Fallback: easeInOut
-            view.transitionEasingBezier = floatArrayOf(0.42f, 0f, 0.58f, 1.0f)
-        }
-    }
-
-    @ReactProp(name = "transitionDamping", defaultFloat = 15f)
-    fun setTransitionDamping(view: EaseView, value: Float) {
-        view.transitionDamping = value
-    }
-
-    @ReactProp(name = "transitionStiffness", defaultFloat = 120f)
-    fun setTransitionStiffness(view: EaseView, value: Float) {
-        view.transitionStiffness = value
-    }
-
-    @ReactProp(name = "transitionMass", defaultFloat = 1f)
-    fun setTransitionMass(view: EaseView, value: Float) {
-        view.transitionMass = value
-    }
-
-    @ReactProp(name = "transitionLoop")
-    fun setTransitionLoop(view: EaseView, value: String?) {
-        view.transitionLoop = value ?: "none"
-    }
-
-    @ReactProp(name = "transitionDelay", defaultInt = 0)
-    fun setTransitionDelay(view: EaseView, value: Int) {
-        view.transitionDelay = value.toLong()
+    @ReactProp(name = "transitions")
+    fun setTransitions(view: EaseView, value: ReadableMap?) {
+        view.setTransitionsFromMap(value)
     }
 
     // --- Border radius ---

@@ -42,8 +42,28 @@ export type NoneTransition = {
   type: 'none';
 };
 
-/** Animation transition configuration. */
-export type Transition = TimingTransition | SpringTransition | NoneTransition;
+/** A single animation transition configuration. */
+export type SingleTransition =
+  | TimingTransition
+  | SpringTransition
+  | NoneTransition;
+
+/** Per-property transition map with category-based keys. */
+export type TransitionMap = {
+  /** Fallback config for properties not explicitly listed. */
+  default?: SingleTransition;
+  /** Config for all transform properties (translateX/Y, scaleX/Y, rotate, rotateX/Y). */
+  transform?: SingleTransition;
+  /** Config for opacity. */
+  opacity?: SingleTransition;
+  /** Config for borderRadius. */
+  borderRadius?: SingleTransition;
+  /** Config for backgroundColor. */
+  backgroundColor?: SingleTransition;
+};
+
+/** Animation transition configuration — either a single config or a per-property map. */
+export type Transition = SingleTransition | TransitionMap;
 
 /** Event fired when the animation ends. */
 export type TransitionEndEvent = {
