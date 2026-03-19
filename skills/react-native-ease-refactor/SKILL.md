@@ -52,7 +52,9 @@ Apply these checks in order. The first match determines the result:
 2. **Uses scroll handler?** (`useAnimatedScrollHandler`, `onScroll` with `Animated.event`) → NOT migratable — "Scroll-driven animation"
 3. **Uses shared element transitions?** (`sharedTransitionTag`) → NOT migratable — "Shared element transition"
 4. **Uses `runOnUI` or worklet directives?** → NOT migratable — "Requires worklet runtime"
-5. **Uses `withSequence` or `withDelay`?** → NOT migratable — "Animation sequencing not supported"
+5. **Uses `withSequence`?** → NOT migratable — "Animation sequencing not supported"
+5b. **Uses `withDelay` wrapping a single animation (`withTiming`/`withSpring`)?** → MIGRATABLE — map to `delay` on the transition
+5c. **Uses `withDelay` wrapping `withSequence` or nested `withDelay`?** → NOT migratable — "Complex delay/sequencing not supported"
 6. **Uses complex `interpolate()`?** (more than 2 input/output values) → NOT migratable — "Complex interpolation"
 7. **Uses `layout={...}` prop?** → NOT migratable — "Layout animation"
 8. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor) → NOT migratable — "Animates unsupported property: `<prop>`"
@@ -83,6 +85,8 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | `Easing.bezier(x1, y1, x2, y2)`                                                                                           | `easing: [x1, y1, x2, y2]`                                                                                   |
 | `Animated.Value` + `Animated.timing`                                                                                      | Same `animate` + `transition` pattern — convert to state-driven                                              |
 | `Animated.Value` + `Animated.spring`                                                                                      | `animate` + `transition={{ type: 'spring' }}` — convert to state-driven                                      |
+| `withDelay(ms, withTiming(...))` or `withDelay(ms, withSpring(...))`                                                      | `transition={{ ..., delay: ms }}` — add `delay` to the transition config                                     |
+| `entering={FadeIn.delay(ms)}` / any entering preset with `.delay()`                                                      | `initialAnimate` + `animate` + `transition={{ ..., delay: ms }}`                                             |
 
 ### Default Value Mapping
 
@@ -360,6 +364,7 @@ transition={{
   type: 'timing',
   duration: 300,        // ms, default 300
   easing: 'easeInOut',  // 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | [x1,y1,x2,y2]
+  delay: 0,             // ms, default 0
   loop: 'repeat',       // 'repeat' | 'reverse' — requires initialAnimate
 }}
 ```
@@ -372,6 +377,7 @@ transition={{
   damping: 15,      // default 15
   stiffness: 120,   // default 120
   mass: 1,          // default 1
+  delay: 0,         // ms, default 0
 }}
 ```
 
@@ -394,6 +400,6 @@ transition={{ type: 'none' }}
 
 - **Loop requires timing** (not spring) and `initialAnimate` must define the start value
 - **No per-property transitions** — one transition config applies to all animated properties
-- **No animation sequencing** — no equivalent to `withSequence`/`withDelay`
+- **No animation sequencing** — no equivalent to `withSequence`. Simple `withDelay` IS supported via the `delay` transition prop
 - **No gesture/scroll-driven animations** — EaseView is state-driven only
 - **Style/animate conflict** — if a property appears in both `style` and `animate`, the animated value wins

@@ -100,6 +100,7 @@ Timing animations transition from one value to another over a fixed duration wit
 | ---------- | ------------ | ------------- | ------------------------------------------------------------------------ |
 | `duration` | `number`     | `300`         | Duration in milliseconds                                                 |
 | `easing`   | `EasingType` | `'easeInOut'` | Easing curve (preset name or `[x1, y1, x2, y2]` cubic bezier)            |
+| `delay`    | `number`     | `0`           | Delay in milliseconds before the animation starts                        |
 | `loop`     | `string`     | —             | `'repeat'` restarts from the beginning, `'reverse'` alternates direction |
 
 Available easing curves:
@@ -146,6 +147,7 @@ Spring animations use a physics-based model for natural-feeling motion. Great fo
 | `damping`   | `number` | `15`    | Friction — higher values reduce oscillation                   |
 | `stiffness` | `number` | `120`   | Spring constant — higher values mean faster animation         |
 | `mass`      | `number` | `1`     | Mass of the object — higher values mean slower, more momentum |
+| `delay`     | `number` | `0`     | Delay in milliseconds before the animation starts             |
 
 Spring presets for common feels:
 
@@ -276,6 +278,26 @@ Use `initialAnimate` to set starting values. On mount, the view starts at `initi
 
 Without `initialAnimate`, the view renders at the `animate` values immediately with no animation on mount.
 
+### Delay
+
+Use `delay` to postpone the start of an animation. This is useful for staggering enter animations across multiple elements.
+
+```tsx
+// Staggered fade-in list
+{items.map((item, i) => (
+  <EaseView
+    key={item.id}
+    initialAnimate={{ opacity: 0, translateY: 20 }}
+    animate={{ opacity: 1, translateY: 0 }}
+    transition={{ type: 'timing', duration: 300, delay: i * 100 }}
+  >
+    <Text>{item.label}</Text>
+  </EaseView>
+))}
+```
+
+`delay` works with both timing and spring transitions.
+
 ### Interruption
 
 Animations are interruptible by default. If you change `animate` values while an animation is running, it smoothly redirects to the new target from wherever it currently is — no jumping or restarting.
@@ -386,6 +408,7 @@ Properties not specified in `animate` default to their identity values.
   type: 'timing';
   duration?: number;  // default: 300 (ms)
   easing?: EasingType;  // default: 'easeInOut' — preset name or [x1, y1, x2, y2]
+  delay?: number;  // default: 0 (ms)
   loop?: 'repeat' | 'reverse';  // default: none
 }
 ```
@@ -398,6 +421,7 @@ Properties not specified in `animate` default to their identity values.
   damping?: number;    // default: 15
   stiffness?: number;  // default: 120
   mass?: number;       // default: 1
+  delay?: number;      // default: 0 (ms)
 }
 ```
 
