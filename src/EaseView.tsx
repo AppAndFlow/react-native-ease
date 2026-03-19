@@ -59,33 +59,6 @@ const EASING_PRESETS: Record<string, CubicBezier> = {
   easeInOut: [0.42, 0, 0.58, 1],
 };
 
-/** Transition struct field names (matches NativeTransitions keys). */
-const TRANSITION_KEYS = [
-  'opacity',
-  'translateX',
-  'translateY',
-  'scaleX',
-  'scaleY',
-  'rotate',
-  'rotateX',
-  'rotateY',
-  'borderRadius',
-  'backgroundColor',
-] as const;
-
-type TransitionKey = (typeof TRANSITION_KEYS)[number];
-
-/** Transform property keys (indices 1-7) get spring defaults; others get timing. */
-const TRANSFORM_KEYS = new Set<TransitionKey>([
-  'translateX',
-  'translateY',
-  'scaleX',
-  'scaleY',
-  'rotate',
-  'rotateX',
-  'rotateY',
-]);
-
 /** Returns true if the transition is a SingleTransition (has a `type` field). */
 function isSingleTransition(t: Transition): t is SingleTransition {
   return 'type' in t;
@@ -106,20 +79,14 @@ type NativeTransitionConfig = {
 /** Full transitions struct passed to native. */
 type NativeTransitions = {
   defaultConfig: NativeTransitionConfig;
-  opacity: NativeTransitionConfig;
-  translateX: NativeTransitionConfig;
-  translateY: NativeTransitionConfig;
-  scaleX: NativeTransitionConfig;
-  scaleY: NativeTransitionConfig;
-  rotate: NativeTransitionConfig;
-  rotateX: NativeTransitionConfig;
-  rotateY: NativeTransitionConfig;
-  borderRadius: NativeTransitionConfig;
-  backgroundColor: NativeTransitionConfig;
+  transform?: NativeTransitionConfig;
+  opacity?: NativeTransitionConfig;
+  borderRadius?: NativeTransitionConfig;
+  backgroundColor?: NativeTransitionConfig;
 };
 
-/** Library defaults: spring for transforms, timing 300ms easeInOut for others. */
-const TIMING_DEFAULT_CONFIG: NativeTransitionConfig = {
+/** Default config: timing 300ms easeInOut. */
+const DEFAULT_CONFIG: NativeTransitionConfig = {
   type: 'timing',
   duration: 300,
   easingBezier: [0.42, 0, 0.58, 1],
@@ -130,6 +97,7 @@ const TIMING_DEFAULT_CONFIG: NativeTransitionConfig = {
   delay: 0,
 };
 
+/** Default config for transform properties: spring. */
 const SPRING_DEFAULT_CONFIG: NativeTransitionConfig = {
   type: 'spring',
   duration: 300,
@@ -140,12 +108,6 @@ const SPRING_DEFAULT_CONFIG: NativeTransitionConfig = {
   loop: 'none',
   delay: 0,
 };
-
-function getLibraryDefault(key: TransitionKey): NativeTransitionConfig {
-  return TRANSFORM_KEYS.has(key)
-    ? SPRING_DEFAULT_CONFIG
-    : TIMING_DEFAULT_CONFIG;
-}
 
 /** Resolve a SingleTransition into a native config object. */
 function resolveSingleConfig(config: SingleTransition): NativeTransitionConfig {
@@ -198,63 +160,47 @@ function resolveSingleConfig(config: SingleTransition): NativeTransitionConfig {
   };
 }
 
-/** Resolve the transition prop into a fully-populated NativeTransitions struct. */
+/** Category keys that map to optional NativeTransitions fields. */
+const CATEGORY_KEYS = [
+  'transform',
+  'opacity',
+  'borderRadius',
+  'backgroundColor',
+] as const;
+
+/** Resolve the transition prop into a NativeTransitions struct. */
 function resolveTransitions(transition?: Transition): NativeTransitions {
-  // Single transition: apply the same config to all 11 slots
+  // Single transition: set as defaultConfig, no category overrides needed
   if (transition != null && isSingleTransition(transition)) {
-    const config = resolveSingleConfig(transition);
-    const result = { defaultConfig: config } as Record<
-      string,
-      NativeTransitionConfig
-    >;
-    for (const key of TRANSITION_KEYS) {
-      result[key] = config;
-    }
-    return result as unknown as NativeTransitions;
+    return { defaultConfig: resolveSingleConfig(transition) };
   }
 
-  // No transition: use library defaults per category
+  // No transition: timing default + spring for transforms
   if (transition == null) {
-    const result = { defaultConfig: TIMING_DEFAULT_CONFIG } as Record<
-      string,
-      NativeTransitionConfig
-    >;
-    for (const key of TRANSITION_KEYS) {
-      result[key] = getLibraryDefault(key);
-    }
-    return result as unknown as NativeTransitions;
+    return { defaultConfig: DEFAULT_CONFIG, transform: SPRING_DEFAULT_CONFIG };
   }
 
-  // TransitionMap: resolve per property
-  const transitionMap = transition;
-  const defaultSingle = transitionMap.default;
-  const defaultNative = defaultSingle
-    ? resolveSingleConfig(defaultSingle)
-    : undefined;
+  // TransitionMap: resolve defaultConfig + only specified category keys
+  const defaultConfig = transition.default
+    ? resolveSingleConfig(transition.default)
+    : DEFAULT_CONFIG;
 
-  const result = {
-    defaultConfig: defaultNative ?? TIMING_DEFAULT_CONFIG,
-  } as Record<string, NativeTransitionConfig>;
+  const result: NativeTransitions = { defaultConfig };
 
-  for (const key of TRANSITION_KEYS) {
-    const specific = transitionMap[key as keyof typeof transitionMap] as
-      | SingleTransition
-      | undefined;
+  for (const key of CATEGORY_KEYS) {
+    const specific = transition[key];
     if (specific != null) {
-      result[key] = resolveSingleConfig(specific);
-    } else if (
-      (key === 'scaleX' || key === 'scaleY') &&
-      transitionMap.scale != null
-    ) {
-      result[key] = resolveSingleConfig(transitionMap.scale!);
-    } else if (defaultNative) {
-      result[key] = defaultNative;
-    } else {
-      result[key] = getLibraryDefault(key);
+      (result as Record<string, NativeTransitionConfig>)[key] =
+        resolveSingleConfig(specific);
     }
   }
 
-  return result as unknown as NativeTransitions;
+  // Preserve spring default for transforms when not explicitly set
+  if (result.transform == null && transition.default == null) {
+    result.transform = SPRING_DEFAULT_CONFIG;
+  }
+
+  return result;
 }
 
 export type EaseViewProps = ViewProps & {

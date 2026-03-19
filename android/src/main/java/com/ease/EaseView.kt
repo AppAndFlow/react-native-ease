@@ -55,7 +55,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             return
         }
         val configs = mutableMapOf<String, TransitionConfig>()
-        val keys = listOf("defaultConfig", "opacity", "translateX", "translateY", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "borderRadius", "backgroundColor")
+        val keys = listOf("defaultConfig", "transform", "opacity", "borderRadius", "backgroundColor")
         for (key in keys) {
             if (map.hasKey(key)) {
                 val configMap = map.getMap(key) ?: continue
@@ -85,15 +85,31 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         transitionConfigs = configs
     }
 
+    /** Map property name to category key, then fall back to defaultConfig. */
     fun getTransitionConfig(name: String): TransitionConfig {
-        return transitionConfigs[name]
-            ?: transitionConfigs["defaultConfig"]
+        val categoryKey = when (name) {
+            "opacity" -> "opacity"
+            "translateX", "translateY", "scaleX", "scaleY",
+            "rotate", "rotateX", "rotateY" -> "transform"
+            "borderRadius" -> "borderRadius"
+            "backgroundColor" -> "backgroundColor"
+            else -> null
+        }
+        if (categoryKey != null) {
+            transitionConfigs[categoryKey]?.let { return it }
+        }
+        return transitionConfigs["defaultConfig"]
             ?: TransitionConfig("timing", 300, floatArrayOf(0.42f, 0f, 0.58f, 1.0f), 15.0f, 120.0f, 1.0f, "none", 0L)
     }
 
     private fun allTransitionsNone(): Boolean {
-        val keys = listOf("opacity", "translateX", "translateY", "scaleX", "scaleY", "rotate", "rotateX", "rotateY", "borderRadius", "backgroundColor")
-        return keys.all { getTransitionConfig(it).type == "none" }
+        val defaultConfig = transitionConfigs["defaultConfig"]
+        if (defaultConfig == null || defaultConfig.type != "none") return false
+        val categories = listOf("transform", "opacity", "borderRadius", "backgroundColor")
+        return categories.all { key ->
+            val config = transitionConfigs[key]
+            config == null || config.type == "none"
+        }
     }
 
     companion object {

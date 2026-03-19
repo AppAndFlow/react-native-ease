@@ -48,11 +48,19 @@ export type SingleTransition =
   | SpringTransition
   | NoneTransition;
 
-/** Per-property transition map. Each key overrides the transition for that animatable property. */
+/** Per-property transition map with category-based keys. */
 export type TransitionMap = {
   /** Fallback config for properties not explicitly listed. */
   default?: SingleTransition;
-} & Partial<Record<keyof AnimateProps, SingleTransition>>;
+  /** Config for all transform properties (translateX/Y, scaleX/Y, rotate, rotateX/Y). */
+  transform?: SingleTransition;
+  /** Config for opacity. */
+  opacity?: SingleTransition;
+  /** Config for borderRadius. */
+  borderRadius?: SingleTransition;
+  /** Config for backgroundColor. */
+  backgroundColor?: SingleTransition;
+};
 
 /** Animation transition configuration — either a single config or a per-property map. */
 export type Transition = SingleTransition | TransitionMap;
