@@ -97,32 +97,32 @@ static EaseTransitionConfig transitionConfigFromStruct(const T &src) {
   return config;
 }
 
+// Check if a category config was explicitly set (non-empty type means JS sent
+// it)
+template <typename T> static bool hasConfig(const T &cfg) {
+  return !cfg.type.empty();
+}
+
 static EaseTransitionConfig
 transitionConfigForProperty(const std::string &name,
                             const EaseViewProps &props) {
-  if (name == "opacity") {
-    return transitionConfigFromStruct(props.transitions.opacity);
-  } else if (name == "translateX") {
-    return transitionConfigFromStruct(props.transitions.translateX);
-  } else if (name == "translateY") {
-    return transitionConfigFromStruct(props.transitions.translateY);
-  } else if (name == "scaleX") {
-    return transitionConfigFromStruct(props.transitions.scaleX);
-  } else if (name == "scaleY") {
-    return transitionConfigFromStruct(props.transitions.scaleY);
-  } else if (name == "rotate") {
-    return transitionConfigFromStruct(props.transitions.rotate);
-  } else if (name == "rotateX") {
-    return transitionConfigFromStruct(props.transitions.rotateX);
-  } else if (name == "rotateY") {
-    return transitionConfigFromStruct(props.transitions.rotateY);
-  } else if (name == "borderRadius") {
-    return transitionConfigFromStruct(props.transitions.borderRadius);
-  } else if (name == "backgroundColor") {
-    return transitionConfigFromStruct(props.transitions.backgroundColor);
+  const auto &t = props.transitions;
+
+  // Map property name to category, check if category override exists
+  if (name == "opacity" && hasConfig(t.opacity)) {
+    return transitionConfigFromStruct(t.opacity);
+  } else if ((name == "translateX" || name == "translateY" ||
+              name == "scaleX" || name == "scaleY" || name == "rotate" ||
+              name == "rotateX" || name == "rotateY") &&
+             hasConfig(t.transform)) {
+    return transitionConfigFromStruct(t.transform);
+  } else if (name == "borderRadius" && hasConfig(t.borderRadius)) {
+    return transitionConfigFromStruct(t.borderRadius);
+  } else if (name == "backgroundColor" && hasConfig(t.backgroundColor)) {
+    return transitionConfigFromStruct(t.backgroundColor);
   }
   // Fallback to defaultConfig
-  return transitionConfigFromStruct(props.transitions.defaultConfig);
+  return transitionConfigFromStruct(t.defaultConfig);
 }
 
 // Find lowest property name with a set mask bit among transform properties
@@ -487,16 +487,15 @@ static std::string lowestTransformPropertyName(int mask) {
             RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
                 .CGColor;
     }
-  } else if (newViewProps.transitions.opacity.type == "none" &&
-             newViewProps.transitions.translateX.type == "none" &&
-             newViewProps.transitions.translateY.type == "none" &&
-             newViewProps.transitions.scaleX.type == "none" &&
-             newViewProps.transitions.scaleY.type == "none" &&
-             newViewProps.transitions.rotate.type == "none" &&
-             newViewProps.transitions.rotateX.type == "none" &&
-             newViewProps.transitions.rotateY.type == "none" &&
-             newViewProps.transitions.borderRadius.type == "none" &&
-             newViewProps.transitions.backgroundColor.type == "none") {
+  } else if (newViewProps.transitions.defaultConfig.type == "none" &&
+             (!hasConfig(newViewProps.transitions.transform) ||
+              newViewProps.transitions.transform.type == "none") &&
+             (!hasConfig(newViewProps.transitions.opacity) ||
+              newViewProps.transitions.opacity.type == "none") &&
+             (!hasConfig(newViewProps.transitions.borderRadius) ||
+              newViewProps.transitions.borderRadius.type == "none") &&
+             (!hasConfig(newViewProps.transitions.backgroundColor) ||
+              newViewProps.transitions.backgroundColor.type == "none")) {
     // All transitions are 'none' — set values immediately
     [self.layer removeAllAnimations];
     if (mask & kMaskOpacity)

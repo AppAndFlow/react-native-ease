@@ -22,16 +22,10 @@ type NativeTransitionConfig = Readonly<{
 
 type NativeTransitions = Readonly<{
   defaultConfig: NativeTransitionConfig;
-  opacity: NativeTransitionConfig;
-  translateX: NativeTransitionConfig;
-  translateY: NativeTransitionConfig;
-  scaleX: NativeTransitionConfig;
-  scaleY: NativeTransitionConfig;
-  rotate: NativeTransitionConfig;
-  rotateX: NativeTransitionConfig;
-  rotateY: NativeTransitionConfig;
-  borderRadius: NativeTransitionConfig;
-  backgroundColor: NativeTransitionConfig;
+  transform?: NativeTransitionConfig;
+  opacity?: NativeTransitionConfig;
+  borderRadius?: NativeTransitionConfig;
+  backgroundColor?: NativeTransitionConfig;
 }>;
 
 export interface NativeProps extends ViewProps {
