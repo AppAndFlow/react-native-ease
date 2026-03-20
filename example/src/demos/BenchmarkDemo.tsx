@@ -352,11 +352,11 @@ export function BenchmarkDemo() {
         <View style={styles.resultsSection}>
           <Text style={styles.resultsSectionTitle}>Results</Text>
 
-          {/* Primary table: animation time (Android) or frame time (iOS) */}
+          {/* Primary table: main thread work per frame */}
           <Text style={styles.subtitleText}>
             {isAndroid
               ? 'UI thread time per frame: anim + layout + draw (ms). Lower is better.'
-              : 'Frame delivery time (ms). Lower is better.'}
+              : 'Display link callback time per frame (ms). Lower is better.'}
           </Text>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableCell, styles.tableCellLabel]}>
@@ -368,9 +368,9 @@ export function BenchmarkDemo() {
           </View>
           {APPROACHES.filter((a) => results[a.key]).map((a) => {
             const r = results[a.key]!;
-            const avg = isAndroid ? r.avgUiThreadTime ?? 0 : r.avgFrameTime;
-            const p95 = isAndroid ? r.p95UiThreadTime ?? 0 : r.p95FrameTime;
-            const p99 = isAndroid ? r.p99UiThreadTime ?? 0 : r.p99FrameTime;
+            const avg = r.avgUiThreadTime;
+            const p95 = r.p95UiThreadTime;
+            const p99 = r.p99UiThreadTime;
             return (
               <View key={a.key} style={styles.tableRow}>
                 <Text

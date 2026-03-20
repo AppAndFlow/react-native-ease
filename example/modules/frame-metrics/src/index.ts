@@ -19,12 +19,12 @@ interface FrameMetricsResult {
   p95AnimationTime?: number;
   /** P99 animation time (Android only) */
   p99AnimationTime?: number;
-  /** Average UI thread time: anim + layout + draw (Android only) */
-  avgUiThreadTime?: number;
-  /** P95 UI thread time (Android only) */
-  p95UiThreadTime?: number;
-  /** P99 UI thread time (Android only) */
-  p99UiThreadTime?: number;
+  /** Average UI/main thread work time per frame (ms) */
+  avgUiThreadTime: number;
+  /** P95 UI/main thread work time (ms) */
+  p95UiThreadTime: number;
+  /** P99 UI/main thread work time (ms) */
+  p99UiThreadTime: number;
   /** Average layout/measure time (Android only) */
   avgLayoutTime?: number;
   /** Average draw time (Android only) */
