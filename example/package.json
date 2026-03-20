@@ -48,5 +48,13 @@
   },
   "resolutions": {
     "@react-native/gradle-plugin": "0.83.0"
+  },
+  "reanimated": {
+    "staticFeatureFlags": {
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true,
+      "IOS_SYNCHRONOUSLY_UPDATE_UI_PROPS": true,
+      "USE_SYNCHRONIZABLE_FOR_MUTABLES": true,
+      "DISABLE_COMMIT_PAUSING_MECHANISM": true
+    }
   }
 }
