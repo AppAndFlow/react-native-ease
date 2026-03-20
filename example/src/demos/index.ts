@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import { BackgroundColorDemo } from './BackgroundColorDemo';
+import { BenchmarkDemo } from './BenchmarkDemo';
 import { BannerDemo } from './BannerDemo';
 import { BorderRadiusDemo } from './BorderRadiusDemo';
 import { ButtonDemo } from './ButtonDemo';
@@ -76,6 +77,11 @@ export const demos: Record<string, DemoEntry> = {
   'comparison': {
     component: ComparisonDemo,
     title: 'Comparison',
+    section: 'Advanced',
+  },
+  'benchmark': {
+    component: BenchmarkDemo,
+    title: 'Benchmark',
     section: 'Advanced',
   },
 };

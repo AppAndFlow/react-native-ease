@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FrameMetricsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.framemetrics.FrameMetricsModule"]
+  }
+}

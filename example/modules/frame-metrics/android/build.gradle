@@ -1,0 +1,12 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+android {
+  namespace "expo.modules.framemetrics"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}

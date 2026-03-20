@@ -7,3 +7,7 @@ web-build/
 # Expo prebuild generated dirs
 android/
 ios/
+
+# Keep local modules native code
+!modules/**/android/
+!modules/**/ios/
