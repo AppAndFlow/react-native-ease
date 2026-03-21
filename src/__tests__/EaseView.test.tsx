@@ -258,6 +258,12 @@ describe('EaseView', () => {
       expect(screen.getByText('Hello')).toBeTruthy();
     });
 
+    it('passes className through', () => {
+      render(<EaseView testID="ease" className="bg-red-500 p-4" />);
+      const props = getNativeProps();
+      expect(props.className).toBe('bg-red-500 p-4');
+    });
+
     it('passes style through', () => {
       render(
         <EaseView
