@@ -229,22 +229,12 @@ static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
   const auto &newViewProps =
       *std::static_pointer_cast<const EaseViewProps>(props);
 
-  // Fabric may pass a null oldProps shared_ptr in some update paths (e.g. recycling or
-  // newer React Native versions). static_pointer_cast can also yield null if the
-  // runtime type does not match. Never dereference without a non-null EaseViewProps.
-  std::shared_ptr<const EaseViewProps> previousEaseViewPropsForDiff;
-  if (oldProps) {
-    previousEaseViewPropsForDiff =
-        std::static_pointer_cast<const EaseViewProps>(oldProps);
-  }
-  if (!previousEaseViewPropsForDiff) {
-    previousEaseViewPropsForDiff =
-        std::static_pointer_cast<const EaseViewProps>(_props);
-  }
-  if (!previousEaseViewPropsForDiff) {
-    previousEaseViewPropsForDiff =
-        std::static_pointer_cast<const EaseViewProps>(props);
-  }
+  // Fabric may pass a null oldProps shared_ptr in some update paths (e.g.
+  // recycling or newer React Native versions). Fall back to the current props
+  // so we always have a valid EaseViewProps to diff against (worst case: no
+  // diff, no animation).
+  const auto &oldViewProps = *std::static_pointer_cast<const EaseViewProps>(
+      oldProps ? oldProps : props);
 
   [super updateProps:props oldProps:oldProps];
 
@@ -404,7 +394,6 @@ static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
     }
   } else {
     // Subsequent updates: animate changed properties
-    const auto &oldViewProps = *previousEaseViewPropsForDiff;
 
     if ((mask & kMaskOpacity) &&
         oldViewProps.animateOpacity != newViewProps.animateOpacity) {
