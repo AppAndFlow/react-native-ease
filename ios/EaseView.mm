@@ -229,10 +229,7 @@ static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
   const auto &newViewProps =
       *std::static_pointer_cast<const EaseViewProps>(props);
 
-  // Fabric may pass a null oldProps shared_ptr in some update paths (e.g.
-  // recycling or newer React Native versions). Fall back to the current props
-  // so we always have a valid EaseViewProps to diff against (worst case: no
-  // diff, no animation).
+  // oldProps can be null. Fall back to props so the diff is a no-op.
   const auto &oldViewProps = *std::static_pointer_cast<const EaseViewProps>(
       oldProps ? oldProps : props);
 
