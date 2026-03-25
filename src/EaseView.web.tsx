@@ -30,6 +30,80 @@ const EASING_PRESETS: Record<string, CubicBezier> = {
   easeInOut: [0.42, 0, 0.58, 1],
 };
 
+// ---------------------------------------------------------------------------
+// Spring simulation → CSS linear() easing
+// ---------------------------------------------------------------------------
+
+/** Simulate a damped spring from 0 → 1 and return settling duration + sample points. */
+function simulateSpring(
+  damping: number,
+  stiffness: number,
+  mass: number,
+): { durationMs: number; points: number[] } {
+  const dt = 1 / 120; // 120 Hz simulation
+  const maxTime = 10; // 10s safety cap
+  let x = 0;
+  let v = 0;
+  const samples: number[] = [0];
+  let step = 0;
+
+  while (step * dt < maxTime) {
+    const a = (-stiffness * (x - 1) - damping * v) / mass;
+    v += a * dt;
+    x += v * dt;
+    step++;
+    // Downsample to ~60 fps (every 2nd sample)
+    if (step % 2 === 0) {
+      samples.push(Math.round(x * 10000) / 10000);
+    }
+    // Settled?
+    if (Math.abs(x - 1) < 0.001 && Math.abs(v) < 0.001) break;
+  }
+
+  // Ensure last point is exactly 1
+  samples[samples.length - 1] = 1;
+
+  return {
+    durationMs: Math.round(step * dt * 1000),
+    points: samples,
+  };
+}
+
+/** Cache for computed spring easing strings (keyed by damping-stiffness-mass). */
+const springCache = new Map<string, { duration: number; easing: string }>();
+
+function getSpringEasing(
+  damping: number,
+  stiffness: number,
+  mass: number,
+): { duration: number; easing: string } {
+  const key = `${damping}-${stiffness}-${mass}`;
+  let cached = springCache.get(key);
+  if (cached) return cached;
+
+  const { durationMs, points } = simulateSpring(damping, stiffness, mass);
+  const easing = `linear(${points.join(', ')})`;
+  cached = { duration: durationMs, easing };
+  springCache.set(key, cached);
+  return cached;
+}
+
+/** Detect CSS linear() support (lazy, cached). */
+let linearSupported: boolean | null = null;
+function supportsLinearEasing(): boolean {
+  if (linearSupported != null) return linearSupported;
+  try {
+    const el = document.createElement('div');
+    el.style.transitionTimingFunction = 'linear(0, 1)';
+    linearSupported = el.style.transitionTimingFunction !== '';
+  } catch {
+    linearSupported = false;
+  }
+  return linearSupported;
+}
+
+const SPRING_FALLBACK_EASING = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+
 export type EaseViewProps = {
   animate?: AnimateProps;
   initialAnimate?: AnimateProps;
@@ -154,9 +228,19 @@ function resolvePerCategoryConfigs(
 }
 
 function resolveEasing(transition: SingleTransition | undefined): string {
-  if (!transition || transition.type !== 'timing') {
-    return 'cubic-bezier(0.42, 0, 0.58, 1)';
+  if (!transition || transition.type === 'none') {
+    return 'linear';
   }
+  if (transition.type === 'spring') {
+    const d = transition.damping ?? 15;
+    const s = transition.stiffness ?? 120;
+    const m = transition.mass ?? 1;
+    if (supportsLinearEasing()) {
+      return getSpringEasing(d, s, m).easing;
+    }
+    return SPRING_FALLBACK_EASING;
+  }
+  // timing
   const easing = transition.easing ?? 'easeInOut';
   const bezier: CubicBezier = Array.isArray(easing)
     ? easing
@@ -168,10 +252,11 @@ function resolveDuration(transition: SingleTransition | undefined): number {
   if (!transition) return 300;
   if (transition.type === 'timing') return transition.duration ?? 300;
   if (transition.type === 'none') return 0;
-  const damping = transition.damping ?? 15;
-  const mass = transition.mass ?? 1;
-  const tau = (2 * mass) / damping;
-  return Math.round(tau * 4 * 1000);
+  // Spring: use simulation-derived duration (incorporates stiffness)
+  const d = transition.damping ?? 15;
+  const s = transition.stiffness ?? 120;
+  const m = transition.mass ?? 1;
+  return getSpringEasing(d, s, m).duration;
 }
 
 /** Counter for unique keyframe names. */
@@ -237,13 +322,7 @@ export function EaseView({
           })
           .map((key) => {
             const cfg = categoryConfigs[key];
-            const springEasing =
-              cfg.type === 'spring'
-                ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                : null;
-            return `${CSS_PROP_MAP[key]} ${cfg.duration}ms ${
-              springEasing ?? cfg.easing
-            }`;
+            return `${CSS_PROP_MAP[key]} ${cfg.duration}ms ${cfg.easing}`;
           })
           .join(', ') || 'none';
 
