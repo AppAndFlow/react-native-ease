@@ -140,14 +140,14 @@ const CATEGORY_KEYS = [
 
 /** Resolve the transition prop into a NativeTransitions struct. */
 function resolveTransitions(transition?: Transition): NativeTransitions {
-  // Single transition: set as defaultConfig only
-  if (transition != null && isSingleTransition(transition)) {
-    return { defaultConfig: resolveSingleConfig(transition) };
-  }
-
   // No transition: timing default for all properties
   if (transition == null) {
     return { defaultConfig: DEFAULT_CONFIG };
+  }
+
+  // Single transition: set as defaultConfig only
+  if (isSingleTransition(transition)) {
+    return { defaultConfig: resolveSingleConfig(transition) };
   }
 
   // TransitionMap: resolve defaultConfig + only specified category keys
