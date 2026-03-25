@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { Platform } from 'react-native';
 
 import { BackgroundColorDemo } from './BackgroundColorDemo';
 import { BenchmarkDemo } from './BenchmarkDemo';
@@ -79,11 +80,15 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Comparison',
     section: 'Advanced',
   },
-  'benchmark': {
-    component: BenchmarkDemo,
-    title: 'Benchmark',
-    section: 'Advanced',
-  },
+  ...(Platform.OS !== 'web'
+    ? {
+        benchmark: {
+          component: BenchmarkDemo,
+          title: 'Benchmark',
+          section: 'Advanced',
+        },
+      }
+    : {}),
 };
 
 interface SectionData {

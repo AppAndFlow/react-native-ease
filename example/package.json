@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "start": "expo start",
+    "web": "expo start --web",
     "prebuild": "expo prebuild",
     "build:android": "expo prebuild --platform android --clean && cd android && ./gradlew assembleDebug --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a",
     "build:ios": "expo prebuild --platform ios --clean && xcodebuild -workspace ios/EaseExample.xcworkspace -scheme EaseExample -configuration Debug -sdk iphonesimulator -arch x86_64 build"
