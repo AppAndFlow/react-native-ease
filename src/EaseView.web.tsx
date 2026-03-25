@@ -231,7 +231,10 @@ export function EaseView({
     !mounted && hasInitial
       ? 'none'
       : (Object.keys(CSS_PROP_MAP) as CategoryKey[])
-          .filter((key) => categoryConfigs[key].type !== 'none')
+          .filter((key) => {
+            const cfg = categoryConfigs[key];
+            return cfg.type !== 'none' && cfg.duration > 0;
+          })
           .map((key) => {
             const cfg = categoryConfigs[key];
             const springEasing =
