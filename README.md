@@ -475,27 +475,6 @@ Properties not specified in `animate` default to their identity values.
 
 Applies values instantly with no animation. `onTransitionEnd` fires immediately with `{ finished: true }`.
 
-### `TransitionMap`
-
-```tsx
-{
-  default?: SingleTransition;  // fallback for unlisted properties
-  opacity?: SingleTransition;
-  translateX?: SingleTransition;
-  translateY?: SingleTransition;
-  scale?: SingleTransition;     // shorthand for scaleX + scaleY
-  scaleX?: SingleTransition;
-  scaleY?: SingleTransition;
-  rotate?: SingleTransition;
-  rotateX?: SingleTransition;
-  rotateY?: SingleTransition;
-  borderRadius?: SingleTransition;
-  backgroundColor?: SingleTransition;
-}
-```
-
-`Transition` is `SingleTransition | TransitionMap`. The `transition` prop accepts either form.
-
 ## Hardware Layers (Android)
 
 Setting `useHardwareLayer` rasterizes the view into a GPU texture for the duration of the animation. This means animated property changes (opacity, scale, rotation) are composited on the RenderThread without redrawing the view hierarchy — useful for complex views with many children.
