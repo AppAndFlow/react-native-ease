@@ -180,19 +180,29 @@ Use `{ type: 'none' }` to apply values immediately without animation. Useful for
 
 ### Per-Property Transitions
 
-Pass a map instead of a single config to use different transition types per property. This lets you mix timing and spring animations, or use different durations for different properties.
+Pass a map instead of a single config to use different animation types per property category.
 
 ```tsx
 <EaseView
   animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 30 }}
   transition={{
     opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
-    translateY: { type: 'spring', damping: 12, stiffness: 200 },
+    transform: { type: 'spring', damping: 12, stiffness: 200 },
   }}
 />
 ```
 
-Use `default` as a fallback for properties not explicitly listed:
+Available category keys:
+
+| Key               | Properties                                                       |
+| ----------------- | ---------------------------------------------------------------- |
+| `default`         | Fallback for categories not explicitly listed                    |
+| `transform`       | translateX, translateY, scaleX, scaleY, rotate, rotateX, rotateY |
+| `opacity`         | opacity                                                          |
+| `borderRadius`    | borderRadius                                                     |
+| `backgroundColor` | backgroundColor                                                  |
+
+Use `default` as a fallback for categories not explicitly listed:
 
 ```tsx
 <EaseView
@@ -204,13 +214,9 @@ Use `default` as a fallback for properties not explicitly listed:
 />
 ```
 
-The `scale` key applies to both `scaleX` and `scaleY`. A specific `scaleX` or `scaleY` key takes priority over `scale`.
+When no `default` key is provided, the library default (timing 300ms easeInOut) applies to all categories.
 
-When no `default` key is provided, library defaults apply by category:
-- **Transforms** (translateX/Y, scaleX/Y, rotate, rotateX/Y): spring with damping=15, stiffness=120
-- **Other** (opacity, borderRadius, backgroundColor): timing 300ms easeInOut
-
-> **iOS note:** iOS composes all transform sub-properties into a single `CATransform3D` animation. If your map specifies conflicting configs for different transform properties (e.g. spring for `translateX` and timing for `scaleX`), the config from the lowest-index changed property is used.
+> **iOS note:** iOS composes all transform sub-properties into a single `CATransform3D` animation. If your map specifies conflicting configs for different transform properties, the config from the lowest-index changed property is used.
 >
 > **Android note:** Android animates `backgroundColor` with `ValueAnimator` (timing only). If a per-property map specifies `type: 'spring'` for `backgroundColor`, it silently falls back to timing 300ms.
 

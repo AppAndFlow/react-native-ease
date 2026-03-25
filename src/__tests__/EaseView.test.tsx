@@ -127,7 +127,7 @@ describe('EaseView', () => {
   });
 
   describe('transition defaults', () => {
-    it('uses timing default with spring for transforms when no transition', () => {
+    it('uses timing default for all properties when no transition', () => {
       render(<EaseView testID="ease" />);
       const t = getNativeProps().transitions;
       expect(t.defaultConfig.type).toBe('timing');
@@ -135,12 +135,9 @@ describe('EaseView', () => {
       expect(t.defaultConfig.easingBezier).toEqual([0.42, 0, 0.58, 1]);
       expect(t.defaultConfig.loop).toBe('none');
       expect(t.defaultConfig.delay).toBe(0);
-      // Transform gets spring default
-      expect(t.transform.type).toBe('spring');
-      expect(t.transform.damping).toBe(15);
-      expect(t.transform.stiffness).toBe(120);
-      // Other categories not set
+      // No category overrides
       expect(t.opacity).toBeUndefined();
+      expect(t.transform).toBeUndefined();
       expect(t.borderRadius).toBeUndefined();
       expect(t.backgroundColor).toBeUndefined();
     });
@@ -555,7 +552,7 @@ describe('EaseView', () => {
       expect(t.backgroundColor).toBeUndefined();
     });
 
-    it('preserves spring default for transforms when no default key', () => {
+    it('does not inject spring default for transforms when no default key', () => {
       render(
         <EaseView
           testID="ease"
@@ -571,11 +568,8 @@ describe('EaseView', () => {
       // defaultConfig is timing 300ms (library default)
       expect(t.defaultConfig.type).toBe('timing');
       expect(t.defaultConfig.duration).toBe(300);
-      // transform gets spring default (no explicit default or transform key)
-      expect(t.transform!.type).toBe('spring');
-      expect(t.transform!.damping).toBe(15);
-      expect(t.transform!.stiffness).toBe(120);
-      // Other categories not set
+      // No spring injection — transform falls back to defaultConfig on native
+      expect(t.transform).toBeUndefined();
       expect(t.borderRadius).toBeUndefined();
       expect(t.backgroundColor).toBeUndefined();
     });

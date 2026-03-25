@@ -1,5 +1,5 @@
 import { StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
-import NativeEaseView from './EaseViewNativeComponent';
+import NativeEaseView, { type NativeProps } from './EaseViewNativeComponent';
 import type {
   AnimateProps,
   CubicBezier,
@@ -64,42 +64,12 @@ function isSingleTransition(t: Transition): t is SingleTransition {
   return 'type' in t;
 }
 
-/** Resolved native transition config for a single property. */
-type NativeTransitionConfig = {
-  type: string;
-  duration: number;
-  easingBezier: number[];
-  damping: number;
-  stiffness: number;
-  mass: number;
-  loop: string;
-  delay: number;
-};
-
-/** Full transitions struct passed to native. */
-type NativeTransitions = {
-  defaultConfig: NativeTransitionConfig;
-  transform?: NativeTransitionConfig;
-  opacity?: NativeTransitionConfig;
-  borderRadius?: NativeTransitionConfig;
-  backgroundColor?: NativeTransitionConfig;
-};
+type NativeTransitions = NonNullable<NativeProps['transitions']>;
+type NativeTransitionConfig = NativeTransitions['defaultConfig'];
 
 /** Default config: timing 300ms easeInOut. */
 const DEFAULT_CONFIG: NativeTransitionConfig = {
   type: 'timing',
-  duration: 300,
-  easingBezier: [0.42, 0, 0.58, 1],
-  damping: 15,
-  stiffness: 120,
-  mass: 1,
-  loop: 'none',
-  delay: 0,
-};
-
-/** Default config for transform properties: spring. */
-const SPRING_DEFAULT_CONFIG: NativeTransitionConfig = {
-  type: 'spring',
   duration: 300,
   easingBezier: [0.42, 0, 0.58, 1],
   damping: 15,
@@ -170,14 +140,14 @@ const CATEGORY_KEYS = [
 
 /** Resolve the transition prop into a NativeTransitions struct. */
 function resolveTransitions(transition?: Transition): NativeTransitions {
-  // Single transition: set as defaultConfig, no category overrides needed
+  // Single transition: set as defaultConfig only
   if (transition != null && isSingleTransition(transition)) {
     return { defaultConfig: resolveSingleConfig(transition) };
   }
 
-  // No transition: timing default + spring for transforms
+  // No transition: timing default for all properties
   if (transition == null) {
-    return { defaultConfig: DEFAULT_CONFIG, transform: SPRING_DEFAULT_CONFIG };
+    return { defaultConfig: DEFAULT_CONFIG };
   }
 
   // TransitionMap: resolve defaultConfig + only specified category keys
@@ -193,11 +163,6 @@ function resolveTransitions(transition?: Transition): NativeTransitions {
       (result as Record<string, NativeTransitionConfig>)[key] =
         resolveSingleConfig(specific);
     }
-  }
-
-  // Preserve spring default for transforms when not explicitly set
-  if (result.transform == null && transition.default == null) {
-    result.transform = SPRING_DEFAULT_CONFIG;
   }
 
   return result;

@@ -59,26 +59,21 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         for (key in keys) {
             if (map.hasKey(key)) {
                 val configMap = map.getMap(key) ?: continue
-                val bezierArray = configMap.getArray("easingBezier")
-                val bezier = if (bezierArray != null && bezierArray.size() == 4) {
-                    floatArrayOf(
+                val bezierArray = configMap.getArray("easingBezier")!!
+                configs[key] = TransitionConfig(
+                    type = configMap.getString("type")!!,
+                    duration = configMap.getInt("duration"),
+                    easingBezier = floatArrayOf(
                         bezierArray.getDouble(0).toFloat(),
                         bezierArray.getDouble(1).toFloat(),
                         bezierArray.getDouble(2).toFloat(),
                         bezierArray.getDouble(3).toFloat()
-                    )
-                } else {
-                    floatArrayOf(0.42f, 0f, 0.58f, 1.0f)
-                }
-                configs[key] = TransitionConfig(
-                    type = configMap.getString("type") ?: "timing",
-                    duration = if (configMap.hasKey("duration")) configMap.getInt("duration") else 300,
-                    easingBezier = bezier,
-                    damping = if (configMap.hasKey("damping")) configMap.getDouble("damping").toFloat() else 15.0f,
-                    stiffness = if (configMap.hasKey("stiffness")) configMap.getDouble("stiffness").toFloat() else 120.0f,
-                    mass = if (configMap.hasKey("mass")) configMap.getDouble("mass").toFloat() else 1.0f,
-                    loop = configMap.getString("loop") ?: "none",
-                    delay = if (configMap.hasKey("delay")) configMap.getInt("delay").toLong() else 0L
+                    ),
+                    damping = configMap.getDouble("damping").toFloat(),
+                    stiffness = configMap.getDouble("stiffness").toFloat(),
+                    mass = configMap.getDouble("mass").toFloat(),
+                    loop = configMap.getString("loop")!!,
+                    delay = configMap.getInt("delay").toLong()
                 )
             }
         }
@@ -98,8 +93,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         if (categoryKey != null) {
             transitionConfigs[categoryKey]?.let { return it }
         }
-        return transitionConfigs["defaultConfig"]
-            ?: TransitionConfig("timing", 300, floatArrayOf(0.42f, 0f, 0.58f, 1.0f), 15.0f, 120.0f, 1.0f, "none", 0L)
+        return transitionConfigs["defaultConfig"]!!
     }
 
     private fun allTransitionsNone(): Boolean {
