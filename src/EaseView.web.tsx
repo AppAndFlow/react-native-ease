@@ -231,9 +231,9 @@ export function EaseView({
     !mounted && hasInitial
       ? 'none'
       : (Object.keys(CSS_PROP_MAP) as CategoryKey[])
+          .filter((key) => categoryConfigs[key].type !== 'none')
           .map((key) => {
             const cfg = categoryConfigs[key];
-            if (cfg.type === 'none') return `${CSS_PROP_MAP[key]} 0ms linear`;
             const springEasing =
               cfg.type === 'spring'
                 ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -242,7 +242,7 @@ export function EaseView({
               springEasing ?? cfg.easing
             }`;
           })
-          .join(', ');
+          .join(', ') || 'none';
 
   // Apply CSS transition/animation properties imperatively (not in RN style spec).
   useEffect(() => {
@@ -346,13 +346,23 @@ export function EaseView({
   const animatedStyle: ViewStyle = {
     opacity: displayValues.opacity,
     transform: [
-      { translateX: displayValues.translateX },
-      { translateY: displayValues.translateY },
-      { scaleX: displayValues.scaleX },
-      { scaleY: displayValues.scaleY },
-      { rotate: `${displayValues.rotate}deg` },
-      { rotateX: `${displayValues.rotateX}deg` },
-      { rotateY: `${displayValues.rotateY}deg` },
+      ...(displayValues.translateX !== 0
+        ? [{ translateX: displayValues.translateX }]
+        : []),
+      ...(displayValues.translateY !== 0
+        ? [{ translateY: displayValues.translateY }]
+        : []),
+      ...(displayValues.scaleX !== 1 ? [{ scaleX: displayValues.scaleX }] : []),
+      ...(displayValues.scaleY !== 1 ? [{ scaleY: displayValues.scaleY }] : []),
+      ...(displayValues.rotate !== 0
+        ? [{ rotate: `${displayValues.rotate}deg` }]
+        : []),
+      ...(displayValues.rotateX !== 0
+        ? [{ rotateX: `${displayValues.rotateX}deg` }]
+        : []),
+      ...(displayValues.rotateY !== 0
+        ? [{ rotateY: `${displayValues.rotateY}deg` }]
+        : []),
     ],
     ...(displayValues.borderRadius > 0
       ? { borderRadius: displayValues.borderRadius }
