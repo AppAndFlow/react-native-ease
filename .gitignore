@@ -86,3 +86,4 @@ android/generated
 nitrogen/
 .playwright-cli/
 *.png
+!example/assets/*.png

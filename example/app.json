@@ -1,11 +1,17 @@
 {
   "name": "EaseExample",
-  "displayName": "EaseExample",
+  "displayName": "Ease",
   "expo": {
-    "name": "EaseExample",
+    "name": "Ease",
     "slug": "ease-example",
     "scheme": "ease-example",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#1a1a2e"
+    },
     "plugins": [
       [
         "expo-router",
@@ -16,7 +22,8 @@
     ],
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/favicon.png"
     },
     "platforms": [
       "ios",
@@ -24,7 +31,11 @@
       "web"
     ],
     "android": {
-      "package": "com.janic.easeexample"
+      "package": "com.janic.easeexample",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.janic.easeexample"
