@@ -216,8 +216,6 @@ Use `default` as a fallback for categories not explicitly listed:
 
 When no `default` key is provided, the library default (timing 300ms easeInOut) applies to all categories.
 
-> **iOS note:** iOS composes all transform sub-properties into a single `CATransform3D` animation. If your map specifies conflicting configs for different transform properties, the config from the lowest-index changed property is used.
->
 > **Android note:** Android animates `backgroundColor` with `ValueAnimator` (timing only). If a per-property map specifies `type: 'spring'` for `backgroundColor`, it silently falls back to timing 300ms.
 
 ### Border Radius
