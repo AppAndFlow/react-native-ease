@@ -279,7 +279,7 @@ All properties are set in the `animate` prop as flat values (no transform array)
 
 `scale` is a shorthand that sets both `scaleX` and `scaleY`. When `scaleX` or `scaleY` is also specified, it overrides the `scale` value for that axis.
 
-You can animate any combination of properties simultaneously. All properties share the same transition config.
+You can animate any combination of properties simultaneously. Use a single transition config for all properties, or a [per-property map](#per-property-transitions) for different configs per category.
 
 ### Looping Animations
 
@@ -415,10 +415,11 @@ A `View` that animates property changes using native platform APIs.
 | ------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `animate`          | `AnimateProps`               | Target values for animated properties                                                                                        |
 | `initialAnimate`   | `AnimateProps`               | Starting values for enter animations (animates to `animate` on mount)                                                        |
-| `transition`       | `Transition`                 | Animation configuration (timing, spring, or none)                                                                            |
+| `transition`       | `Transition`                 | Animation configuration — a single config (timing, spring, or none) or a [per-property map](#per-property-transitions)        |
 | `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }`                                                             |
 | `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center)                                      |
 | `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
+| `className`        | `string`                     | NativeWind / Tailwind CSS class string. Requires NativeWind in your project.                                                 |
 | `style`            | `ViewStyle`                  | Non-animated styles (layout, colors, borders, etc.)                                                                          |
 | `children`         | `ReactNode`                  | Child elements                                                                                                               |
 | ...rest            | `ViewProps`                  | All other standard View props                                                                                                |
@@ -474,6 +475,18 @@ Properties not specified in `animate` default to their identity values.
 ```
 
 Applies values instantly with no animation. `onTransitionEnd` fires immediately with `{ finished: true }`.
+
+### `TransitionMap`
+
+A per-property map that applies different transition configs to different property categories. See [Per-Property Transitions](#per-property-transitions).
+
+| Key               | Properties                                                       |
+| ----------------- | ---------------------------------------------------------------- |
+| `default`         | Fallback for categories not explicitly listed                    |
+| `transform`       | translateX, translateY, scaleX, scaleY, rotate, rotateX, rotateY |
+| `opacity`         | opacity                                                          |
+| `borderRadius`    | borderRadius                                                     |
+| `backgroundColor` | backgroundColor                                                  |
 
 ## Hardware Layers (Android)
 

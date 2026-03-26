@@ -58,7 +58,7 @@ Apply these checks in order. The first match determines the result:
 6. **Uses complex `interpolate()`?** (more than 2 input/output values) → NOT migratable — "Complex interpolation"
 7. **Uses `layout={...}` prop?** → NOT migratable — "Layout animation"
 8. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor) → NOT migratable — "Animates unsupported property: `<prop>`"
-9. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → NOT migratable — "Per-property transition configs"
+9. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → MIGRATABLE — map to `TransitionMap` with category keys (`transform`, `opacity`, `borderRadius`, `backgroundColor`, `default`)
 10. **Not driven by state?** (animation triggered by gesture/scroll value, not React state) → NOT migratable — "Not state-driven"
 11. **Otherwise** → MIGRATABLE
 
@@ -87,6 +87,7 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | `Animated.Value` + `Animated.spring`                                                                                      | `animate` + `transition={{ type: 'spring' }}` — convert to state-driven                                      |
 | `withDelay(ms, withTiming(...))` or `withDelay(ms, withSpring(...))`                                                      | `transition={{ ..., delay: ms }}` — add `delay` to the transition config                                     |
 | `entering={FadeIn.delay(ms)}` / any entering preset with `.delay()`                                                      | `initialAnimate` + `animate` + `transition={{ ..., delay: ms }}`                                             |
+| Different `withTiming`/`withSpring` per property in `useAnimatedStyle`                                                    | `transition={{ opacity: { type: 'timing', ... }, transform: { type: 'spring', ... } }}` (per-property map)   |
 
 ### Default Value Mapping
 
@@ -391,15 +392,16 @@ transition={{ type: 'none' }}
 
 - `animate` — target values for animated properties
 - `initialAnimate` — starting values (animates to `animate` on mount)
-- `transition` — animation config (timing or spring)
+- `transition` — animation config: a single `SingleTransition` (timing/spring/none) OR a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`)
 - `onTransitionEnd` — callback with `{ finished: boolean }`
 - `transformOrigin` — pivot point as `{ x: 0-1, y: 0-1 }`, default center
 - `useHardwareLayer` — Android GPU optimization (boolean, default false)
+- `className` — NativeWind / Tailwind CSS class string (requires NativeWind in the project)
 
 ### Important Constraints
 
 - **Loop requires timing** (not spring) and `initialAnimate` must define the start value
-- **No per-property transitions** — one transition config applies to all animated properties
+- **Per-property transitions supported** — pass a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`) to use different configs per property group
 - **No animation sequencing** — no equivalent to `withSequence`. Simple `withDelay` IS supported via the `delay` transition prop
 - **No gesture/scroll-driven animations** — EaseView is state-driven only
 - **Style/animate conflict** — if a property appears in both `style` and `animate`, the animated value wins
