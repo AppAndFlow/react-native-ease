@@ -13310,8 +13310,12 @@ __metadata:
     turbo: "npm:^2.5.6"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    nativewind: ">=4"
     react: "*"
     react-native: "*"
+  peerDependenciesMeta:
+    nativewind:
+      optional: true
   languageName: unknown
   linkType: soft
 

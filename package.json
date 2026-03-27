@@ -102,9 +102,9 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
+    "nativewind": ">=4",
     "react": "*",
-    "react-native": "*",
-    "nativewind": ">=4"
+    "react-native": "*"
   },
   "peerDependenciesMeta": {
     "nativewind": {
