@@ -37,6 +37,28 @@ The skill will:
 4. Let you select which components to migrate
 5. Apply the changes, preserving all non-animation logic
 
+### NativeWind Support
+
+If you're using [NativeWind](https://www.nativewind.dev/) (v4+), add this import once in your app's entry point (e.g., `_layout.tsx` or `App.tsx`):
+
+```tsx
+import 'react-native-ease/nativewind';
+```
+
+This registers `EaseView` with NativeWind's `cssInterop` so `className` is properly converted to styles:
+
+```tsx
+<EaseView
+  className="flex-1 bg-white rounded-2xl p-4"
+  animate={{ opacity: visible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300 }}
+>
+  {children}
+</EaseView>
+```
+
+> **Tip:** If you use the [migration skill](#migration-skill), it detects NativeWind automatically and adds this import for you.
+
 ### Example
 
 ```tsx

@@ -16,7 +16,13 @@ Follow these 6 phases exactly. Do not skip phases or reorder them.
 
 Scan the user's project for animation code:
 
-1. Use Grep to find all files importing from `react-native-reanimated`:
+1. Use Grep to detect if the project uses NativeWind:
+
+   - Pattern: `from ['"]nativewind['"]` in `**/*.{ts,tsx,js,jsx}`
+   - Also check `package.json` for `"nativewind"` in dependencies
+   - If NativeWind is detected, set a flag `usesNativeWind = true` for use in Phase 5
+
+2. Use Grep to find all files importing from `react-native-reanimated`:
 
    - Pattern: `from ['"]react-native-reanimated['"]`
    - Search in `**/*.{ts,tsx,js,jsx}`
@@ -250,6 +256,8 @@ For each confirmed component, apply the migration:
    ```typescript
    import { EaseView } from 'react-native-ease';
    ```
+
+1b. **If `usesNativeWind` is true**, check if `import 'react-native-ease/nativewind'` already exists in the project (search all files). If not, add it to the app's root entry point (e.g., `_layout.tsx`, `App.tsx`, or `index.tsx` — whichever is the earliest entry). This only needs to be done once across all migrations, not per component.
 
 2. **Replace the animated view:**
 

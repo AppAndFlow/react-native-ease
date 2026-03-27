@@ -10,6 +10,11 @@
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
+    "./nativewind": {
+      "source": "./src/nativewind.ts",
+      "types": "./lib/typescript/src/nativewind.d.ts",
+      "default": "./lib/module/nativewind.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -98,7 +103,13 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "nativewind": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "nativewind": {
+      "optional": true
+    }
   },
   "workspaces": [
     "example"

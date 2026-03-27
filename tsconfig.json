@@ -2,7 +2,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-ease": ["./src/index"]
+      "react-native-ease": ["./src/index"],
+      "react-native-ease/nativewind": ["./src/nativewind"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
