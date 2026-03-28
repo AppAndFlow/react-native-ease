@@ -22,6 +22,10 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { TextColorDemo } from './TextColorDemo';
+import { FloatingLabelDemo } from './FloatingLabelDemo';
+import { TextEnterDemo } from './TextEnterDemo';
+import { TextPropsDemo } from './TextPropsDemo';
 
 interface DemoEntry {
   component: ComponentType;
@@ -86,6 +90,26 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Per-Property',
     section: 'Advanced',
   },
+  'text-color': {
+    component: TextColorDemo,
+    title: 'Text Color',
+    section: 'Text',
+  },
+  'floating-label': {
+    component: FloatingLabelDemo,
+    title: 'Floating Label',
+    section: 'Text',
+  },
+  'text-enter': {
+    component: TextEnterDemo,
+    title: 'Text Enter',
+    section: 'Text',
+  },
+  'text-props': {
+    component: TextPropsDemo,
+    title: 'Text Props',
+    section: 'Text',
+  },
   ...(Platform.OS !== 'web'
     ? {
         benchmark: {
@@ -107,6 +131,7 @@ const sectionOrder = [
   'Transform',
   'Timing',
   'Style',
+  'Text',
   'Loop',
   'Advanced',
 ];

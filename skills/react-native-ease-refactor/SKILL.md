@@ -6,7 +6,7 @@ user-invocable: true
 
 # react-native-ease refactor
 
-You are a migration assistant that converts `react-native-reanimated` and React Native's built-in `Animated` API code to `react-native-ease` `EaseView` components.
+You are a migration assistant that converts `react-native-reanimated` and React Native's built-in `Animated` API code to `react-native-ease` `EaseView` and `EaseText` components.
 
 Follow these 6 phases exactly. Do not skip phases or reorder them.
 
@@ -27,12 +27,12 @@ Scan the user's project for animation code:
    - Pattern: `from ['"]react-native-reanimated['"]`
    - Search in `**/*.{ts,tsx,js,jsx}`
 
-2. Use Grep to find all files using React Native's built-in `Animated` API:
+3. Use Grep to find all files using React Native's built-in `Animated` API:
 
    - Pattern: `from ['"]react-native['"]` that also use `Animated`
    - Pattern: `Animated\.View|Animated\.Text|Animated\.Image|Animated\.Value|Animated\.timing|Animated\.spring`
 
-3. Use Grep to find files already using `react-native-ease` (to avoid re-migrating):
+4. Use Grep to find files already using `react-native-ease` (to avoid re-migrating):
 
    - Pattern: `from ['"]react-native-ease['"]`
 
@@ -63,10 +63,14 @@ Apply these checks in order. The first match determines the result:
 5c. **Uses `withDelay` wrapping `withSequence` or nested `withDelay`?** → NOT migratable — "Complex delay/sequencing not supported"
 6. **Uses complex `interpolate()`?** (more than 2 input/output values) → NOT migratable — "Complex interpolation"
 7. **Uses `layout={...}` prop?** → NOT migratable — "Layout animation"
-8. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor) → NOT migratable — "Animates unsupported property: `<prop>`"
-9. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → MIGRATABLE — map to `TransitionMap` with category keys (`transform`, `opacity`, `borderRadius`, `backgroundColor`, `default`)
-10. **Not driven by state?** (animation triggered by gesture/scroll value, not React state) → NOT migratable — "Not state-driven"
-11. **Otherwise** → MIGRATABLE
+8. **Is a text component** (`Animated.Text`, or `<Text>` with `useAnimatedStyle`)?
+   - 8a. Animates `fontSize`, `fontWeight`, `letterSpacing`, or `lineHeight`? → NOT migratable — "Text property `<prop>` not animatable. Use `scale` + `transformOrigin` as approximation for fontSize."
+   - 8b. Animates `color` (with or without transforms/opacity)? → MIGRATABLE to **`EaseText`**
+   - 8c. Animates only transforms/opacity (no color)? → MIGRATABLE to **`EaseText`** (benefits from text prop passthrough even without color)
+9. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor) → NOT migratable — "Animates unsupported property: `<prop>`"
+10. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → MIGRATABLE to **`EaseView`** — map to `TransitionMap` with category keys (`transform`, `opacity`, `borderRadius`, `backgroundColor`, `default`)
+11. **Not driven by state?** (animation triggered by gesture/scroll value, not React state) → NOT migratable — "Not state-driven"
+12. **Otherwise** → MIGRATABLE to **`EaseView`**
 
 ### Migratable Pattern Mapping
 
@@ -94,6 +98,20 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | `withDelay(ms, withTiming(...))` or `withDelay(ms, withSpring(...))`                                                      | `transition={{ ..., delay: ms }}` — add `delay` to the transition config                                     |
 | `entering={FadeIn.delay(ms)}` / any entering preset with `.delay()`                                                      | `initialAnimate` + `animate` + `transition={{ ..., delay: ms }}`                                             |
 | Different `withTiming`/`withSpring` per property in `useAnimatedStyle`                                                    | `transition={{ opacity: { type: 'timing', ... }, transform: { type: 'spring', ... } }}` (per-property map)   |
+
+
+### Text-Specific Patterns (→ EaseText)
+
+Use `EaseText` instead of `EaseView` when the source is an `Animated.Text` or a `<Text>` with `useAnimatedStyle`.
+
+| Source Pattern | EaseText Equivalent |
+|---|---|
+| `Animated.Text` + `Animated.timing` on `color` | `<EaseText interpolateColor={value} transition={{ type: 'timing', duration }}>` |
+| `useSharedValue` + `useAnimatedStyle` on `<Text>` animating `color` + `translateY` + `scale` | `<EaseText interpolateColor={color} animate={{ translateY, scale }} transition={{ color: { type: 'timing', ... }, transform: { type: 'spring', ... } }}>` |
+| Text with `color` that doesn't need smooth transition | `<EaseText style={{ color: value }}>` — instant, zero JS cost |
+| `useAnimatedStyle` changing `fontSize` | NOT migratable — use `<EaseText animate={{ scale }} transformOrigin={{ x: 0, y: 0.5 }}>` as visual approximation |
+
+**Key difference:** `interpolateColor` is JS-interpolated (requestAnimationFrame), not native. Use `style.color` for instant changes with zero overhead. Transforms and opacity remain native via the internal EaseView wrapper. All standard `TextProps` (`numberOfLines`, `ellipsizeMode`, `selectable`, `onPress`, etc.) pass through to the inner `<Text>`.
 
 ### Default Value Mapping
 
@@ -251,18 +269,23 @@ For each confirmed component, apply the migration:
 
 ### Migration Steps (per component)
 
-1. **Add EaseView import** if not already present:
+1. **Add import** if not already present:
 
    ```typescript
+   // For view animations:
    import { EaseView } from 'react-native-ease';
+   // For text animations (color, transforms on text):
+   import { EaseText } from 'react-native-ease';
    ```
 
 1b. **If `usesNativeWind` is true**, check if `import 'react-native-ease/nativewind'` already exists in the project (search all files). If not, add it to the app's root entry point (e.g., `_layout.tsx`, `App.tsx`, or `index.tsx` — whichever is the earliest entry). This only needs to be done once across all migrations, not per component.
 
-2. **Replace the animated view:**
+2. **Replace the animated component:**
 
    - `Animated.View` → `EaseView`
+   - `Animated.Text` (or `<Text>` with animated color/transforms) → `EaseText`
    - `<Animated.View style={[styles.box, animatedStyle]}>` → `<EaseView style={styles.box} animate={{ ... }} transition={{ ... }}>`
+   - `<Animated.Text style={[styles.label, animatedStyle]}>` → `<EaseText style={styles.label} interpolateColor={color} animate={{ translateY, scale }} transition={{ ... }}>`
 
 3. **Convert animation hooks to props:**
 
@@ -400,16 +423,49 @@ transition={{ type: 'none' }}
 
 - `animate` — target values for animated properties
 - `initialAnimate` — starting values (animates to `animate` on mount)
-- `transition` — animation config: a single `SingleTransition` (timing/spring/none) OR a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`)
+- `transition` — animation config: a single `SingleTransition` (timing/spring/none) OR a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`, `color`)
 - `onTransitionEnd` — callback with `{ finished: boolean }`
 - `transformOrigin` — pivot point as `{ x: 0-1, y: 0-1 }`, default center
 - `useHardwareLayer` — Android GPU optimization (boolean, default false)
 - `className` — NativeWind / Tailwind CSS class string (requires NativeWind in the project)
 
+### EaseText API Reference
+
+`EaseText` is a JS-only component that composes `EaseView` (native transforms/opacity) with `<Text>` (text rendering + JS color interpolation).
+
+**Additional Animatable Properties (text only):**
+
+| Property | Type         | Default     | Notes                                              |
+| -------- | ------------ | ----------- | -------------------------------------------------- |
+| `color`  | `ColorValue` | from style  | JS-interpolated via requestAnimationFrame           |
+
+**NOT Animatable on text:** `fontSize`, `fontWeight`, `fontFamily`, `lineHeight`, `textAlign`, `letterSpacing`, `backgroundColor`. Use `scale` + `transformOrigin` as approximation for `fontSize`.
+
+**Props:** Same as EaseView (`animate`, `initialAnimate`, `transition`, `onTransitionEnd`, `transformOrigin`, `useHardwareLayer`) plus all standard `TextProps` (`numberOfLines`, `ellipsizeMode`, `selectable`, `onPress`, `style`, etc.).
+
+**Per-property transition for color:**
+```typescript
+transition={{
+  color: { type: 'timing', duration: 150 },
+  transform: { type: 'spring', damping: 12, stiffness: 250 },
+}}
+```
+
+**TextAnimateProps:** `Omit<AnimateProps, 'borderRadius' | 'backgroundColor'>` — same transform/opacity props as AnimateProps. Color is not in `animate` — it's a separate prop.
+
+**Color:**
+- `style.color` — instant, zero JS cost (recommended for most cases)
+- `interpolateColor` prop — smooth JS interpolation via requestAnimationFrame, follows `color` key in transition or falls back to `default`
+- `initialInterpolateColor` — starting color for mount animations (used with `interpolateColor`)
+
+**Performance:** Transforms/opacity are native (60fps, off JS thread). `interpolateColor` runs on JS thread — smooth under normal conditions, may stutter under heavy JS load. For typical 150–300ms transitions, imperceptible. Use `style.color` to avoid any JS cost.
+
 ### Important Constraints
 
 - **Loop requires timing** (not spring) and `initialAnimate` must define the start value
-- **Per-property transitions supported** — pass a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`) to use different configs per property group
+- **Per-property transitions supported** — pass a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`, `color`) to use different configs per property group
 - **No animation sequencing** — no equivalent to `withSequence`. Simple `withDelay` IS supported via the `delay` transition prop
-- **No gesture/scroll-driven animations** — EaseView is state-driven only
+- **No gesture/scroll-driven animations** — EaseView/EaseText are state-driven only
 - **Style/animate conflict** — if a property appears in both `style` and `animate`, the animated value wins
+- **EaseText wraps EaseView + Text** — layout behaves like a View containing a Text, not a bare Text. Use a wrapper View with `position: 'absolute'` for floating label patterns
+- **EaseText color is JS-interpolated** — not native. Spring transitions on color are approximated as 500ms easeOut

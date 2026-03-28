@@ -2,7 +2,7 @@
 
 ## Overview
 
-`react-native-ease` is a React Native library that provides declarative, native-powered animations via a single `EaseView` component. It uses Core Animation (iOS) and ObjectAnimator/SpringAnimation (Android) — no JS animation loop, no worklets, no C++ runtime.
+`react-native-ease` is a React Native library that provides declarative, native-powered animations via `EaseView` and `EaseText` components. It uses Core Animation (iOS) and ObjectAnimator/SpringAnimation (Android) — no JS animation loop, no worklets, no C++ runtime.
 
 **Fabric (new architecture) only.** Does not support the old architecture.
 
@@ -11,6 +11,8 @@
 ```
 src/                          # TypeScript source (library)
   EaseView.tsx                # React component — flattens props to native
+  EaseText.tsx                # Text component — EaseView wrapper + Text with color interpolation
+  useColorTransition.ts       # JS-side color interpolation hook (requestAnimationFrame)
   EaseViewNativeComponent.ts  # Codegen spec — defines native props/events
   types.ts                    # Public TypeScript types
   index.tsx                   # Public exports
@@ -26,8 +28,7 @@ android/src/main/java/com/ease/
   EasePackage.kt              # Package registration
 
 example/                      # Demo app (separate workspace)
-  src/App.tsx                 # Main demo screen with animation examples
-  src/ComparisonScreen.tsx    # Comparison with Reanimated
+  src/demos/                  # Demo screens (one per feature)
   src/components/             # Shared demo components (Section, Button, TabBar)
 ```
 
@@ -42,6 +43,24 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 ```
 
 **Key design pattern:** All animation logic lives on the native side. The JS layer is purely a prop resolver — no animation state, no timers, no refs.
+
+## EaseText Architecture
+
+`EaseText` is a **JS-only component** — no native code. It composes `EaseView` (for native transforms/opacity) with a standard `<Text>` (for text rendering).
+
+```
+<EaseText interpolateColor="#000" animate={{ translateY, scale }} />
+  → <EaseView animate={{ translateY, scale }}>   ← native animations
+      <Text style={{ color: interpolated }}>      ← JS color interpolation
+  ```
+
+**Color:** Two modes:
+- `style.color` — instant change, zero JS cost (same as `<Text>`)
+- `interpolateColor` prop — smooth JS interpolation via `requestAnimationFrame`, follows the `color` key in `transition` (or falls back to `default`)
+
+**Why not native text color animation:** Fabric's text rendering pipeline (`RCTParagraphComponentView` on iOS) manages text via `NSAttributedString` in the shadow tree. The `attributedText` is readonly — color can't be mutated from outside the Fabric commit cycle. Android's `ReactTextView.setTextColor()` works, but iOS doesn't. JS interpolation keeps behavior consistent cross-platform.
+
+**TextAnimateProps:** `Omit<AnimateProps, 'borderRadius' | 'backgroundColor'>` — same transform/opacity props as EaseView. Color is handled separately via `interpolateColor`.
 
 ## Adding a New Animatable Property
 
@@ -111,3 +130,5 @@ Use conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, etc.
 - **Spring damping ratio on Android is derived** from `damping`, `stiffness`, and `mass` using: `dampingRatio = damping / (2 * sqrt(stiffness * mass))`. iOS passes these values directly to `CASpringAnimation`.
 - **Animation batching:** Both platforms track animation batches with a generation ID. When new animations start, any pending old-batch callbacks are fired as interrupted (`finished: false`).
 - **Loop only works with timing animations**, not springs. Loop requires `initialAnimate` to define the start value.
+- **EaseText color has two modes:** `style.color` for instant changes (zero cost), `interpolateColor` prop for smooth JS interpolation via requestAnimationFrame. Transforms/opacity are always native via EaseView.
+- **EaseText wraps EaseView + Text.** Layout behaves like a View containing a Text, not a bare Text. Use a wrapper View with `position: 'absolute'` for floating label patterns (see FloatingLabelDemo).

@@ -60,6 +60,8 @@ export type TransitionMap = {
   borderRadius?: SingleTransition;
   /** Config for backgroundColor. */
   backgroundColor?: SingleTransition;
+  /** Config for text color (EaseText only). */
+  color?: SingleTransition;
 };
 
 /** Animation transition configuration — either a single config or a per-property map. */
@@ -104,3 +106,9 @@ export type AnimateProps = {
   /** Background color. Accepts any React Native color value. @default 'transparent' */
   backgroundColor?: ColorValue;
 };
+
+/** Animatable text properties. Same as AnimateProps minus borderRadius/backgroundColor. */
+export type TextAnimateProps = Omit<
+  AnimateProps,
+  'borderRadius' | 'backgroundColor'
+>;
