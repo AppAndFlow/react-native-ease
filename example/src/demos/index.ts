@@ -22,6 +22,7 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { UniwindDemo } from './uniwind/UniwindDemo';
 
 interface DemoEntry {
   component: ComponentType;
@@ -67,6 +68,11 @@ export const demos: Record<string, DemoEntry> = {
   'style-rerender': {
     component: StyleReRenderDemo,
     title: 'Style Re-Render',
+    section: 'Style',
+  },
+  'uniwind': {
+    component: UniwindDemo,
+    title: 'Uniwind',
     section: 'Style',
   },
   'pulse': { component: PulseDemo, title: 'Pulse', section: 'Loop' },

@@ -59,6 +59,31 @@ This registers `EaseView` with NativeWind's `cssInterop` so `className` is prope
 
 > **Tip:** If you use the [migration skill](#migration-skill), it detects NativeWind automatically and adds this import for you.
 
+### Uniwind Support
+
+If you're using [Uniwind](https://docs.uniwind.dev/), first follow the
+[Uniwind quickstart](https://docs.uniwind.dev/quickstart) to install and
+configure Uniwind in your app. That setup includes the required CSS entry file,
+app-root CSS import, and bundler configuration.
+
+Once Uniwind is set up, import `EaseView` from the Uniwind entry point:
+
+```tsx
+import { EaseView } from 'react-native-ease/uniwind';
+```
+
+This wraps `EaseView` with Uniwind's `withUniwind(...)` so `className` is converted to styles:
+
+```tsx
+<EaseView
+  className="flex-1 bg-white rounded-2xl p-4"
+  animate={{ opacity: visible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300 }}
+>
+  {children}
+</EaseView>
+```
+
 ### Example
 
 ```tsx
@@ -441,7 +466,7 @@ A `View` that animates property changes using native platform APIs.
 | `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }`                                                             |
 | `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center)                                      |
 | `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
-| `className`        | `string`                     | NativeWind / Tailwind CSS class string. Requires NativeWind in your project.                                                 |
+| `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string. Requires NativeWind or Uniwind in your project.                            |
 | `style`            | `ViewStyle`                  | Non-animated styles (layout, colors, borders, etc.)                                                                          |
 | `children`         | `ReactNode`                  | Child elements                                                                                                               |
 | ...rest            | `ViewProps`                  | All other standard View props                                                                                                |

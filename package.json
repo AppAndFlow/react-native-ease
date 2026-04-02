@@ -10,6 +10,11 @@
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
+    "./uniwind": {
+      "source": "./src/uniwind.ts",
+      "types": "./lib/typescript/src/uniwind.d.ts",
+      "default": "./lib/module/uniwind.js"
+    },
     "./nativewind": {
       "source": "./src/nativewind.ts",
       "types": "./lib/typescript/src/nativewind.d.ts",
@@ -42,8 +47,9 @@
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
     "test": "jest",
-    "lint": "yarn lint:eslint && yarn lint:ts",
+    "lint": "yarn lint:eslint && yarn lint:ts && yarn lint:ts:example",
     "lint:ts": "tsc",
+    "lint:ts:example": "tsc -p example/tsconfig.json --noEmit",
     "lint:eslint": "eslint \"**/*.{js,ts,tsx}\"",
     "release": "release-it --only-version",
     "format:prettier:check": "prettier \"src/**/*.{js,ts,tsx}\" \"example/**/*.{js,ts,tsx}\" --check",
@@ -104,10 +110,14 @@
   "peerDependencies": {
     "nativewind": ">=4",
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "uniwind": ">=1"
   },
   "peerDependenciesMeta": {
     "nativewind": {
+      "optional": true
+    },
+    "uniwind": {
       "optional": true
     }
   },
