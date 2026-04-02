@@ -31,7 +31,7 @@ To edit the Java or Kotlin files, open `example/android` in Android studio and f
 
 You can use various commands from the root directory to work with the project.
 
-To start the packager:
+To start the example app packager:
 
 ```sh
 yarn example start
@@ -49,44 +49,31 @@ To run the example app on iOS:
 yarn example ios
 ```
 
-To confirm that the app is running with the new architecture, you can check the Metro logs for a message like this:
-
-```sh
-Running "EaseExample" with {"fabric":true,"initialProps":{"concurrentRoot":true},"rootTag":1}
-```
-
-Note the `"fabric":true` and `"concurrentRoot":true` properties.
-
-Make sure your code passes TypeScript:
-
-```sh
-yarn typecheck
-```
-
-To check for linting errors, run the following:
+To run linting and type checks:
 
 ```sh
 yarn lint
 ```
 
-To fix formatting errors, run the following:
+To check formatting:
 
 ```sh
-yarn lint --fix
+yarn format:check
 ```
-
-
 
 ### Scripts
 
-The `package.json` file contains various scripts for common tasks:
+The root `package.json` contains these common scripts:
 
-- `yarn`: setup project by installing dependencies.
-- `yarn typecheck`: type-check files with TypeScript.
-- `yarn lint`: lint files with [ESLint](https://eslint.org/).
+- `yarn`: install dependencies for the workspace.
+- `yarn format:check`: check Prettier and clang-format.
+- `yarn format:write`: write Prettier and clang-format fixes.
+- `yarn lint`: run ESLint and TypeScript checks for the library and example app.
+- `yarn test`: run the Jest test suite.
+- `yarn prepare`: build the library with `react-native-builder-bob`.
 - `yarn example start`: start the Metro server for the example app.
-- `yarn example android`: run the example app on Android.
 - `yarn example ios`: run the example app on iOS.
+- `yarn example android`: run the example app on Android.
 
 ### Sending a pull request
 
@@ -95,7 +82,7 @@ The `package.json` file contains various scripts for common tasks:
 When you're sending a pull request:
 
 - Prefer small pull requests focused on one change.
-- Verify that linters and tests are passing.
+- Verify that formatting, linting, tests, and any relevant example app checks are passing.
 - Review the documentation to make sure it looks good.
 - Follow the pull request template when opening a pull request.
 - For pull requests that change the API or implementation, discuss with maintainers first by opening an issue.
