@@ -3,6 +3,7 @@
     "rootDir": ".",
     "paths": {
       "react-native-ease": ["./src/index"],
+      "react-native-ease/uniwind": ["./src/uniwind"],
       "react-native-ease/nativewind": ["./src/nativewind"]
     },
     "allowUnreachableCode": false,
@@ -27,5 +28,6 @@
     "strict": true,
     "target": "ESNext",
     "verbatimModuleSyntax": true
-  }
+  },
+  "exclude": ["example", "lib"]
 }

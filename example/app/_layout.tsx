@@ -1,3 +1,6 @@
+// Import uniwind global.css
+import '../global.css';
+
 import { Stack } from 'expo-router';
 
 import { MaxWidthContainer } from '../src/components/MaxWidthContainer';

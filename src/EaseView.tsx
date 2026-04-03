@@ -196,7 +196,7 @@ export type EaseViewProps = ViewProps & {
   useHardwareLayer?: boolean;
   /** Pivot point for scale and rotation as 0–1 fractions. @default { x: 0.5, y: 0.5 } (center) */
   transformOrigin?: TransformOrigin;
-  /** NativeWind / Tailwind CSS class string. Requires NativeWind in your project. */
+  /** NativeWind / Uniwind / Tailwind CSS class string. Requires a compatible className interop in your project. */
   className?: string;
 };
 
