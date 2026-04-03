@@ -146,6 +146,7 @@ static std::string lowestTransformPropertyName(int mask) {
 
 @implementation EaseView {
   BOOL _isFirstMount;
+  BOOL _hasPendingFirstMountUpdate;
   NSInteger _animationBatchId;
   NSInteger _pendingAnimationCount;
   BOOL _anyInterrupted;
@@ -162,6 +163,7 @@ static std::string lowestTransformPropertyName(int mask) {
     static const auto defaultProps = std::make_shared<const EaseViewProps>();
     _props = defaultProps;
     _isFirstMount = YES;
+    _hasPendingFirstMountUpdate = NO;
     _transformOriginX = 0.5;
     _transformOriginY = 0.5;
   }
@@ -298,6 +300,184 @@ static std::string lowestTransformPropertyName(int mask) {
                           degreesToRadians(p.initialAnimateRotateY));
 }
 
+- (void)beginAnimationBatch {
+  if (_pendingAnimationCount > 0 && _eventEmitter) {
+    auto emitter =
+        std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
+    emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
+        .finished = false,
+    });
+  }
+
+  _animationBatchId++;
+  _pendingAnimationCount = 0;
+  _anyInterrupted = NO;
+}
+
+- (void)applyFirstMountProps:(const EaseViewProps &)viewProps {
+  int mask = viewProps.animatedProperties;
+  BOOL hasTransform = (mask & kMaskAnyTransform) != 0;
+
+  // Check if initial differs from target for any masked property
+  BOOL hasInitialOpacity =
+      (mask & kMaskOpacity) &&
+      viewProps.initialAnimateOpacity != viewProps.animateOpacity;
+
+  BOOL hasInitialBorderRadius =
+      (mask & kMaskBorderRadius) &&
+      viewProps.initialAnimateBorderRadius != viewProps.animateBorderRadius;
+
+  BOOL hasInitialBackgroundColor = (mask & kMaskBackgroundColor) &&
+                                   viewProps.initialAnimateBackgroundColor !=
+                                       viewProps.animateBackgroundColor;
+
+  BOOL hasInitialTransform = NO;
+  CATransform3D initialT = CATransform3DIdentity;
+  CATransform3D targetT = CATransform3DIdentity;
+
+  if (hasTransform) {
+    initialT = [self initialTransformFromProps:viewProps];
+    targetT = [self targetTransformFromProps:viewProps];
+    hasInitialTransform = !CATransform3DEqualToTransform(initialT, targetT);
+  }
+
+  if (hasInitialOpacity || hasInitialTransform || hasInitialBorderRadius ||
+      hasInitialBackgroundColor) {
+    // Set initial values after props and layout have settled for this mount.
+    if (mask & kMaskOpacity)
+      self.layer.opacity = viewProps.initialAnimateOpacity;
+    if (hasTransform)
+      self.layer.transform = initialT;
+    if (mask & kMaskBorderRadius) {
+      self.layer.cornerRadius = viewProps.initialAnimateBorderRadius;
+      self.layer.masksToBounds = viewProps.initialAnimateBorderRadius > 0 ||
+                                 viewProps.animateBorderRadius > 0;
+    }
+    if (mask & kMaskBackgroundColor)
+      self.layer.backgroundColor =
+          RCTUIColorFromSharedColor(viewProps.initialAnimateBackgroundColor)
+              .CGColor;
+
+    // Animate from initial to target (skip if config is 'none')
+    if (hasInitialOpacity) {
+      EaseTransitionConfig opacityConfig =
+          transitionConfigForProperty("opacity", viewProps);
+      self.layer.opacity = viewProps.animateOpacity;
+      if (opacityConfig.type != "none") {
+        [self applyAnimationForKeyPath:@"opacity"
+                          animationKey:kAnimKeyOpacity
+                             fromValue:@(viewProps.initialAnimateOpacity)
+                               toValue:@(viewProps.animateOpacity)
+                                config:opacityConfig
+                                  loop:YES];
+      }
+    }
+    if (hasInitialTransform) {
+      // Build mask of which transform sub-properties actually changed
+      int changedInitTransform = 0;
+      if (viewProps.initialAnimateTranslateX != viewProps.animateTranslateX)
+        changedInitTransform |= kMaskTranslateX;
+      if (viewProps.initialAnimateTranslateY != viewProps.animateTranslateY)
+        changedInitTransform |= kMaskTranslateY;
+      if (viewProps.initialAnimateScaleX != viewProps.animateScaleX)
+        changedInitTransform |= kMaskScaleX;
+      if (viewProps.initialAnimateScaleY != viewProps.animateScaleY)
+        changedInitTransform |= kMaskScaleY;
+      if (viewProps.initialAnimateRotate != viewProps.animateRotate)
+        changedInitTransform |= kMaskRotate;
+      if (viewProps.initialAnimateRotateX != viewProps.animateRotateX)
+        changedInitTransform |= kMaskRotateX;
+      if (viewProps.initialAnimateRotateY != viewProps.animateRotateY)
+        changedInitTransform |= kMaskRotateY;
+      std::string transformName =
+          lowestTransformPropertyName(changedInitTransform);
+      EaseTransitionConfig transformConfig =
+          transitionConfigForProperty(transformName, viewProps);
+      self.layer.transform = targetT;
+      if (transformConfig.type != "none") {
+        [self applyAnimationForKeyPath:@"transform"
+                          animationKey:kAnimKeyTransform
+                             fromValue:[NSValue valueWithCATransform3D:initialT]
+                               toValue:[NSValue valueWithCATransform3D:targetT]
+                                config:transformConfig
+                                  loop:YES];
+      }
+    }
+    if (hasInitialBorderRadius) {
+      EaseTransitionConfig brConfig =
+          transitionConfigForProperty("borderRadius", viewProps);
+      self.layer.cornerRadius = viewProps.animateBorderRadius;
+      if (brConfig.type != "none") {
+        [self applyAnimationForKeyPath:@"cornerRadius"
+                          animationKey:kAnimKeyCornerRadius
+                             fromValue:@(viewProps.initialAnimateBorderRadius)
+                               toValue:@(viewProps.animateBorderRadius)
+                                config:brConfig
+                                  loop:YES];
+      }
+    }
+    if (hasInitialBackgroundColor) {
+      EaseTransitionConfig bgConfig =
+          transitionConfigForProperty("backgroundColor", viewProps);
+      self.layer.backgroundColor =
+          RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
+      if (bgConfig.type != "none") {
+        [self applyAnimationForKeyPath:@"backgroundColor"
+                          animationKey:kAnimKeyBackgroundColor
+                             fromValue:(__bridge id)RCTUIColorFromSharedColor(
+                                           viewProps
+                                               .initialAnimateBackgroundColor)
+                                           .CGColor
+                               toValue:(__bridge id)RCTUIColorFromSharedColor(
+                                           viewProps.animateBackgroundColor)
+                                           .CGColor
+                                config:bgConfig
+                                  loop:YES];
+      }
+    }
+
+    // If all per-property configs were 'none', no animations were queued.
+    // Fire onTransitionEnd immediately to match the scalar 'none' contract.
+    if (_pendingAnimationCount == 0 && _eventEmitter) {
+      auto emitter =
+          std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
+      emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
+          .finished = true,
+      });
+    }
+  } else {
+    // No initial animation — set target values directly
+    if (mask & kMaskOpacity)
+      self.layer.opacity = viewProps.animateOpacity;
+    if (hasTransform)
+      self.layer.transform = targetT;
+    if (mask & kMaskBorderRadius) {
+      self.layer.cornerRadius = viewProps.animateBorderRadius;
+      self.layer.masksToBounds = viewProps.animateBorderRadius > 0;
+    }
+    if (mask & kMaskBackgroundColor)
+      self.layer.backgroundColor =
+          RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
+  }
+}
+
+- (void)tryApplyPendingFirstMountProps {
+  if (!_hasPendingFirstMountUpdate || !_isFirstMount || self.window == nil) {
+    return;
+  }
+
+  const auto &viewProps =
+      *std::static_pointer_cast<const EaseViewProps>(_props);
+
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  [self beginAnimationBatch];
+  [self applyFirstMountProps:viewProps];
+  _hasPendingFirstMountUpdate = NO;
+  _isFirstMount = NO;
+  [CATransaction commit];
+}
+
 #pragma mark - Props update
 
 - (void)updateProps:(const Props::Shared &)props
@@ -321,176 +501,14 @@ static std::string lowestTransformPropertyName(int mask) {
     [self updateAnchorPoint];
   }
 
-  if (_pendingAnimationCount > 0 && _eventEmitter) {
-    auto emitter =
-        std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
-    emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
-        .finished = false,
-    });
-  }
-
-  _animationBatchId++;
-  _pendingAnimationCount = 0;
-  _anyInterrupted = NO;
-
   // Bitmask: which properties are animated. Non-animated = let style handle.
   int mask = newViewProps.animatedProperties;
   BOOL hasTransform = (mask & kMaskAnyTransform) != 0;
 
   if (_isFirstMount) {
-    _isFirstMount = NO;
-
-    // Check if initial differs from target for any masked property
-    BOOL hasInitialOpacity =
-        (mask & kMaskOpacity) &&
-        newViewProps.initialAnimateOpacity != newViewProps.animateOpacity;
-
-    BOOL hasInitialBorderRadius =
-        (mask & kMaskBorderRadius) && newViewProps.initialAnimateBorderRadius !=
-                                          newViewProps.animateBorderRadius;
-
-    BOOL hasInitialBackgroundColor =
-        (mask & kMaskBackgroundColor) &&
-        newViewProps.initialAnimateBackgroundColor !=
-            newViewProps.animateBackgroundColor;
-
-    BOOL hasInitialTransform = NO;
-    CATransform3D initialT = CATransform3DIdentity;
-    CATransform3D targetT = CATransform3DIdentity;
-
-    if (hasTransform) {
-      initialT = [self initialTransformFromProps:newViewProps];
-      targetT = [self targetTransformFromProps:newViewProps];
-      hasInitialTransform = !CATransform3DEqualToTransform(initialT, targetT);
-    }
-
-    if (hasInitialOpacity || hasInitialTransform || hasInitialBorderRadius ||
-        hasInitialBackgroundColor) {
-      // Set initial values
-      if (mask & kMaskOpacity)
-        self.layer.opacity = newViewProps.initialAnimateOpacity;
-      if (hasTransform)
-        self.layer.transform = initialT;
-      if (mask & kMaskBorderRadius) {
-        self.layer.cornerRadius = newViewProps.initialAnimateBorderRadius;
-        self.layer.masksToBounds =
-            newViewProps.initialAnimateBorderRadius > 0 ||
-            newViewProps.animateBorderRadius > 0;
-      }
-      if (mask & kMaskBackgroundColor)
-        self.layer.backgroundColor =
-            RCTUIColorFromSharedColor(
-                newViewProps.initialAnimateBackgroundColor)
-                .CGColor;
-
-      // Animate from initial to target (skip if config is 'none')
-      if (hasInitialOpacity) {
-        EaseTransitionConfig opacityConfig =
-            transitionConfigForProperty("opacity", newViewProps);
-        self.layer.opacity = newViewProps.animateOpacity;
-        if (opacityConfig.type != "none") {
-          [self applyAnimationForKeyPath:@"opacity"
-                            animationKey:kAnimKeyOpacity
-                               fromValue:@(newViewProps.initialAnimateOpacity)
-                                 toValue:@(newViewProps.animateOpacity)
-                                  config:opacityConfig
-                                    loop:YES];
-        }
-      }
-      if (hasInitialTransform) {
-        // Build mask of which transform sub-properties actually changed
-        int changedInitTransform = 0;
-        if (newViewProps.initialAnimateTranslateX !=
-            newViewProps.animateTranslateX)
-          changedInitTransform |= kMaskTranslateX;
-        if (newViewProps.initialAnimateTranslateY !=
-            newViewProps.animateTranslateY)
-          changedInitTransform |= kMaskTranslateY;
-        if (newViewProps.initialAnimateScaleX != newViewProps.animateScaleX)
-          changedInitTransform |= kMaskScaleX;
-        if (newViewProps.initialAnimateScaleY != newViewProps.animateScaleY)
-          changedInitTransform |= kMaskScaleY;
-        if (newViewProps.initialAnimateRotate != newViewProps.animateRotate)
-          changedInitTransform |= kMaskRotate;
-        if (newViewProps.initialAnimateRotateX != newViewProps.animateRotateX)
-          changedInitTransform |= kMaskRotateX;
-        if (newViewProps.initialAnimateRotateY != newViewProps.animateRotateY)
-          changedInitTransform |= kMaskRotateY;
-        std::string transformName =
-            lowestTransformPropertyName(changedInitTransform);
-        EaseTransitionConfig transformConfig =
-            transitionConfigForProperty(transformName, newViewProps);
-        self.layer.transform = targetT;
-        if (transformConfig.type != "none") {
-          [self
-              applyAnimationForKeyPath:@"transform"
-                          animationKey:kAnimKeyTransform
-                             fromValue:[NSValue valueWithCATransform3D:initialT]
-                               toValue:[NSValue valueWithCATransform3D:targetT]
-                                config:transformConfig
-                                  loop:YES];
-        }
-      }
-      if (hasInitialBorderRadius) {
-        EaseTransitionConfig brConfig =
-            transitionConfigForProperty("borderRadius", newViewProps);
-        self.layer.cornerRadius = newViewProps.animateBorderRadius;
-        if (brConfig.type != "none") {
-          [self applyAnimationForKeyPath:@"cornerRadius"
-                            animationKey:kAnimKeyCornerRadius
-                               fromValue:@(newViewProps
-                                               .initialAnimateBorderRadius)
-                                 toValue:@(newViewProps.animateBorderRadius)
-                                  config:brConfig
-                                    loop:YES];
-        }
-      }
-      if (hasInitialBackgroundColor) {
-        EaseTransitionConfig bgConfig =
-            transitionConfigForProperty("backgroundColor", newViewProps);
-        self.layer.backgroundColor =
-            RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
-                .CGColor;
-        if (bgConfig.type != "none") {
-          [self
-              applyAnimationForKeyPath:@"backgroundColor"
-                          animationKey:kAnimKeyBackgroundColor
-                             fromValue:(__bridge id)RCTUIColorFromSharedColor(
-                                           newViewProps
-                                               .initialAnimateBackgroundColor)
-                                           .CGColor
-                               toValue:(__bridge id)RCTUIColorFromSharedColor(
-                                           newViewProps.animateBackgroundColor)
-                                           .CGColor
-                                config:bgConfig
-                                  loop:YES];
-        }
-      }
-
-      // If all per-property configs were 'none', no animations were queued.
-      // Fire onTransitionEnd immediately to match the scalar 'none' contract.
-      if (_pendingAnimationCount == 0 && _eventEmitter) {
-        auto emitter =
-            std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
-        emitter->onTransitionEnd(EaseViewEventEmitter::OnTransitionEnd{
-            .finished = true,
-        });
-      }
-    } else {
-      // No initial animation — set target values directly
-      if (mask & kMaskOpacity)
-        self.layer.opacity = newViewProps.animateOpacity;
-      if (hasTransform)
-        self.layer.transform = targetT;
-      if (mask & kMaskBorderRadius) {
-        self.layer.cornerRadius = newViewProps.animateBorderRadius;
-        self.layer.masksToBounds = newViewProps.animateBorderRadius > 0;
-      }
-      if (mask & kMaskBackgroundColor)
-        self.layer.backgroundColor =
-            RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
-                .CGColor;
-    }
+    // Delay enter animations until finalizeUpdates so Fabric has already
+    // applied props and layout metrics for this mount transaction.
+    _hasPendingFirstMountUpdate = YES;
   } else if (newViewProps.transitions.defaultConfig.type == "none" &&
              (!hasConfig(newViewProps.transitions.transform) ||
               newViewProps.transitions.transform.type == "none") &&
@@ -501,6 +519,7 @@ static std::string lowestTransformPropertyName(int mask) {
              (!hasConfig(newViewProps.transitions.backgroundColor) ||
               newViewProps.transitions.backgroundColor.type == "none")) {
     // All transitions are 'none' — set values immediately
+    [self beginAnimationBatch];
     [self.layer removeAllAnimations];
     if (mask & kMaskOpacity)
       self.layer.opacity = newViewProps.animateOpacity;
@@ -523,6 +542,7 @@ static std::string lowestTransformPropertyName(int mask) {
     }
   } else {
     // Subsequent updates: animate changed properties
+    [self beginAnimationBatch];
     BOOL anyPropertyChanged = NO;
 
     if ((mask & kMaskOpacity) &&
@@ -656,6 +676,18 @@ static std::string lowestTransformPropertyName(int mask) {
   [CATransaction commit];
 }
 
+- (void)finalizeUpdates:(RNComponentViewUpdateMask)updateMask {
+  [super finalizeUpdates:updateMask];
+  (void)updateMask;
+
+  [self tryApplyPendingFirstMountProps];
+}
+
+- (void)didMoveToWindow {
+  [super didMoveToWindow];
+  [self tryApplyPendingFirstMountProps];
+}
+
 - (void)invalidateLayer {
   [super invalidateLayer];
 
@@ -713,6 +745,7 @@ static std::string lowestTransformPropertyName(int mask) {
   [super prepareForRecycle];
   [self.layer removeAllAnimations];
   _isFirstMount = YES;
+  _hasPendingFirstMountUpdate = NO;
   _pendingAnimationCount = 0;
   _anyInterrupted = NO;
   _transformOriginX = 0.5;
