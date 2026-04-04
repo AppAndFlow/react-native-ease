@@ -44,6 +44,9 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-ease-example",
+    "docs": "yarn --cwd docs",
+    "docs:start": "yarn --cwd docs start",
+    "docs:build": "yarn --cwd docs build",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "prepare": "bob build",
     "test": "jest",
@@ -122,7 +125,8 @@
     }
   },
   "workspaces": [
-    "example"
+    "example",
+    "docs"
   ],
   "packageManager": "yarn@4.11.0",
   "react-native-builder-bob": {

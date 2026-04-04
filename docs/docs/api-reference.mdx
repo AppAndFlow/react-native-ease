@@ -1,0 +1,97 @@
+---
+id: api-reference
+title: API reference
+---
+
+## `<EaseView>`
+
+A `View` that animates property changes using native platform APIs.
+
+| Prop               | Type                         | Description |
+| ------------------ | ---------------------------- | ----------- |
+| `animate`          | `AnimateProps`               | Target values for animated properties |
+| `initialAnimate`   | `AnimateProps`               | Starting values for enter animations |
+| `transition`       | `Transition`                 | Single config or per-property map |
+| `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }` |
+| `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions |
+| `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations |
+| `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string |
+| `style`            | `ViewStyle`                  | Non-animated styles |
+| `children`         | `ReactNode`                  | Child elements |
+| `...rest`          | `ViewProps`                  | All other standard View props |
+
+## `AnimateProps`
+
+| Property          | Type         | Default         | Description |
+| ----------------- | ------------ | --------------- | ----------- |
+| `opacity`         | `number`     | `1`             | View opacity (0–1) |
+| `translateX`      | `number`     | `0`             | Horizontal translation in pixels |
+| `translateY`      | `number`     | `0`             | Vertical translation in pixels |
+| `scale`           | `number`     | `1`             | Uniform scale factor |
+| `scaleX`          | `number`     | `1`             | Horizontal scale factor |
+| `scaleY`          | `number`     | `1`             | Vertical scale factor |
+| `rotate`          | `number`     | `0`             | Z-axis rotation in degrees |
+| `rotateX`         | `number`     | `0`             | X-axis rotation in degrees |
+| `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees |
+| `borderRadius`    | `number`     | `0`             | Border radius in pixels |
+| `backgroundColor` | `ColorValue` | `'transparent'` | Background color |
+
+## `TimingTransition`
+
+```tsx
+{
+  type: 'timing';
+  duration?: number;
+  easing?: EasingType;
+  delay?: number;
+  loop?: 'repeat' | 'reverse';
+}
+```
+
+## `SpringTransition`
+
+```tsx
+{
+  type: 'spring';
+  damping?: number;
+  stiffness?: number;
+  mass?: number;
+  delay?: number;
+}
+```
+
+## `NoneTransition`
+
+```tsx
+{
+  type: 'none';
+}
+```
+
+Applies values instantly with no animation.
+
+## `TransitionMap`
+
+A per-property map that applies different transition configs to different property categories.
+
+| Key               | Properties |
+| ----------------- | ---------- |
+| `default`         | Fallback for categories not explicitly listed |
+| `transform`       | translateX, translateY, scaleX, scaleY, rotate, rotateX, rotateY |
+| `opacity`         | opacity |
+| `borderRadius`    | borderRadius |
+| `backgroundColor` | backgroundColor |
+
+## Hardware layers (Android)
+
+Setting `useHardwareLayer` rasterizes the view into a GPU texture for the duration of the animation.
+
+```tsx
+<EaseView animate={{ opacity: isVisible ? 1 : 0 }} useHardwareLayer />
+```
+
+**Trade-offs:**
+
+- Faster rendering for opacity, scale, and rotation animations.
+- Uses additional GPU memory for the off-screen texture.
+- Overflowing children are clipped by the texture.
