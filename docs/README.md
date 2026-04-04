@@ -2,6 +2,8 @@
 
 Docusaurus website for `react-native-ease`.
 
+This site is published with GitHub Pages from the `gh-pages` branch.
+
 ## Local development
 
 ```bash
