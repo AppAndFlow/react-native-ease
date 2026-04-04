@@ -167,16 +167,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Build smoke-test tvOS app with local package
+      - name: Build example for tvOS
         run: |
-          npx create-expo-app@latest tvos-smoke -e with-router-tv --yes
-          cd tvos-smoke
-          yarn add file:..
-          npm run prebuild:tv
-          xcodebuild \
-            -workspace ios/*.xcworkspace \
-            -scheme tvossmoke \
-            -configuration Debug \
-            -sdk appletvsimulator \
-            -destination 'generic/platform=tvOS Simulator' \
-            build
+          yarn workspace react-native-ease-example build:tvos

@@ -16,7 +16,8 @@
         {
           "root": "./app"
         }
-      ]
+      ],
+      "@react-native-tvos/config-tv"
     ],
     "web": {
       "bundler": "metro",
@@ -26,8 +27,10 @@
     "platforms": [
       "ios",
       "android",
+      "tvos",
       "web"
     ],
+    "isTV": false,
     "android": {
       "package": "com.janic.easeexample",
       "adaptiveIcon": {
