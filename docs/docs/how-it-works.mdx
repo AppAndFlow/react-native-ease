@@ -1,0 +1,19 @@
+---
+id: how-it-works
+title: How it works
+---
+
+`EaseView` is a native Fabric component. The JS side flattens your `animate` and `transition` props into flat native props. When those props change, the native view:
+
+1. **Diffs** previous vs new values to find what changed
+2. **Reads** the current in-flight value for smooth interruption
+3. **Creates** a platform-native animation from the current value to the new target
+4. **Sets** the final value immediately on the model layer
+
+On iOS, this uses `CABasicAnimation` and `CASpringAnimation` on `CALayer` key paths. On Android, this uses `ObjectAnimator` and `SpringAnimation` on `View` properties. No JS thread involvement during the animation.
+
+## Requirements
+
+- React Native 0.76+ (new architecture / Fabric)
+- iOS 15.1+
+- Android minSdk 24+

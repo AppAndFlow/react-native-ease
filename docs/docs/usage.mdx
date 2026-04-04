@@ -1,0 +1,225 @@
+---
+id: usage
+title: Usage
+---
+
+## Timing animations
+
+Timing animations transition from one value to another over a fixed duration with an easing curve.
+
+```tsx
+<EaseView
+  animate={{ opacity: isVisible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300, easing: 'easeOut' }}
+/>
+```
+
+| Parameter  | Type         | Default       | Description |
+| ---------- | ------------ | ------------- | ----------- |
+| `duration` | `number`     | `300`         | Duration in milliseconds |
+| `easing`   | `EasingType` | `'easeInOut'` | Easing curve or `[x1, y1, x2, y2]` cubic bezier |
+| `delay`    | `number`     | `0`           | Delay in milliseconds before the animation starts |
+| `loop`     | `string`     | —             | `'repeat'` restarts from the beginning, `'reverse'` alternates |
+
+Available easing curves:
+
+- `'linear'`
+- `'easeIn'`
+- `'easeOut'`
+- `'easeInOut'`
+- `[x1, y1, x2, y2]`
+
+## Custom easing
+
+```tsx
+<EaseView
+  animate={{ opacity: isVisible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300, easing: [0.4, 0, 0.2, 1] }}
+/>
+```
+
+```tsx
+<EaseView
+  animate={{ scale: active ? 1.2 : 1 }}
+  transition={{ type: 'timing', duration: 500, easing: [0.68, -0.55, 0.265, 1.55] }}
+/>
+```
+
+## Spring animations
+
+```tsx
+<EaseView
+  animate={{ translateX: isOpen ? 200 : 0 }}
+  transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+/>
+```
+
+| Parameter   | Type     | Default | Description |
+| ----------- | -------- | ------- | ----------- |
+| `damping`   | `number` | `15`    | Friction — higher values reduce oscillation |
+| `stiffness` | `number` | `120`   | Spring constant — higher values mean faster animation |
+| `mass`      | `number` | `1`     | Mass of the object — higher values mean slower, more momentum |
+| `delay`     | `number` | `0`     | Delay in milliseconds before the animation starts |
+
+## Disabling animations
+
+```tsx
+<EaseView
+  animate={{ opacity: isVisible ? 1 : 0 }}
+  transition={{ type: 'none' }}
+/>
+```
+
+## Per-property transitions
+
+```tsx
+<EaseView
+  animate={{ opacity: visible ? 1 : 0, translateY: visible ? 0 : 30 }}
+  transition={{
+    opacity: { type: 'timing', duration: 150, easing: 'easeOut' },
+    transform: { type: 'spring', damping: 12, stiffness: 200 },
+  }}
+/>
+```
+
+Available category keys:
+
+| Key               | Properties |
+| ----------------- | ---------- |
+| `default`         | Fallback for categories not explicitly listed |
+| `transform`       | translateX, translateY, scaleX, scaleY, rotate, rotateX, rotateY |
+| `opacity`         | opacity |
+| `borderRadius`    | borderRadius |
+| `backgroundColor` | backgroundColor |
+
+When no `default` key is provided, the library default (timing 300ms easeInOut) applies to all categories.
+
+> **Android note:** `backgroundColor` uses timing animation only. If a per-property map specifies `type: 'spring'` for `backgroundColor`, it falls back to timing 300ms.
+
+## Border radius
+
+```tsx
+<EaseView
+  animate={{ borderRadius: expanded ? 0 : 16 }}
+  transition={{ type: 'timing', duration: 300 }}
+  style={styles.card}
+>
+  <Image source={heroImage} style={styles.image} />
+  <Text>Content is clipped to rounded corners</Text>
+</EaseView>
+```
+
+When `borderRadius` is in `animate`, any `borderRadius` in `style` is automatically stripped to avoid conflicts.
+
+## Background color
+
+```tsx
+<EaseView
+  animate={{ backgroundColor: isActive ? '#3B82F6' : '#E5E7EB' }}
+  transition={{ type: 'timing', duration: 300 }}
+  style={styles.card}
+>
+  <Text>Tap to change color</Text>
+</EaseView>
+```
+
+On Android, background color uses timing animation only. On iOS, it supports both timing and spring transitions.
+
+## Animatable properties
+
+```tsx
+<EaseView
+  animate={{
+    opacity: 1,
+    translateX: 0,
+    translateY: 0,
+    scale: 1,
+    scaleX: 1,
+    scaleY: 1,
+    rotate: 0,
+    rotateX: 0,
+    rotateY: 0,
+    borderRadius: 0,
+    backgroundColor: 'transparent',
+  }}
+/>
+```
+
+`scale` is shorthand for `scaleX` and `scaleY`.
+
+## Looping animations
+
+```tsx
+<EaseView
+  initialAnimate={{ opacity: 0.3 }}
+  animate={{ opacity: 1 }}
+  transition={{ type: 'timing', duration: 1000, easing: 'easeInOut', loop: 'reverse' }}
+/>
+```
+
+Loop requires `initialAnimate` to define the starting value. Spring animations do not support looping.
+
+## Enter animations
+
+```tsx
+<EaseView
+  initialAnimate={{ opacity: 0, translateY: 20 }}
+  animate={{ opacity: 1, translateY: 0 }}
+  transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+/>
+```
+
+## Delay
+
+```tsx
+{items.map((item, i) => (
+  <EaseView
+    key={item.id}
+    initialAnimate={{ opacity: 0, translateY: 20 }}
+    animate={{ opacity: 1, translateY: 0 }}
+    transition={{ type: 'timing', duration: 300, delay: i * 100 }}
+  >
+    <Text>{item.label}</Text>
+  </EaseView>
+))}
+```
+
+## Interruption
+
+Animations are interruptible by default. Changing `animate` values mid-animation smoothly redirects to the new target.
+
+## Transform origin
+
+```tsx
+<EaseView
+  animate={{ rotate: isOpen ? 45 : 0 }}
+  transformOrigin={{ x: 0, y: 0 }}
+  transition={{ type: 'spring', damping: 12, stiffness: 200, mass: 1 }}
+  style={styles.card}
+/>
+```
+
+| Value                | Position |
+| -------------------- | -------- |
+| `{ x: 0, y: 0 }`     | Top-left |
+| `{ x: 0.5, y: 0.5 }` | Center (default) |
+| `{ x: 1, y: 1 }`     | Bottom-right |
+
+## Style handling
+
+If a property appears in both `style` and `animate`, the animated value takes priority and the style value is stripped.
+
+```tsx
+<EaseView
+  animate={{ translateY: moved ? -10 : 0 }}
+  transition={{ type: 'spring', damping: 15, stiffness: 120, mass: 1 }}
+  style={{
+    opacity: 0.9,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+  }}
+>
+  <Text>Notification card</Text>
+</EaseView>
+```

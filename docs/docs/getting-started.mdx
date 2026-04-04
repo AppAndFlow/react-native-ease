@@ -1,0 +1,115 @@
+---
+id: getting-started
+title: Getting started
+slug: /
+---
+
+![react-native-ease hero](https://github.com/user-attachments/assets/8006ed51-d373-4c97-9e80-9937eb9a569e)
+
+Lightweight declarative animations powered by platform APIs. Uses Core Animation on iOS and Animator on Android — zero JS overhead.
+
+## Installation
+
+```bash
+npm install react-native-ease
+# or
+yarn add react-native-ease
+```
+
+## Example
+
+```tsx
+import { EaseView } from 'react-native-ease';
+
+function FadeCard({ visible, children }) {
+  return (
+    <EaseView
+      animate={{ opacity: visible ? 1 : 0 }}
+      transition={{ type: 'timing', duration: 300 }}
+      style={styles.card}
+    >
+      {children}
+    </EaseView>
+  );
+}
+```
+
+`EaseView` works like a regular `View` — it accepts children, styles, and all standard view props. When values in `animate` change, it smoothly transitions to the new values using native platform animations.
+
+## Why Ease
+
+### Goals
+
+- **Fast** — Animations run entirely on native platform APIs (CAAnimation, ObjectAnimator/SpringAnimation). No JS animation loop, no worklets, no shared values.
+- **Simple** — CSS-transition-like API. Set target values, get smooth animations. One component, a few props.
+- **Lightweight** — Minimal native code, no C++ runtime, no custom animation engine. Just a thin declarative wrapper around what the OS already provides.
+- **Interruptible** — Changing values mid-animation smoothly redirects to the new target. No jumps.
+
+### Non-goals
+
+- **Complex gesture-driven animations** — If you need pan/pinch-driven animations, animation worklets, or shared values across components, use [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated).
+- **Layout animations** — Animating width/height/layout changes is not supported.
+- **Shared element transitions** — Use Reanimated or React Navigation's shared element transitions.
+- **Old architecture** — Fabric (new architecture) only.
+
+## When to use this vs Reanimated
+
+| Use case                               | Ease | Reanimated |
+| -------------------------------------- | ---- | ---------- |
+| Fade/slide/scale on state change       | ✅   |            |
+| Enter/exit animations                  | ✅   |            |
+| Gesture-driven animations (pan, pinch) |      | ✅         |
+| Layout animations (width, height)      |      | ✅         |
+| Complex interpolations & chaining      |      | ✅         |
+
+## Styling integrations
+
+### NativeWind support
+
+If you're using [NativeWind](https://www.nativewind.dev/) (v4+), add this import once in your app's entry point (for example `_layout.tsx` or `App.tsx`):
+
+```tsx
+import 'react-native-ease/nativewind';
+```
+
+This registers `EaseView` with NativeWind's `cssInterop` so `className` is properly converted to styles:
+
+```tsx
+<EaseView
+  className="flex-1 bg-white rounded-2xl p-4"
+  animate={{ opacity: visible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300 }}
+>
+  {children}
+</EaseView>
+```
+
+### Uniwind support
+
+If you're using [Uniwind](https://docs.uniwind.dev/), first follow the [Uniwind quickstart](https://docs.uniwind.dev/quickstart) to install and configure Uniwind in your app.
+
+Once Uniwind is set up, import `EaseView` from the Uniwind entry point:
+
+```tsx
+import { EaseView } from 'react-native-ease/uniwind';
+```
+
+```tsx
+<EaseView
+  className="flex-1 bg-white rounded-2xl p-4"
+  animate={{ opacity: visible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300 }}
+>
+  {children}
+</EaseView>
+```
+
+## Migration skill
+
+If you're already using `react-native-reanimated` or React Native's `Animated` API, this project includes an [Agent Skill](https://agentskills.io) that scans your codebase for animations that can be replaced with `react-native-ease` and migrates them automatically.
+
+```bash
+npx skills add appandflow/react-native-ease
+```
+
+Then invoke the skill in your agent (for example `/react-native-ease-refactor` in Claude Code).
