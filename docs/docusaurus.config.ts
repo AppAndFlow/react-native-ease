@@ -7,7 +7,7 @@ const config: Config = {
   tagline: 'Lightweight declarative animations powered by platform APIs',
   favicon: 'img/favicon.png',
   url: 'https://appandflow.github.io',
-  baseUrl: '/',
+  baseUrl: '/react-native-ease/',
   organizationName: 'AppAndFlow',
   projectName: 'react-native-ease',
   onBrokenLinks: 'throw',
