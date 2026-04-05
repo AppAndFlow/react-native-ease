@@ -171,8 +171,10 @@ jobs:
         run: yarn pack -o react-native-ease.tgz
 
       - name: Create tvOS smoke test app
+        env:
+          CI: '1'
         run: |
-          npx create-expo-app@latest tvos-smoke -e with-router-tv --yes
+          npx create-expo-app@latest tvos-smoke --template with-router-tv --yes
           cd tvos-smoke
           yarn add file:../react-native-ease.tgz
 
