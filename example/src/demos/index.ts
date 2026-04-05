@@ -22,6 +22,7 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { SpinDemo } from './SpinDemo';
 import { UniwindDemo } from './uniwind/UniwindDemo';
 
 interface DemoEntry {
@@ -75,6 +76,7 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Uniwind',
     section: 'Style',
   },
+  'spin': { component: SpinDemo, title: 'Spin', section: 'Loop' },
   'pulse': { component: PulseDemo, title: 'Pulse', section: 'Loop' },
   'banner': { component: BannerDemo, title: 'Banner', section: 'Loop' },
   'interrupt': {

@@ -19,6 +19,13 @@ using namespace facebook::react;
 // Animation key constants
 static NSString *const kAnimKeyOpacity = @"ease_opacity";
 static NSString *const kAnimKeyTransform = @"ease_transform";
+static NSString *const kAnimKeyTransformRotateZ = @"ease_transform_rotZ";
+static NSString *const kAnimKeyTransformRotateX = @"ease_transform_rotX";
+static NSString *const kAnimKeyTransformRotateY = @"ease_transform_rotY";
+static NSString *const kAnimKeyTransformScaleX = @"ease_transform_scX";
+static NSString *const kAnimKeyTransformScaleY = @"ease_transform_scY";
+static NSString *const kAnimKeyTransformTransX = @"ease_transform_trX";
+static NSString *const kAnimKeyTransformTransY = @"ease_transform_trY";
 static NSString *const kAnimKeyCornerRadius = @"ease_cornerRadius";
 static NSString *const kAnimKeyBackgroundColor = @"ease_backgroundColor";
 
@@ -373,7 +380,10 @@ static std::string lowestTransformPropertyName(int mask) {
       }
     }
     if (hasInitialTransform) {
-      // Build mask of which transform sub-properties actually changed
+      // Build bitmask of which transform sub-properties differ between initial
+      // and target. Comparing raw prop values (not composed matrices) so that
+      // e.g. rotate 0→360 is correctly detected as a change even though the
+      // resulting CATransform3D matrices are identical.
       int changedInitTransform = 0;
       if (viewProps.initialAnimateTranslateX != viewProps.animateTranslateX)
         changedInitTransform |= kMaskTranslateX;
@@ -395,12 +405,71 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty(transformName, viewProps);
       self.layer.transform = targetT;
       if (transformConfig.type != "none") {
-        [self applyAnimationForKeyPath:@"transform"
-                          animationKey:kAnimKeyTransform
-                             fromValue:[NSValue valueWithCATransform3D:initialT]
-                               toValue:[NSValue valueWithCATransform3D:targetT]
-                                config:transformConfig
-                                  loop:YES];
+        // Animate each changed sub-property individually using key paths.
+        // This avoids matrix interpolation which fails for cases like
+        // rotate 0→360 (identical matrices, but visually a full rotation).
+        if (changedInitTransform & kMaskTranslateX) {
+          [self applyAnimationForKeyPath:@"transform.translation.x"
+                            animationKey:kAnimKeyTransformTransX
+                               fromValue:@(viewProps.initialAnimateTranslateX)
+                                 toValue:@(viewProps.animateTranslateX)
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskTranslateY) {
+          [self applyAnimationForKeyPath:@"transform.translation.y"
+                            animationKey:kAnimKeyTransformTransY
+                               fromValue:@(viewProps.initialAnimateTranslateY)
+                                 toValue:@(viewProps.animateTranslateY)
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskScaleX) {
+          [self applyAnimationForKeyPath:@"transform.scale.x"
+                            animationKey:kAnimKeyTransformScaleX
+                               fromValue:@(viewProps.initialAnimateScaleX)
+                                 toValue:@(viewProps.animateScaleX)
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskScaleY) {
+          [self applyAnimationForKeyPath:@"transform.scale.y"
+                            animationKey:kAnimKeyTransformScaleY
+                               fromValue:@(viewProps.initialAnimateScaleY)
+                                 toValue:@(viewProps.animateScaleY)
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskRotate) {
+          [self applyAnimationForKeyPath:@"transform.rotation.z"
+                            animationKey:kAnimKeyTransformRotateZ
+                               fromValue:@(degreesToRadians(
+                                             viewProps.initialAnimateRotate))
+                                 toValue:@(degreesToRadians(
+                                             viewProps.animateRotate))
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskRotateX) {
+          [self applyAnimationForKeyPath:@"transform.rotation.x"
+                            animationKey:kAnimKeyTransformRotateX
+                               fromValue:@(degreesToRadians(
+                                             viewProps.initialAnimateRotateX))
+                                 toValue:@(degreesToRadians(
+                                             viewProps.animateRotateX))
+                                  config:transformConfig
+                                    loop:YES];
+        }
+        if (changedInitTransform & kMaskRotateY) {
+          [self applyAnimationForKeyPath:@"transform.rotation.y"
+                            animationKey:kAnimKeyTransformRotateY
+                               fromValue:@(degreesToRadians(
+                                             viewProps.initialAnimateRotateY))
+                                 toValue:@(degreesToRadians(
+                                             viewProps.animateRotateY))
+                                  config:transformConfig
+                                    loop:YES];
+        }
       }
     }
     if (hasInitialBorderRadius) {

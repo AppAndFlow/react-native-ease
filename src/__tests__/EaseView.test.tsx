@@ -624,4 +624,53 @@ describe('EaseView', () => {
       expect(t.transform!.stiffness).toBe(100);
     });
   });
+
+  describe('rotate loop props', () => {
+    it('passes rotate 0→360 with loop repeat to native', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ rotate: 0 }}
+          animate={{ rotate: 360 }}
+          transition={{
+            type: 'timing',
+            duration: 1000,
+            easing: 'linear',
+            loop: 'repeat',
+          }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateRotate).toBe(0);
+      expect(props.animateRotate).toBe(360);
+      expect(props.transitions.defaultConfig.loop).toBe('repeat');
+      // rotate bit = 1<<5 = 32
+      // eslint-disable-next-line no-bitwise
+      expect(props.animatedProperties & 32).toBe(32);
+    });
+
+    it('passes rotate with scale for combined loop animation', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ rotate: 0, scale: 0.8 }}
+          animate={{ rotate: 360, scale: 1.2 }}
+          transition={{
+            type: 'timing',
+            duration: 1500,
+            easing: 'easeInOut',
+            loop: 'reverse',
+          }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateRotate).toBe(0);
+      expect(props.animateRotate).toBe(360);
+      expect(props.initialAnimateScaleX).toBe(0.8);
+      expect(props.initialAnimateScaleY).toBe(0.8);
+      expect(props.animateScaleX).toBe(1.2);
+      expect(props.animateScaleY).toBe(1.2);
+      expect(props.transitions.defaultConfig.loop).toBe('reverse');
+    });
+  });
 });
