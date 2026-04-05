@@ -42,7 +42,7 @@ echo "Installing local tarball"
 npm install "$TARBALL_PATH"
 
 APP_JSON_PATH="$PROJECT_DIR/app.json"
-node <<'NODE'
+APP_JSON_PATH="$APP_JSON_PATH" node <<'NODE'
 const fs = require('fs');
 const path = process.env.APP_JSON_PATH;
 const json = JSON.parse(fs.readFileSync(path, 'utf8'));
