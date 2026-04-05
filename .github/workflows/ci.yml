@@ -167,29 +167,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Pack library
-        run: yarn pack -o react-native-ease.tgz
-
-      - name: Create tvOS smoke test app
-        env:
-          CI: '1'
+      - name: Run tvOS Expo integration build
         run: |
-          npx create-expo-app@latest tvos-smoke --template with-router-tv --yes
-          cd tvos-smoke
-          yarn add file:../react-native-ease.tgz
-
-      - name: Prebuild tvOS app
-        working-directory: tvos-smoke
-        run: |
-          npm run prebuild:tv
-
-      - name: Build Apple TV simulator app
-        working-directory: tvos-smoke
-        run: |
-          xcodebuild \
-            -workspace ios/*.xcworkspace \
-            -scheme tvossmoke \
-            -configuration Debug \
-            -sdk appletvsimulator \
-            -destination 'generic/platform=tvOS Simulator' \
-            build
+          bash ./scripts/test-expo-tv-project.sh
