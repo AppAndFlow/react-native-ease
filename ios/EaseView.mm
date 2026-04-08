@@ -35,13 +35,14 @@ static inline CGFloat degreesToRadians(CGFloat degrees) {
 
 // Compose a full CATransform3D from individual animate values.
 // Order: Scale → RotateY → RotateX → RotateZ → Translate.
-// Perspective (m34) is always included — invisible when no 3D rotation.
+// Default perspective (1280) matches React Native's default.
+// https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/uimanager/BaseViewManager.java#L624
 static CATransform3D composeTransform(CGFloat scaleX, CGFloat scaleY,
                                       CGFloat translateX, CGFloat translateY,
                                       CGFloat rotateZ, CGFloat rotateX,
-                                      CGFloat rotateY) {
+                                      CGFloat rotateY, CGFloat perspective) {
   CATransform3D t = CATransform3DIdentity;
-  t.m34 = -1.0 / 850.0;
+  t.m34 = -1.0 / perspective;
   t = CATransform3DTranslate(t, translateX, translateY, 0);
   t = CATransform3DRotate(t, rotateZ, 0, 0, 1);
   t = CATransform3DRotate(t, rotateX, 1, 0, 0);
@@ -159,6 +160,7 @@ static std::string lowestTransformPropertyName(int mask) {
   BOOL _anyInterrupted;
   CGFloat _transformOriginX;
   CGFloat _transformOriginY;
+  CGFloat _transformPerspective;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -170,6 +172,7 @@ static std::string lowestTransformPropertyName(int mask) {
     static const auto defaultProps = std::make_shared<const EaseViewProps>();
     _props = defaultProps;
     _isFirstMount = YES;
+    _transformPerspective = 1280.0;
     _hasPendingFirstMountUpdate = NO;
     _transformOriginX = 0.5;
     _transformOriginY = 0.5;
@@ -294,17 +297,18 @@ static std::string lowestTransformPropertyName(int mask) {
   return composeTransform(
       p.animateScaleX, p.animateScaleY, p.animateTranslateX,
       p.animateTranslateY, degreesToRadians(p.animateRotate),
-      degreesToRadians(p.animateRotateX), degreesToRadians(p.animateRotateY));
+      degreesToRadians(p.animateRotateX), degreesToRadians(p.animateRotateY),
+      _transformPerspective);
 }
 
 /// Compose a CATransform3D from EaseViewProps initial values.
 - (CATransform3D)initialTransformFromProps:(const EaseViewProps &)p {
-  return composeTransform(p.initialAnimateScaleX, p.initialAnimateScaleY,
-                          p.initialAnimateTranslateX,
-                          p.initialAnimateTranslateY,
-                          degreesToRadians(p.initialAnimateRotate),
-                          degreesToRadians(p.initialAnimateRotateX),
-                          degreesToRadians(p.initialAnimateRotateY));
+  return composeTransform(
+      p.initialAnimateScaleX, p.initialAnimateScaleY,
+      p.initialAnimateTranslateX, p.initialAnimateTranslateY,
+      degreesToRadians(p.initialAnimateRotate),
+      degreesToRadians(p.initialAnimateRotateX),
+      degreesToRadians(p.initialAnimateRotateY), _transformPerspective);
 }
 
 - (void)beginAnimationBatch {
@@ -372,7 +376,7 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskOpacity)
       self.layer.opacity = viewProps.initialAnimateOpacity;
     if (hasTransform)
-      self.layer.transform = initialT;
+      self.layer.transform = [self initialTransformFromProps:viewProps];
     if (mask & kMaskBorderRadius) {
       self.layer.cornerRadius = viewProps.initialAnimateBorderRadius;
       self.layer.masksToBounds = viewProps.initialAnimateBorderRadius > 0 ||
@@ -402,7 +406,7 @@ static std::string lowestTransformPropertyName(int mask) {
           lowestTransformPropertyName(changedInitTransform);
       EaseTransitionConfig transformConfig =
           transitionConfigForProperty(transformName, viewProps);
-      self.layer.transform = targetT;
+      self.layer.transform = [self targetTransformFromProps:viewProps];
       if (transformConfig.type != "none") {
         // Animate each changed sub-property individually using key paths.
         // This avoids matrix interpolation which fails for cases like
@@ -518,7 +522,7 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskOpacity)
       self.layer.opacity = viewProps.animateOpacity;
     if (hasTransform)
-      self.layer.transform = targetT;
+      self.layer.transform = [self targetTransformFromProps:viewProps];
     if (mask & kMaskBorderRadius) {
       self.layer.cornerRadius = viewProps.animateBorderRadius;
       self.layer.masksToBounds = viewProps.animateBorderRadius > 0;
@@ -567,6 +571,10 @@ static std::string lowestTransformPropertyName(int mask) {
     _transformOriginX = newViewProps.transformOriginX;
     _transformOriginY = newViewProps.transformOriginY;
     [self updateAnchorPoint];
+  }
+
+  if (_transformPerspective != newViewProps.transformPerspective) {
+    _transformPerspective = newViewProps.transformPerspective;
   }
 
   // Bitmask: which properties are animated. Non-animated = let style handle.
@@ -673,15 +681,99 @@ static std::string lowestTransformPropertyName(int mask) {
           self.layer.transform = [self targetTransformFromProps:newViewProps];
           [self.layer removeAnimationForKey:kAnimKeyTransform];
         } else {
-          CATransform3D fromT = [self presentationTransform];
-          CATransform3D toT = [self targetTransformFromProps:newViewProps];
-          self.layer.transform = toT;
-          [self applyAnimationForKeyPath:@"transform"
-                            animationKey:kAnimKeyTransform
-                               fromValue:[NSValue valueWithCATransform3D:fromT]
-                                 toValue:[NSValue valueWithCATransform3D:toT]
-                                  config:transformConfig
-                                    loop:NO];
+          // Read "from" values from the presentation layer BEFORE setting
+          // the new model transform. During an active animation, CA tracks
+          // key-path values correctly. After completion, the model matrix
+          // with m34 can't be reliably decomposed, so fall back to old props.
+          BOOL isAnimating =
+              [self.layer animationForKey:kAnimKeyTransformRotateY] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformRotateX] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformRotateZ] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformTransX] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformTransY] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformScaleX] != nil ||
+              [self.layer animationForKey:kAnimKeyTransformScaleY] != nil;
+          CGFloat fromTX, fromTY, fromSX, fromSY, fromR, fromRX, fromRY;
+          if (isAnimating) {
+            CALayer *pl = self.layer.presentationLayer ?: self.layer;
+            fromTX =
+                [[pl valueForKeyPath:@"transform.translation.x"] floatValue];
+            fromTY =
+                [[pl valueForKeyPath:@"transform.translation.y"] floatValue];
+            fromSX = [[pl valueForKeyPath:@"transform.scale.x"] floatValue];
+            fromSY = [[pl valueForKeyPath:@"transform.scale.y"] floatValue];
+            fromR = [[pl valueForKeyPath:@"transform.rotation"] floatValue];
+            fromRX = [[pl valueForKeyPath:@"transform.rotation.x"] floatValue];
+            fromRY = [[pl valueForKeyPath:@"transform.rotation.y"] floatValue];
+          } else {
+            fromTX = oldViewProps.animateTranslateX;
+            fromTY = oldViewProps.animateTranslateY;
+            fromSX = oldViewProps.animateScaleX;
+            fromSY = oldViewProps.animateScaleY;
+            fromR = degreesToRadians(oldViewProps.animateRotate);
+            fromRX = degreesToRadians(oldViewProps.animateRotateX);
+            fromRY = degreesToRadians(oldViewProps.animateRotateY);
+          }
+          self.layer.transform = [self targetTransformFromProps:newViewProps];
+          if (changedTransformMask & kMaskTranslateX) {
+            [self applyAnimationForKeyPath:@"transform.translation.x"
+                              animationKey:kAnimKeyTransformTransX
+                                 fromValue:@(fromTX)
+                                   toValue:@(newViewProps.animateTranslateX)
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskTranslateY) {
+            [self applyAnimationForKeyPath:@"transform.translation.y"
+                              animationKey:kAnimKeyTransformTransY
+                                 fromValue:@(fromTY)
+                                   toValue:@(newViewProps.animateTranslateY)
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskScaleX) {
+            [self applyAnimationForKeyPath:@"transform.scale.x"
+                              animationKey:kAnimKeyTransformScaleX
+                                 fromValue:@(fromSX)
+                                   toValue:@(newViewProps.animateScaleX)
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskScaleY) {
+            [self applyAnimationForKeyPath:@"transform.scale.y"
+                              animationKey:kAnimKeyTransformScaleY
+                                 fromValue:@(fromSY)
+                                   toValue:@(newViewProps.animateScaleY)
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskRotate) {
+            [self applyAnimationForKeyPath:@"transform.rotation.z"
+                              animationKey:kAnimKeyTransformRotateZ
+                                 fromValue:@(fromR)
+                                   toValue:@(degreesToRadians(
+                                               newViewProps.animateRotate))
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskRotateX) {
+            [self applyAnimationForKeyPath:@"transform.rotation.x"
+                              animationKey:kAnimKeyTransformRotateX
+                                 fromValue:@(fromRX)
+                                   toValue:@(degreesToRadians(
+                                               newViewProps.animateRotateX))
+                                    config:transformConfig
+                                      loop:NO];
+          }
+          if (changedTransformMask & kMaskRotateY) {
+            [self applyAnimationForKeyPath:@"transform.rotation.y"
+                              animationKey:kAnimKeyTransformRotateY
+                                 fromValue:@(fromRY)
+                                   toValue:@(degreesToRadians(
+                                               newViewProps.animateRotateY))
+                                    config:transformConfig
+                                      loop:NO];
+          }
         }
       }
     }
@@ -818,6 +910,7 @@ static std::string lowestTransformPropertyName(int mask) {
   _anyInterrupted = NO;
   _transformOriginX = 0.5;
   _transformOriginY = 0.5;
+  _transformPerspective = 1280.0;
   self.layer.anchorPoint = CGPointMake(0.5, 0.5);
   self.layer.opacity = 1.0;
   self.layer.transform = CATransform3DIdentity;

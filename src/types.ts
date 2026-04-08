@@ -79,6 +79,17 @@ export type TransformOrigin = {
   y?: number;
 };
 
+/**
+ * Distance of the camera from the z=0 plane for 3D transforms (rotateX, rotateY).
+ * Higher values produce a flatter, more telephoto look; lower values exaggerate
+ * perspective. @default 1280 (matches React Native default)
+ *
+ * **iOS note:** On iOS, the parent view must not be flattened by Fabric for
+ * perspective to render correctly. Ensure the parent has `collapsable={false}`
+ * or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+ */
+export type TransformPerspective = number;
+
 /** Animatable view properties. Unspecified properties default to their identity values. */
 export type AnimateProps = {
   /** View opacity (0–1). @default 1 */
