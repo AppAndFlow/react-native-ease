@@ -66,6 +66,9 @@ export interface NativeProps extends ViewProps {
   transformOriginX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
   transformOriginY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
 
+  // 3D perspective distance (default 1280, matches RN default)
+  transformPerspective?: CodegenTypes.WithDefault<CodegenTypes.Float, 1280.0>;
+
   // Events
   onTransitionEnd?: CodegenTypes.DirectEventHandler<
     Readonly<{ finished: boolean }>

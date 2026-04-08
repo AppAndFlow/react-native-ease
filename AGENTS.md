@@ -54,6 +54,11 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 7. Add tests and update README
 8. Add an example/demo in the example app (`example/src/App.tsx` or a new screen)
 
+**Important:** When adding or changing props/features, also update:
+- `README.md` (props table + usage section)
+- `docs/docs/usage.mdx` (usage guide)
+- `docs/docs/api-reference.mdx` (API reference table)
+
 ## Development Commands
 
 ```sh

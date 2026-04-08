@@ -205,6 +205,25 @@ Animations are interruptible by default. Changing `animate` values mid-animation
 | `{ x: 0.5, y: 0.5 }` | Center (default) |
 | `{ x: 1, y: 1 }`     | Bottom-right |
 
+## Transform perspective
+
+Control the 3D perspective depth for `rotateX` and `rotateY` animations. Lower values create a more dramatic 3D effect; higher values look flatter.
+
+```tsx
+<EaseView
+  animate={{ rotateY: flipped ? 180 : 0 }}
+  transformPerspective={800}
+  transition={{ type: 'timing', duration: 600, easing: 'easeInOut' }}
+  style={styles.card}
+/>
+```
+
+Default is `1280`, matching React Native's default perspective.
+
+:::note[iOS]
+On iOS, the parent view must not be flattened by Fabric for perspective to render correctly. Ensure the parent has `collapsable={false}` or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+:::
+
 ## Style handling
 
 If a property appears in both `style` and `animate`, the animated value takes priority and the style value is stripped.

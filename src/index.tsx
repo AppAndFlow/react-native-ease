@@ -12,4 +12,5 @@ export type {
   EasingType,
   TransitionEndEvent,
   TransformOrigin,
+  TransformPerspective,
 } from './types';

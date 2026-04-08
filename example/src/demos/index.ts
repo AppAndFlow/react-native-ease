@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { BackgroundColorDemo } from './BackgroundColorDemo';
 import { BenchmarkDemo } from './BenchmarkDemo';
 import { BannerDemo } from './BannerDemo';
+import { CardFlipDemo } from './CardFlipDemo';
 import { BorderRadiusDemo } from './BorderRadiusDemo';
 import { ButtonDemo } from './ButtonDemo';
 import { CombinedDemo } from './CombinedDemo';
@@ -39,6 +40,11 @@ export const demos: Record<string, DemoEntry> = {
   'exit': { component: ExitDemo, title: 'Exit', section: 'Basic' },
   'rotate': { component: RotateDemo, title: 'Rotate', section: 'Transform' },
   'scale': { component: ScaleDemo, title: 'Scale', section: 'Transform' },
+  'card-flip': {
+    component: CardFlipDemo,
+    title: 'Card Flip',
+    section: 'Transform',
+  },
   'transform-origin': {
     component: TransformOriginDemo,
     title: 'Transform Origin',

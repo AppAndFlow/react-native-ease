@@ -172,6 +172,13 @@ class EaseViewManager : ReactViewManager() {
         view.transformOriginY = value
     }
 
+    // --- Transform perspective ---
+
+    @ReactProp(name = "transformPerspective", defaultFloat = 1280f)
+    fun setTransformPerspective(view: EaseView, value: Float) {
+        view.transformPerspective = value
+    }
+
     // --- Lifecycle ---
 
     override fun onAfterUpdateTransaction(view: ReactViewGroup) {

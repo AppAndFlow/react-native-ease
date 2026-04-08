@@ -426,6 +426,23 @@ By default, scale and rotation animate from the view's center. Use `transformOri
 | `{ x: 0.5, y: 0.5 }` | Center (default) |
 | `{ x: 1, y: 1 }`     | Bottom-right     |
 
+### Transform Perspective
+
+Control the 3D perspective depth for `rotateX` and `rotateY` animations. Lower values create a more dramatic 3D effect; higher values look flatter.
+
+```tsx
+<EaseView
+  animate={{ rotateY: flipped ? 180 : 0 }}
+  transformPerspective={800}
+  transition={{ type: 'timing', duration: 600, easing: 'easeInOut' }}
+  style={styles.card}
+/>
+```
+
+Default is `1280`, matching React Native's default perspective.
+
+> **iOS note:** On iOS, the parent view must not be flattened by Fabric for perspective to render correctly. Ensure the parent has `collapsable={false}` or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+
 ### Style Handling
 
 `EaseView` accepts all standard `ViewStyle` properties. If a property appears in both `style` and `animate`, the animated value takes priority and the style value is stripped. A dev warning is logged when this happens.
@@ -465,6 +482,7 @@ A `View` that animates property changes using native platform APIs.
 | `transition`       | `Transition`                 | Animation configuration — a single config (timing, spring, or none) or a [per-property map](#per-property-transitions)        |
 | `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }`                                                             |
 | `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center)                                      |
+| `transformPerspective` | `number`                 | Camera distance for 3D transforms (`rotateX`, `rotateY`). See [Transform Perspective](#transform-perspective). Default: `1280` |
 | `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
 | `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string. Requires NativeWind or Uniwind in your project.                            |
 | `style`            | `ViewStyle`                  | Non-animated styles (layout, colors, borders, etc.)                                                                          |

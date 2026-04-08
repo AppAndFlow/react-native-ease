@@ -7,6 +7,7 @@ import type {
   Transition,
   TransitionEndEvent,
   TransformOrigin,
+  TransformPerspective,
 } from './types';
 
 /** Identity values used as defaults for animate/initialAnimate. */
@@ -196,6 +197,18 @@ export type EaseViewProps = ViewProps & {
   useHardwareLayer?: boolean;
   /** Pivot point for scale and rotation as 0–1 fractions. @default { x: 0.5, y: 0.5 } (center) */
   transformOrigin?: TransformOrigin;
+  /**
+   * Distance of the camera from the z=0 plane for 3D transforms (rotateX,
+   * rotateY). Higher values produce a flatter look; lower values exaggerate
+   * perspective.
+   *
+   * **iOS note:** On iOS, the parent view must not be flattened by Fabric for
+   * perspective to render correctly. Ensure the parent has `collapsable={false}`
+   * or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+   *
+   * @default 1280
+   */
+  transformPerspective?: TransformPerspective;
   /** NativeWind / Uniwind / Tailwind CSS class string. Requires a compatible className interop in your project. */
   className?: string;
 };
@@ -207,6 +220,7 @@ export function EaseView({
   onTransitionEnd,
   useHardwareLayer = false,
   transformOrigin,
+  transformPerspective,
   style,
   ...rest
 }: EaseViewProps) {
@@ -328,6 +342,7 @@ export function EaseView({
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}
       transformOriginY={transformOrigin?.y ?? 0.5}
+      transformPerspective={transformPerspective ?? 1280}
       {...rest}
     />
   );

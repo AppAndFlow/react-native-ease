@@ -14,6 +14,7 @@ A `View` that animates property changes using native platform APIs.
 | `transition`       | `Transition`                 | Single config or per-property map |
 | `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }` |
 | `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions |
+| `transformPerspective` | `number`                 | Camera distance for 3D transforms (`rotateX`, `rotateY`). Default: `1280` |
 | `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations |
 | `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string |
 | `style`            | `ViewStyle`                  | Non-animated styles |

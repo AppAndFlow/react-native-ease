@@ -17,6 +17,10 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.views.view.ReactViewGroup
 import kotlin.math.sqrt
 
+// Matches React Native's camera distance normalization.
+// https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/uimanager/BaseViewManager.java#L58
+private val CAMERA_DISTANCE_NORMALIZATION_MULTIPLIER = sqrt(5.0).toFloat()
+
 class EaseView(context: Context) : ReactViewGroup(context) {
 
     // --- Previous animate values (for change detection) ---
@@ -194,9 +198,22 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     // --- Animated properties bitmask (set by ViewManager) ---
     var animatedProperties: Int = 0
 
+    // --- Transform perspective (camera distance for 3D rotations) ---
+    var transformPerspective: Float = 1280f
+        set(value) {
+            field = value
+            applyCameraDistance(value)
+        }
+
+    private fun applyCameraDistance(perspective: Float) {
+        // Match React Native's conversion from CSS perspective to Android cameraDistance.
+        // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/uimanager/BaseViewManager.java#L626-L637
+        val density = resources.displayMetrics.density
+        cameraDistance = density * density * perspective * CAMERA_DISTANCE_NORMALIZATION_MULTIPLIER
+    }
+
     init {
-        // Set camera distance for 3D perspective rotations (rotateX/rotateY)
-        cameraDistance = resources.displayMetrics.density * 850f
+        applyCameraDistance(1280f)
 
         // ViewOutlineProvider reads _borderRadius dynamically — set once, invalidated on each frame.
         outlineProvider = object : ViewOutlineProvider() {
@@ -344,6 +361,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_ROTATE_Y != 0) this.rotationY = rotateY
                 if (mask and MASK_BORDER_RADIUS != 0) setAnimateBorderRadius(borderRadius)
                 if (mask and MASK_BACKGROUND_COLOR != 0) applyBackgroundColor(backgroundColor)
+            }
+
+            // Update backface visibility after setting initial rotation values.
+            // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt#L967-L985
+            if (mask and (MASK_ROTATE or MASK_ROTATE_X or MASK_ROTATE_Y) != 0) {
+                setBackfaceVisibilityDependantOpacity()
             }
         } else if (allTransitionsNone()) {
             // No transition (scalar) — set values immediately, cancel running animations
@@ -613,12 +636,19 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         }
     }
 
+    // React Native's backfaceVisibility on Android checks rotationX/rotationY and sets alpha=0
+    // when the back face is showing. We must call setBackfaceVisibilityDependantOpacity() during
+    // rotation animations so the check runs each frame.
+    // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt#L967-L985
+    private val isRotationProperty = setOf("rotation", "rotationX", "rotationY")
+
     private fun animateTiming(propertyName: String, fromValue: Float, toValue: Float, config: TransitionConfig, loop: Boolean = false) {
         cancelSpringForProperty(propertyName)
         runningAnimators[propertyName]?.cancel()
 
         val batchId = animationBatchId
         pendingBatchAnimationCount++
+        val needsBackfaceUpdate = propertyName in isRotationProperty
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
             duration = config.duration.toLong()
@@ -635,6 +665,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 } else {
                     ObjectAnimator.RESTART
                 }
+            }
+            if (needsBackfaceUpdate) {
+                addUpdateListener { this@EaseView.setBackfaceVisibilityDependantOpacity() }
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false
@@ -675,6 +708,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val batchId = animationBatchId
         pendingBatchAnimationCount++
 
+        val needsBackfaceUpdate = viewProperty == DynamicAnimation.ROTATION ||
+            viewProperty == DynamicAnimation.ROTATION_X ||
+            viewProperty == DynamicAnimation.ROTATION_Y
+
         val dampingRatio = (config.damping / (2.0f * sqrt(config.stiffness * config.mass)))
             .coerceAtLeast(0.01f)
 
@@ -687,6 +724,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 // First update — enable hardware layer
                 if (activeAnimationCount == 0) {
                     this@EaseView.onEaseAnimationStart()
+                }
+                if (needsBackfaceUpdate) {
+                    this@EaseView.setBackfaceVisibilityDependantOpacity()
                 }
             }
             addEndListener { _, canceled, _, _ ->
@@ -809,6 +849,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         setAnimateBorderRadius(0f)
         applyBackgroundColor(Color.TRANSPARENT)
 
+        transformPerspective = 1280f
         isFirstMount = true
         transitionConfigs = emptyMap()
     }
