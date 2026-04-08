@@ -14,7 +14,7 @@ export function CardFlipDemo() {
         <EaseView
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ type: 'timing', duration: 600, easing: 'easeInOut' }}
-          transformPerspective={1200}
+          transformPerspective={800}
           style={[styles.card, styles.front]}
         >
           <Text style={styles.emoji}>{'  '}</Text>
@@ -25,7 +25,7 @@ export function CardFlipDemo() {
         <EaseView
           animate={{ rotateY: flipped ? 0 : -180 }}
           transition={{ type: 'timing', duration: 600, easing: 'easeInOut' }}
-          transformPerspective={1200}
+          transformPerspective={800}
           style={[styles.card, styles.back]}
         >
           <Text style={styles.emoji}>{'  '}</Text>
