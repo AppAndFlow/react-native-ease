@@ -341,11 +341,29 @@ static std::string lowestTransformPropertyName(int mask) {
   BOOL hasInitialTransform = NO;
   CATransform3D initialT = CATransform3DIdentity;
   CATransform3D targetT = CATransform3DIdentity;
+  int changedInitTransform = 0;
 
   if (hasTransform) {
     initialT = [self initialTransformFromProps:viewProps];
     targetT = [self targetTransformFromProps:viewProps];
-    hasInitialTransform = !CATransform3DEqualToTransform(initialT, targetT);
+    // Compare raw prop values (not composed matrices) so that e.g.
+    // rotate 0→360 is correctly detected as a change even though the
+    // resulting CATransform3D matrices are identical.
+    if (viewProps.initialAnimateTranslateX != viewProps.animateTranslateX)
+      changedInitTransform |= kMaskTranslateX;
+    if (viewProps.initialAnimateTranslateY != viewProps.animateTranslateY)
+      changedInitTransform |= kMaskTranslateY;
+    if (viewProps.initialAnimateScaleX != viewProps.animateScaleX)
+      changedInitTransform |= kMaskScaleX;
+    if (viewProps.initialAnimateScaleY != viewProps.animateScaleY)
+      changedInitTransform |= kMaskScaleY;
+    if (viewProps.initialAnimateRotate != viewProps.animateRotate)
+      changedInitTransform |= kMaskRotate;
+    if (viewProps.initialAnimateRotateX != viewProps.animateRotateX)
+      changedInitTransform |= kMaskRotateX;
+    if (viewProps.initialAnimateRotateY != viewProps.animateRotateY)
+      changedInitTransform |= kMaskRotateY;
+    hasInitialTransform = changedInitTransform != 0;
   }
 
   if (hasInitialOpacity || hasInitialTransform || hasInitialBorderRadius ||
@@ -380,25 +398,6 @@ static std::string lowestTransformPropertyName(int mask) {
       }
     }
     if (hasInitialTransform) {
-      // Build bitmask of which transform sub-properties differ between initial
-      // and target. Comparing raw prop values (not composed matrices) so that
-      // e.g. rotate 0→360 is correctly detected as a change even though the
-      // resulting CATransform3D matrices are identical.
-      int changedInitTransform = 0;
-      if (viewProps.initialAnimateTranslateX != viewProps.animateTranslateX)
-        changedInitTransform |= kMaskTranslateX;
-      if (viewProps.initialAnimateTranslateY != viewProps.animateTranslateY)
-        changedInitTransform |= kMaskTranslateY;
-      if (viewProps.initialAnimateScaleX != viewProps.animateScaleX)
-        changedInitTransform |= kMaskScaleX;
-      if (viewProps.initialAnimateScaleY != viewProps.animateScaleY)
-        changedInitTransform |= kMaskScaleY;
-      if (viewProps.initialAnimateRotate != viewProps.animateRotate)
-        changedInitTransform |= kMaskRotate;
-      if (viewProps.initialAnimateRotateX != viewProps.animateRotateX)
-        changedInitTransform |= kMaskRotateX;
-      if (viewProps.initialAnimateRotateY != viewProps.animateRotateY)
-        changedInitTransform |= kMaskRotateY;
       std::string transformName =
           lowestTransformPropertyName(changedInitTransform);
       EaseTransitionConfig transformConfig =
