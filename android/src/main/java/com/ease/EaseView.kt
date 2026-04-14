@@ -707,9 +707,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 repeatMode = if (config.loop == "reverse") ValueAnimator.REVERSE else ValueAnimator.RESTART
             }
             addUpdateListener { animation ->
-                val color = animation.animatedValue as Int
-                this@EaseView.currentBorderColor = color
-                BackgroundStyleApplicator.setBorderColor(this@EaseView, LogicalEdge.ALL, color)
+                this@EaseView.applyBorderColor(animation.animatedValue as Int)
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false
