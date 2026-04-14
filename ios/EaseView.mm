@@ -428,8 +428,6 @@ static std::string lowestTransformPropertyName(int mask) {
       self.layer.transform = [self initialTransformFromProps:viewProps];
     if (mask & kMaskBorderRadius) {
       self.layer.cornerRadius = viewProps.initialAnimateBorderRadius;
-      self.layer.masksToBounds = viewProps.initialAnimateBorderRadius > 0 ||
-                                 viewProps.animateBorderRadius > 0;
     }
     if (mask & kMaskBackgroundColor)
       self.layer.backgroundColor =
@@ -683,10 +681,8 @@ static std::string lowestTransformPropertyName(int mask) {
       self.layer.opacity = viewProps.animateOpacity;
     if (hasTransform)
       self.layer.transform = [self targetTransformFromProps:viewProps];
-    if (mask & kMaskBorderRadius) {
+    if (mask & kMaskBorderRadius)
       self.layer.cornerRadius = viewProps.animateBorderRadius;
-      self.layer.masksToBounds = viewProps.animateBorderRadius > 0;
-    }
     if (mask & kMaskBackgroundColor)
       self.layer.backgroundColor =
           RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
@@ -780,10 +776,8 @@ static std::string lowestTransformPropertyName(int mask) {
       self.layer.opacity = newViewProps.animateOpacity;
     if (hasTransform)
       self.layer.transform = [self targetTransformFromProps:newViewProps];
-    if (mask & kMaskBorderRadius) {
+    if (mask & kMaskBorderRadius)
       self.layer.cornerRadius = newViewProps.animateBorderRadius;
-      self.layer.masksToBounds = newViewProps.animateBorderRadius > 0;
-    }
     if (mask & kMaskBackgroundColor)
       self.layer.backgroundColor =
           RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
@@ -978,7 +972,6 @@ static std::string lowestTransformPropertyName(int mask) {
       EaseTransitionConfig brConfig =
           transitionConfigForProperty("borderRadius", newViewProps);
       self.layer.cornerRadius = newViewProps.animateBorderRadius;
-      self.layer.masksToBounds = newViewProps.animateBorderRadius > 0;
       if (brConfig.type == "none") {
         [self.layer removeAnimationForKey:kAnimKeyCornerRadius];
       } else {
@@ -1190,7 +1183,6 @@ static std::string lowestTransformPropertyName(int mask) {
   if (mask & kMaskBorderRadius) {
     [self.layer removeAnimationForKey:@"cornerRadius"];
     self.layer.cornerRadius = viewProps.animateBorderRadius;
-    self.layer.masksToBounds = viewProps.animateBorderRadius > 0;
   }
   if (mask & kMaskBackgroundColor) {
     [self.layer removeAnimationForKey:@"backgroundColor"];
