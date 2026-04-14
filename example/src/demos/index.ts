@@ -5,6 +5,7 @@ import { BackgroundColorDemo } from './BackgroundColorDemo';
 import { BenchmarkDemo } from './BenchmarkDemo';
 import { BannerDemo } from './BannerDemo';
 import { CardFlipDemo } from './CardFlipDemo';
+import { BorderDemo } from './BorderDemo';
 import { BorderRadiusDemo } from './BorderRadiusDemo';
 import { ButtonDemo } from './ButtonDemo';
 import { CombinedDemo } from './CombinedDemo';
@@ -60,6 +61,11 @@ export const demos: Record<string, DemoEntry> = {
   'styled-card': {
     component: StyledCardDemo,
     title: 'Styled Card',
+    section: 'Style',
+  },
+  'border': {
+    component: BorderDemo,
+    title: 'Border',
     section: 'Style',
   },
   'border-radius': {
