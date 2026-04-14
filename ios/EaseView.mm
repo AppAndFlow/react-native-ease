@@ -1,4 +1,4 @@
-l#import "EaseView.h"
+#import "EaseView.h"
 
 #import <React/RCTConversions.h>
 
