@@ -22,7 +22,13 @@ Scan the user's project for animation code:
    - Also check `package.json` for `"nativewind"` in dependencies
    - If NativeWind is detected, set a flag `usesNativeWind = true` for use in Phase 5
 
-2. Use Grep to find all files importing from `react-native-reanimated`:
+2. Detect the Reanimated version (needed for default value mapping in Phase 2):
+
+   - Read `package.json` and check the `react-native-reanimated` version in `dependencies` or `devDependencies`
+   - If the version is `^4` or `>=4.0.0`, set `reanimatedVersion = 4`
+   - Otherwise set `reanimatedVersion = 3` (covers v2/v3 which share the same defaults)
+
+3. Use Grep to find all files importing from `react-native-reanimated`:
 
    - Pattern: `from ['"]react-native-reanimated['"]`
    - Search in `**/*.{ts,tsx,js,jsx}`
@@ -99,13 +105,27 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 
 **CRITICAL: Reanimated and EaseView have different defaults. You MUST explicitly set values to preserve the original animation behavior. Do not rely on EaseView defaults matching Reanimated defaults.**
 
+**Use `reanimatedVersion` from Phase 1 to select the correct defaults.**
+
 #### `withSpring` → EaseView spring
 
-| Parameter | Reanimated default | EaseView default | Action |
+**Reanimated v2/v3 defaults:**
+
+| Parameter | Reanimated v2/v3 | EaseView default | Action |
 |---|---|---|---|
 | `damping` | `10` | `15` | **Must set `damping: 10`** |
 | `stiffness` | `100` | `120` | **Must set `stiffness: 100`** |
 | `mass` | `1` | `1` | Same — omit |
+
+**Reanimated v4 defaults:**
+
+| Parameter | Reanimated v4 | EaseView default | Action |
+|---|---|---|---|
+| `damping` | `120` | `15` | **Must set `damping: 120`** |
+| `stiffness` | `900` | `120` | **Must set `stiffness: 900`** |
+| `mass` | `4` | `1` | **Must set `mass: 4`** |
+
+Reanimated v4's defaults produce a critically damped, snappy spring (no bounce). v2/v3 defaults produce a gentle bouncy spring.
 
 If the source code explicitly sets any of these values, carry them over as-is. If the source relies on Reanimated defaults (no explicit value), set the Reanimated default explicitly on the EaseView transition.
 
@@ -114,11 +134,14 @@ Example — bare `withSpring(1)` with no config:
 // Before (Reanimated)
 scale.value = withSpring(1);
 
-// After (EaseView) — must set damping: 10, stiffness: 100 to match
+// After (EaseView) — v2/v3: set damping: 10, stiffness: 100
 transition={{ type: 'spring', damping: 10, stiffness: 100 }}
+
+// After (EaseView) — v4: set damping: 120, stiffness: 900, mass: 4
+transition={{ type: 'spring', damping: 120, stiffness: 900, mass: 4 }}
 ```
 
-**Note:** Reanimated v3+ uses duration-based spring by default (`duration: 550`, `dampingRatio: 1`) when no physics params are set. If migrating code that uses `withSpring` without any config, use `damping: 10, stiffness: 100` which matches the physics-based fallback. If the code explicitly sets `dampingRatio`/`duration`, convert using: `damping = dampingRatio * 2 * sqrt(stiffness * mass)`.
+**Duration-based spring:** Reanimated v3+ also supports `withSpring(target, { duration, dampingRatio })`. If the code explicitly sets `dampingRatio`/`duration`, convert using: `damping = dampingRatio * 2 * sqrt(stiffness * mass)`.
 
 #### `withTiming` → EaseView timing
 
