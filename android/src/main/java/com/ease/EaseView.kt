@@ -15,6 +15,10 @@ import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.BackgroundStyleApplicator
+import com.facebook.react.uimanager.LengthPercentage
+import com.facebook.react.uimanager.LengthPercentageType
+import com.facebook.react.uimanager.PixelUtil
+import com.facebook.react.uimanager.style.BorderRadiusProp
 import com.facebook.react.uimanager.style.LogicalEdge
 import com.facebook.react.views.view.ReactViewGroup
 import kotlin.math.sqrt
@@ -164,6 +168,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 clipToOutline = false
             }
             invalidateOutline()
+            // Sync border drawable so borders follow the animated corner radius.
+            // Value is in pixels; convert back to DIPs for BackgroundStyleApplicator.
+            val dip = PixelUtil.toDIPFromPixel(value)
+            BackgroundStyleApplicator.setBorderRadius(
+                this, BorderRadiusProp.BORDER_RADIUS,
+                LengthPercentage(dip, LengthPercentageType.POINT))
         }
     }
 
