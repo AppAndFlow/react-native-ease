@@ -210,6 +210,8 @@ const CSS_PROP_MAP = {
   backgroundColor: 'background-color',
   borderWidth: 'border-width',
   borderColor: 'border-color',
+  boxShadow: 'box-shadow',
+  elevation: 'elevation',
 } as const;
 
 type CategoryKey = keyof typeof CSS_PROP_MAP;
@@ -227,6 +229,8 @@ function resolvePerCategoryConfigs(
       backgroundColor: def,
       borderWidth: def,
       borderColor: def,
+      boxShadow: def,
+      elevation: def,
     };
   }
   if (isSingleTransition(transition)) {
@@ -238,12 +242,17 @@ function resolvePerCategoryConfigs(
       backgroundColor: def,
       borderWidth: def,
       borderColor: def,
+      boxShadow: def,
+      elevation: def,
     };
   }
   // TransitionMap
   const defaultConfig = resolveConfigForCss(transition.default);
   const borderConfig = transition.border
     ? resolveConfigForCss(transition.border)
+    : defaultConfig;
+  const shadowConfig = transition.shadow
+    ? resolveConfigForCss(transition.shadow)
     : defaultConfig;
   return {
     opacity: transition.opacity
@@ -260,6 +269,8 @@ function resolvePerCategoryConfigs(
       : defaultConfig,
     borderWidth: borderConfig,
     borderColor: borderConfig,
+    boxShadow: shadowConfig,
+    elevation: shadowConfig,
   };
 }
 
@@ -513,6 +524,20 @@ export function EaseView({
       : {}),
     ...(displayValues.borderColor
       ? { borderColor: displayValues.borderColor }
+      : {}),
+    ...(displayValues.shadowOpacity > 0
+      ? {
+          shadowColor: displayValues.shadowColor ?? 'black',
+          shadowOpacity: displayValues.shadowOpacity,
+          shadowRadius: displayValues.shadowRadius,
+          shadowOffset: {
+            width: displayValues.shadowOffsetX,
+            height: displayValues.shadowOffsetY,
+          },
+        }
+      : {}),
+    ...(displayValues.elevation > 0
+      ? { elevation: displayValues.elevation }
       : {}),
   };
 
