@@ -28,6 +28,8 @@ static NSString *const kAnimKeyTransformTransX = @"ease_transform_trX";
 static NSString *const kAnimKeyTransformTransY = @"ease_transform_trY";
 static NSString *const kAnimKeyCornerRadius = @"ease_cornerRadius";
 static NSString *const kAnimKeyBackgroundColor = @"ease_backgroundColor";
+static NSString *const kAnimKeyBorderWidth = @"ease_borderWidth";
+static NSString *const kAnimKeyBorderColor = @"ease_borderColor";
 
 static inline CGFloat degreesToRadians(CGFloat degrees) {
   return degrees * M_PI / 180.0;
@@ -62,6 +64,8 @@ static const int kMaskRotateX = 1 << 6;
 static const int kMaskRotateY = 1 << 7;
 static const int kMaskBorderRadius = 1 << 8;
 static const int kMaskBackgroundColor = 1 << 9;
+static const int kMaskBorderWidth = 1 << 10;
+static const int kMaskBorderColor = 1 << 11;
 static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
                                      kMaskScaleX | kMaskScaleY | kMaskRotate |
                                      kMaskRotateX | kMaskRotateY;
@@ -128,6 +132,9 @@ transitionConfigForProperty(const std::string &name,
     return transitionConfigFromStruct(t.borderRadius);
   } else if (name == "backgroundColor" && hasConfig(t.backgroundColor)) {
     return transitionConfigFromStruct(t.backgroundColor);
+  } else if ((name == "borderWidth" || name == "borderColor") &&
+             hasConfig(t.border)) {
+    return transitionConfigFromStruct(t.border);
   }
   // Fallback to defaultConfig
   return transitionConfigFromStruct(t.defaultConfig);
@@ -342,6 +349,14 @@ static std::string lowestTransformPropertyName(int mask) {
                                    viewProps.initialAnimateBackgroundColor !=
                                        viewProps.animateBackgroundColor;
 
+  BOOL hasInitialBorderWidth =
+      (mask & kMaskBorderWidth) &&
+      viewProps.initialAnimateBorderWidth != viewProps.animateBorderWidth;
+
+  BOOL hasInitialBorderColor =
+      (mask & kMaskBorderColor) &&
+      viewProps.initialAnimateBorderColor != viewProps.animateBorderColor;
+
   BOOL hasInitialTransform = NO;
   CATransform3D initialT = CATransform3DIdentity;
   CATransform3D targetT = CATransform3DIdentity;
@@ -371,7 +386,8 @@ static std::string lowestTransformPropertyName(int mask) {
   }
 
   if (hasInitialOpacity || hasInitialTransform || hasInitialBorderRadius ||
-      hasInitialBackgroundColor) {
+      hasInitialBackgroundColor || hasInitialBorderWidth ||
+      hasInitialBorderColor) {
     // Set initial values after props and layout have settled for this mount.
     if (mask & kMaskOpacity)
       self.layer.opacity = viewProps.initialAnimateOpacity;
@@ -385,6 +401,12 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskBackgroundColor)
       self.layer.backgroundColor =
           RCTUIColorFromSharedColor(viewProps.initialAnimateBackgroundColor)
+              .CGColor;
+    if (mask & kMaskBorderWidth)
+      self.layer.borderWidth = viewProps.initialAnimateBorderWidth;
+    if (mask & kMaskBorderColor)
+      self.layer.borderColor =
+          RCTUIColorFromSharedColor(viewProps.initialAnimateBorderColor)
               .CGColor;
 
     // Animate from initial to target (skip if config is 'none')
@@ -507,6 +529,37 @@ static std::string lowestTransformPropertyName(int mask) {
                                   loop:YES];
       }
     }
+    if (hasInitialBorderWidth) {
+      EaseTransitionConfig config =
+          transitionConfigForProperty("borderWidth", viewProps);
+      self.layer.borderWidth = viewProps.animateBorderWidth;
+      if (config.type != "none") {
+        [self applyAnimationForKeyPath:@"borderWidth"
+                          animationKey:kAnimKeyBorderWidth
+                             fromValue:@(viewProps.initialAnimateBorderWidth)
+                               toValue:@(viewProps.animateBorderWidth)
+                                config:config
+                                  loop:YES];
+      }
+    }
+    if (hasInitialBorderColor) {
+      EaseTransitionConfig config =
+          transitionConfigForProperty("borderColor", viewProps);
+      self.layer.borderColor =
+          RCTUIColorFromSharedColor(viewProps.animateBorderColor).CGColor;
+      if (config.type != "none") {
+        [self applyAnimationForKeyPath:@"borderColor"
+                          animationKey:kAnimKeyBorderColor
+                             fromValue:(__bridge id)RCTUIColorFromSharedColor(
+                                           viewProps.initialAnimateBorderColor)
+                                           .CGColor
+                               toValue:(__bridge id)RCTUIColorFromSharedColor(
+                                           viewProps.animateBorderColor)
+                                           .CGColor
+                                config:config
+                                  loop:YES];
+      }
+    }
 
     // If all per-property configs were 'none', no animations were queued.
     // Fire onTransitionEnd immediately to match the scalar 'none' contract.
@@ -530,6 +583,11 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskBackgroundColor)
       self.layer.backgroundColor =
           RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
+    if (mask & kMaskBorderWidth)
+      self.layer.borderWidth = viewProps.animateBorderWidth;
+    if (mask & kMaskBorderColor)
+      self.layer.borderColor =
+          RCTUIColorFromSharedColor(viewProps.animateBorderColor).CGColor;
   }
 }
 
@@ -593,7 +651,9 @@ static std::string lowestTransformPropertyName(int mask) {
              (!hasConfig(newViewProps.transitions.borderRadius) ||
               newViewProps.transitions.borderRadius.type == "none") &&
              (!hasConfig(newViewProps.transitions.backgroundColor) ||
-              newViewProps.transitions.backgroundColor.type == "none")) {
+              newViewProps.transitions.backgroundColor.type == "none") &&
+             (!hasConfig(newViewProps.transitions.border) ||
+              newViewProps.transitions.border.type == "none")) {
     // All transitions are 'none' — set values immediately
     [self beginAnimationBatch];
     [self.layer removeAllAnimations];
@@ -609,6 +669,11 @@ static std::string lowestTransformPropertyName(int mask) {
       self.layer.backgroundColor =
           RCTUIColorFromSharedColor(newViewProps.animateBackgroundColor)
               .CGColor;
+    if (mask & kMaskBorderWidth)
+      self.layer.borderWidth = newViewProps.animateBorderWidth;
+    if (mask & kMaskBorderColor)
+      self.layer.borderColor =
+          RCTUIColorFromSharedColor(newViewProps.animateBorderColor).CGColor;
     if (_eventEmitter) {
       auto emitter =
           std::static_pointer_cast<const EaseViewEventEmitter>(_eventEmitter);
@@ -822,6 +887,47 @@ static std::string lowestTransformPropertyName(int mask) {
       }
     }
 
+    if ((mask & kMaskBorderWidth) &&
+        oldViewProps.animateBorderWidth != newViewProps.animateBorderWidth) {
+      anyPropertyChanged = YES;
+      EaseTransitionConfig config =
+          transitionConfigForProperty("borderWidth", newViewProps);
+      self.layer.borderWidth = newViewProps.animateBorderWidth;
+      if (config.type == "none") {
+        [self.layer removeAnimationForKey:kAnimKeyBorderWidth];
+      } else {
+        [self applyAnimationForKeyPath:@"borderWidth"
+                          animationKey:kAnimKeyBorderWidth
+                             fromValue:[self presentationValueForKeyPath:
+                                                 @"borderWidth"]
+                               toValue:@(newViewProps.animateBorderWidth)
+                                config:config
+                                  loop:NO];
+      }
+    }
+
+    if ((mask & kMaskBorderColor) &&
+        oldViewProps.animateBorderColor != newViewProps.animateBorderColor) {
+      anyPropertyChanged = YES;
+      EaseTransitionConfig config =
+          transitionConfigForProperty("borderColor", newViewProps);
+      CGColorRef toColor =
+          RCTUIColorFromSharedColor(newViewProps.animateBorderColor).CGColor;
+      self.layer.borderColor = toColor;
+      if (config.type == "none") {
+        [self.layer removeAnimationForKey:kAnimKeyBorderColor];
+      } else {
+        CGColorRef fromColor = (__bridge CGColorRef)
+            [self presentationValueForKeyPath:@"borderColor"];
+        [self applyAnimationForKeyPath:@"borderColor"
+                          animationKey:kAnimKeyBorderColor
+                             fromValue:(__bridge id)fromColor
+                               toValue:(__bridge id)toColor
+                                config:config
+                                  loop:NO];
+      }
+    }
+
     // If all changed properties resolved to 'none', no animations were queued.
     // Fire onTransitionEnd immediately.
     if (anyPropertyChanged && _pendingAnimationCount == 0 && _eventEmitter) {
@@ -857,7 +963,8 @@ static std::string lowestTransformPropertyName(int mask) {
       *std::static_pointer_cast<const EaseViewProps>(_props);
   int mask = viewProps.animatedProperties;
 
-  if (!(mask & (kMaskOpacity | kMaskBorderRadius | kMaskBackgroundColor))) {
+  if (!(mask & (kMaskOpacity | kMaskBorderRadius | kMaskBackgroundColor |
+                kMaskBorderWidth | kMaskBorderColor))) {
     return;
   }
 
@@ -876,6 +983,15 @@ static std::string lowestTransformPropertyName(int mask) {
     [self.layer removeAnimationForKey:@"backgroundColor"];
     self.layer.backgroundColor =
         RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
+  }
+  if (mask & kMaskBorderWidth) {
+    [self.layer removeAnimationForKey:kAnimKeyBorderWidth];
+    self.layer.borderWidth = viewProps.animateBorderWidth;
+  }
+  if (mask & kMaskBorderColor) {
+    [self.layer removeAnimationForKey:kAnimKeyBorderColor];
+    self.layer.borderColor =
+        RCTUIColorFromSharedColor(viewProps.animateBorderColor).CGColor;
   }
   [CATransaction commit];
 }
@@ -917,6 +1033,8 @@ static std::string lowestTransformPropertyName(int mask) {
   self.layer.cornerRadius = 0;
   self.layer.masksToBounds = NO;
   self.layer.backgroundColor = nil;
+  self.layer.borderWidth = 0;
+  self.layer.borderColor = nil;
 }
 
 @end

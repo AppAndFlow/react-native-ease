@@ -21,6 +21,7 @@ const IDENTITY = {
   rotateX: 0,
   rotateY: 0,
   borderRadius: 0,
+  borderWidth: 0,
 };
 
 /** Bitmask flags — must match native constants. */
@@ -35,6 +36,8 @@ const MASK_ROTATE_X = 1 << 6;
 const MASK_ROTATE_Y = 1 << 7;
 const MASK_BORDER_RADIUS = 1 << 8;
 const MASK_BACKGROUND_COLOR = 1 << 9;
+const MASK_BORDER_WIDTH = 1 << 10;
+const MASK_BORDER_COLOR = 1 << 11;
 /* eslint-enable no-bitwise */
 
 /** Maps animate prop keys to style keys that conflict. */
@@ -50,6 +53,8 @@ const ANIMATE_TO_STYLE_KEYS: Record<keyof AnimateProps, string> = {
   rotateY: 'transform',
   borderRadius: 'borderRadius',
   backgroundColor: 'backgroundColor',
+  borderWidth: 'borderWidth',
+  borderColor: 'borderColor',
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -137,6 +142,7 @@ const CATEGORY_KEYS = [
   'opacity',
   'borderRadius',
   'backgroundColor',
+  'border',
 ] as const;
 
 /** Resolve the transition prop into a NativeTransitions struct. */
@@ -241,6 +247,8 @@ export function EaseView({
   if (animate?.borderRadius != null) animatedProperties |= MASK_BORDER_RADIUS;
   if (animate?.backgroundColor != null)
     animatedProperties |= MASK_BACKGROUND_COLOR;
+  if (animate?.borderWidth != null) animatedProperties |= MASK_BORDER_WIDTH;
+  if (animate?.borderColor != null) animatedProperties |= MASK_BORDER_COLOR;
   /* eslint-enable no-bitwise */
 
   // Resolve animate values (identity defaults for non-animated — safe values).
@@ -267,9 +275,11 @@ export function EaseView({
     rotateY: initial?.rotateY ?? IDENTITY.rotateY,
   };
 
-  // Resolve backgroundColor — passed as ColorValue directly (codegen handles conversion)
+  // Resolve color props — passed as ColorValue directly (codegen handles conversion)
   const animBgColor = animate?.backgroundColor ?? 'transparent';
   const initialBgColor = initialAnimate?.backgroundColor ?? animBgColor;
+  const animBorderColor = animate?.borderColor ?? 'black';
+  const initialBorderColor = initialAnimate?.borderColor ?? animBorderColor;
 
   // Strip style keys that conflict with animated properties
   let cleanStyle: ViewProps['style'] = style;
@@ -328,6 +338,8 @@ export function EaseView({
       animateRotateY={resolved.rotateY}
       animateBorderRadius={resolved.borderRadius}
       animateBackgroundColor={animBgColor}
+      animateBorderWidth={resolved.borderWidth}
+      animateBorderColor={animBorderColor}
       initialAnimateOpacity={resolvedInitial.opacity}
       initialAnimateTranslateX={resolvedInitial.translateX}
       initialAnimateTranslateY={resolvedInitial.translateY}
@@ -338,6 +350,8 @@ export function EaseView({
       initialAnimateRotateY={resolvedInitial.rotateY}
       initialAnimateBorderRadius={resolvedInitial.borderRadius}
       initialAnimateBackgroundColor={initialBgColor}
+      initialAnimateBorderWidth={resolvedInitial.borderWidth}
+      initialAnimateBorderColor={initialBorderColor}
       transitions={transitions}
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}

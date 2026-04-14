@@ -625,6 +625,119 @@ describe('EaseView', () => {
     });
   });
 
+  describe('animate borderWidth', () => {
+    it('passes borderWidth to native', () => {
+      render(<EaseView testID="ease" animate={{ borderWidth: 2 }} />);
+      expect(getNativeProps().animateBorderWidth).toBe(2);
+    });
+
+    it('defaults borderWidth to 0', () => {
+      render(<EaseView testID="ease" />);
+      expect(getNativeProps().animateBorderWidth).toBe(0);
+    });
+
+    it('sets bitmask for borderWidth (1 << 10 = 1024)', () => {
+      render(<EaseView testID="ease" animate={{ borderWidth: 2 }} />);
+      expect(getNativeProps().animatedProperties).toBe(1024);
+    });
+
+    it('passes initialAnimate borderWidth', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ borderWidth: 0 }}
+          animate={{ borderWidth: 3 }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateBorderWidth).toBe(0);
+      expect(props.animateBorderWidth).toBe(3);
+    });
+
+    it('strips style borderWidth when animate.borderWidth is set', () => {
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ borderWidth: 2 }}
+          style={{ borderWidth: 1, backgroundColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.style).toEqual(
+        expect.objectContaining({ backgroundColor: 'red' }),
+      );
+      expect(props.style.borderWidth).toBeUndefined();
+      spy.mockRestore();
+    });
+  });
+
+  describe('animate borderColor', () => {
+    it('passes borderColor as ColorValue', () => {
+      render(<EaseView testID="ease" animate={{ borderColor: 'red' }} />);
+      expect(getNativeProps().animateBorderColor).toBe('red');
+    });
+
+    it('defaults borderColor to black', () => {
+      render(<EaseView testID="ease" />);
+      expect(getNativeProps().animateBorderColor).toBe('black');
+    });
+
+    it('sets bitmask for borderColor (1 << 11 = 2048)', () => {
+      render(<EaseView testID="ease" animate={{ borderColor: 'blue' }} />);
+      expect(getNativeProps().animatedProperties).toBe(2048);
+    });
+
+    it('passes initialAnimate borderColor', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ borderColor: 'blue' }}
+          animate={{ borderColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateBorderColor).toBe('blue');
+      expect(props.animateBorderColor).toBe('red');
+    });
+
+    it('strips style borderColor when animate.borderColor is set', () => {
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ borderColor: 'red' }}
+          style={{ borderColor: 'blue', backgroundColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.style).toEqual(
+        expect.objectContaining({ backgroundColor: 'red' }),
+      );
+      expect(props.style.borderColor).toBeUndefined();
+      spy.mockRestore();
+    });
+  });
+
+  describe('border transition category', () => {
+    it('passes border category in transition map', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 300 },
+            border: { type: 'spring', damping: 20, stiffness: 200 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.border!.type).toBe('spring');
+      expect(t.border!.damping).toBe(20);
+      expect(t.border!.stiffness).toBe(200);
+      expect(t.defaultConfig.type).toBe('timing');
+    });
+  });
+
   describe('rotate loop props', () => {
     it('passes rotate 0→360 with loop repeat to native', () => {
       render(

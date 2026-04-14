@@ -11,7 +11,9 @@ import type {
 } from './types';
 
 /** Identity values used as defaults for animate/initialAnimate. */
-const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
+const IDENTITY: Required<
+  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor'>
+> = {
   opacity: 1,
   translateX: 0,
   translateY: 0,
@@ -21,6 +23,7 @@ const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
   rotateX: 0,
   rotateY: 0,
   borderRadius: 0,
+  borderWidth: 0,
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -124,9 +127,10 @@ export type EaseViewProps = {
 };
 
 function resolveAnimateValues(props: AnimateProps | undefined): Required<
-  Omit<AnimateProps, 'scale' | 'backgroundColor'>
+  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor'>
 > & {
   backgroundColor?: string;
+  borderColor?: string;
 } {
   return {
     ...IDENTITY,
@@ -136,6 +140,7 @@ function resolveAnimateValues(props: AnimateProps | undefined): Required<
     rotateX: props?.rotateX ?? IDENTITY.rotateX,
     rotateY: props?.rotateY ?? IDENTITY.rotateY,
     backgroundColor: props?.backgroundColor as string | undefined,
+    borderColor: props?.borderColor as string | undefined,
   };
 }
 
