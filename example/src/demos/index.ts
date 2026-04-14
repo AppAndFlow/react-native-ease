@@ -24,6 +24,7 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { ShadowDemo } from './ShadowDemo';
 import { SpinDemo } from './SpinDemo';
 import { UniwindDemo } from './uniwind/UniwindDemo';
 
@@ -76,6 +77,11 @@ export const demos: Record<string, DemoEntry> = {
   'background-color': {
     component: BackgroundColorDemo,
     title: 'Background Color',
+    section: 'Style',
+  },
+  'shadow': {
+    component: ShadowDemo,
+    title: 'Shadow',
     section: 'Style',
   },
   'style-rerender': {
