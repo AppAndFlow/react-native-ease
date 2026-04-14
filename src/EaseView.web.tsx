@@ -201,6 +201,8 @@ const CSS_PROP_MAP = {
   transform: 'transform',
   borderRadius: 'border-radius',
   backgroundColor: 'background-color',
+  borderWidth: 'border-width',
+  borderColor: 'border-color',
 } as const;
 
 type CategoryKey = keyof typeof CSS_PROP_MAP;
@@ -216,6 +218,8 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
     };
   }
   if (isSingleTransition(transition)) {
@@ -225,10 +229,15 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
     };
   }
   // TransitionMap
   const defaultConfig = resolveConfigForCss(transition.default);
+  const borderConfig = transition.border
+    ? resolveConfigForCss(transition.border)
+    : defaultConfig;
   return {
     opacity: transition.opacity
       ? resolveConfigForCss(transition.opacity)
@@ -242,6 +251,8 @@ function resolvePerCategoryConfigs(
     backgroundColor: transition.backgroundColor
       ? resolveConfigForCss(transition.backgroundColor)
       : defaultConfig,
+    borderWidth: borderConfig,
+    borderColor: borderConfig,
   };
 }
 
@@ -489,6 +500,12 @@ export function EaseView({
       : {}),
     ...(displayValues.backgroundColor
       ? { backgroundColor: displayValues.backgroundColor }
+      : {}),
+    ...(displayValues.borderWidth > 0
+      ? { borderWidth: displayValues.borderWidth }
+      : {}),
+    ...(displayValues.borderColor
+      ? { borderColor: displayValues.borderColor }
       : {}),
   };
 
