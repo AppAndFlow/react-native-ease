@@ -446,8 +446,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
 
             // Update backface visibility after setting initial rotation values.
+            // Skip when opacity is animated — backface check resets alpha.
             // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt#L967-L985
-            if (mask and (MASK_ROTATE or MASK_ROTATE_X or MASK_ROTATE_Y) != 0) {
+            if (mask and (MASK_ROTATE or MASK_ROTATE_X or MASK_ROTATE_Y) != 0 &&
+                mask and MASK_OPACITY == 0) {
                 setBackfaceVisibilityDependantOpacity()
             }
         } else if (allTransitionsNone()) {
@@ -820,7 +822,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         val batchId = animationBatchId
         pendingBatchAnimationCount++
-        val needsBackfaceUpdate = propertyName in isRotationProperty
+        // Only update backface visibility when opacity is NOT animated — the backface
+        // check resets alpha, which would clobber the animated opacity value.
+        val needsBackfaceUpdate = propertyName in isRotationProperty &&
+            (animatedProperties and MASK_OPACITY == 0)
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
             duration = config.duration.toLong()
@@ -880,9 +885,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val batchId = animationBatchId
         pendingBatchAnimationCount++
 
-        val needsBackfaceUpdate = viewProperty == DynamicAnimation.ROTATION ||
+        val needsBackfaceUpdate = (viewProperty == DynamicAnimation.ROTATION ||
             viewProperty == DynamicAnimation.ROTATION_X ||
-            viewProperty == DynamicAnimation.ROTATION_Y
+            viewProperty == DynamicAnimation.ROTATION_Y) &&
+            (animatedProperties and MASK_OPACITY == 0)
 
         val dampingRatio = (config.damping / (2.0f * sqrt(config.stiffness * config.mass)))
             .coerceAtLeast(0.01f)
