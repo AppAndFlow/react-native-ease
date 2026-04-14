@@ -719,6 +719,185 @@ describe('EaseView', () => {
     });
   });
 
+  describe('animate shadow properties', () => {
+    it('passes shadow props to native', () => {
+      render(
+        <EaseView
+          testID="ease"
+          animate={{
+            shadowOpacity: 0.5,
+            shadowRadius: 10,
+            shadowOffsetX: 2,
+            shadowOffsetY: 4,
+          }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.animateShadowOpacity).toBe(0.5);
+      expect(props.animateShadowRadius).toBe(10);
+      expect(props.animateShadowOffsetX).toBe(2);
+      expect(props.animateShadowOffsetY).toBe(4);
+    });
+
+    it('defaults shadow props to 0 when not in animate', () => {
+      render(<EaseView testID="ease" />);
+      const props = getNativeProps();
+      expect(props.animateShadowOpacity).toBe(0);
+      expect(props.animateShadowRadius).toBe(0);
+      expect(props.animateShadowOffsetX).toBe(0);
+      expect(props.animateShadowOffsetY).toBe(0);
+    });
+
+    it('passes shadowColor as ColorValue', () => {
+      render(<EaseView testID="ease" animate={{ shadowColor: 'red' }} />);
+      expect(getNativeProps().animateShadowColor).toBe('red');
+    });
+
+    it('defaults shadowColor to black when not in animate', () => {
+      render(<EaseView testID="ease" />);
+      expect(getNativeProps().animateShadowColor).toBe('black');
+    });
+
+    it('sets bitmask for shadow properties', () => {
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ shadowOpacity: 0.5, shadowRadius: 10 }}
+        />,
+      );
+      // shadowOpacity = 1<<12 = 4096, shadowRadius = 1<<13 = 8192 → 12288
+      expect(getNativeProps().animatedProperties).toBe(12288);
+    });
+
+    it('sets bitmask for shadowColor (1 << 14 = 16384)', () => {
+      render(<EaseView testID="ease" animate={{ shadowColor: 'blue' }} />);
+      expect(getNativeProps().animatedProperties).toBe(16384);
+    });
+
+    it('sets bitmask for shadowOffset (X=1<<15, Y=1<<16)', () => {
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ shadowOffsetX: 2, shadowOffsetY: 4 }}
+        />,
+      );
+      // shadowOffsetX = 1<<15 = 32768, shadowOffsetY = 1<<16 = 65536 → 98304
+      expect(getNativeProps().animatedProperties).toBe(98304);
+    });
+
+    it('passes initialAnimate shadow values', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ shadowOpacity: 0, shadowRadius: 0 }}
+          animate={{ shadowOpacity: 0.5, shadowRadius: 10 }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateShadowOpacity).toBe(0);
+      expect(props.initialAnimateShadowRadius).toBe(0);
+      expect(props.animateShadowOpacity).toBe(0.5);
+      expect(props.animateShadowRadius).toBe(10);
+    });
+
+    it('passes initialAnimate shadowColor', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ shadowColor: 'blue' }}
+          animate={{ shadowColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateShadowColor).toBe('blue');
+      expect(props.animateShadowColor).toBe('red');
+    });
+
+    it('strips style shadowOpacity when animate.shadowOpacity is set', () => {
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ shadowOpacity: 0.5 }}
+          style={{ shadowOpacity: 1, backgroundColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.style).toEqual(
+        expect.objectContaining({ backgroundColor: 'red' }),
+      );
+      expect(props.style.shadowOpacity).toBeUndefined();
+      spy.mockRestore();
+    });
+
+    it('strips style shadowOffset when animate.shadowOffsetX is set', () => {
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ shadowOffsetX: 2 }}
+          style={{
+            shadowOffset: { width: 0, height: 3 },
+            backgroundColor: 'red',
+          }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.style).toEqual(
+        expect.objectContaining({ backgroundColor: 'red' }),
+      );
+      expect(props.style.shadowOffset).toBeUndefined();
+      spy.mockRestore();
+    });
+  });
+
+  describe('animate elevation', () => {
+    it('passes elevation to native', () => {
+      render(<EaseView testID="ease" animate={{ elevation: 5 }} />);
+      expect(getNativeProps().animateElevation).toBe(5);
+    });
+
+    it('defaults elevation to 0', () => {
+      render(<EaseView testID="ease" />);
+      expect(getNativeProps().animateElevation).toBe(0);
+    });
+
+    it('sets bitmask for elevation (1 << 17 = 131072)', () => {
+      render(<EaseView testID="ease" animate={{ elevation: 5 }} />);
+      expect(getNativeProps().animatedProperties).toBe(131072);
+    });
+
+    it('passes initialAnimate elevation', () => {
+      render(
+        <EaseView
+          testID="ease"
+          initialAnimate={{ elevation: 0 }}
+          animate={{ elevation: 10 }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.initialAnimateElevation).toBe(0);
+      expect(props.animateElevation).toBe(10);
+    });
+
+    it('strips style elevation when animate.elevation is set', () => {
+      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <EaseView
+          testID="ease"
+          animate={{ elevation: 5 }}
+          style={{ elevation: 2, backgroundColor: 'red' }}
+        />,
+      );
+      const props = getNativeProps();
+      expect(props.style).toEqual(
+        expect.objectContaining({ backgroundColor: 'red' }),
+      );
+      expect(props.style.elevation).toBeUndefined();
+      spy.mockRestore();
+    });
+  });
+
   describe('border transition category', () => {
     it('passes border category in transition map', () => {
       render(
@@ -734,6 +913,25 @@ describe('EaseView', () => {
       expect(t.border!.type).toBe('spring');
       expect(t.border!.damping).toBe(20);
       expect(t.border!.stiffness).toBe(200);
+      expect(t.defaultConfig.type).toBe('timing');
+    });
+  });
+
+  describe('shadow transition category', () => {
+    it('passes shadow category in transition map', () => {
+      render(
+        <EaseView
+          testID="ease"
+          transition={{
+            default: { type: 'timing', duration: 300 },
+            shadow: { type: 'spring', damping: 20, stiffness: 200 },
+          }}
+        />,
+      );
+      const t = getNativeProps().transitions;
+      expect(t.shadow!.type).toBe('spring');
+      expect(t.shadow!.damping).toBe(20);
+      expect(t.shadow!.stiffness).toBe(200);
       expect(t.defaultConfig.type).toBe('timing');
     });
   });

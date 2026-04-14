@@ -27,6 +27,7 @@ type NativeTransitions = Readonly<{
   borderRadius?: NativeTransitionConfig;
   backgroundColor?: NativeTransitionConfig;
   border?: NativeTransitionConfig;
+  shadow?: NativeTransitionConfig;
 }>;
 
 export interface NativeProps extends ViewProps {
@@ -46,6 +47,12 @@ export interface NativeProps extends ViewProps {
   animateBackgroundColor?: ColorValue;
   animateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
   animateBorderColor?: ColorValue;
+  animateShadowOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateShadowRadius?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateShadowColor?: ColorValue;
+  animateShadowOffsetX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateShadowOffsetY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateElevation?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
 
   // Initial values for enter animations
   initialAnimateOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
@@ -63,6 +70,24 @@ export interface NativeProps extends ViewProps {
   initialAnimateBackgroundColor?: ColorValue;
   initialAnimateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
   initialAnimateBorderColor?: ColorValue;
+  initialAnimateShadowOpacity?: CodegenTypes.WithDefault<
+    CodegenTypes.Float,
+    0.0
+  >;
+  initialAnimateShadowRadius?: CodegenTypes.WithDefault<
+    CodegenTypes.Float,
+    0.0
+  >;
+  initialAnimateShadowColor?: ColorValue;
+  initialAnimateShadowOffsetX?: CodegenTypes.WithDefault<
+    CodegenTypes.Float,
+    0.0
+  >;
+  initialAnimateShadowOffsetY?: CodegenTypes.WithDefault<
+    CodegenTypes.Float,
+    0.0
+  >;
+  initialAnimateElevation?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
 
   // Unified transition config — one struct with per-property configs
   transitions?: NativeTransitions;

@@ -62,6 +62,8 @@ export type TransitionMap = {
   backgroundColor?: SingleTransition;
   /** Config for border properties (borderWidth, borderColor). */
   border?: SingleTransition;
+  /** Config for shadow properties (shadowOpacity, shadowRadius, shadowColor, shadowOffset) and elevation. */
+  shadow?: SingleTransition;
 };
 
 /** Animation transition configuration — either a single config or a per-property map. */
@@ -120,4 +122,16 @@ export type AnimateProps = {
   borderWidth?: number;
   /** Border color. Accepts any React Native color value. @default 'black' */
   borderColor?: ColorValue;
+  /** Shadow opacity (0–1, iOS only). @default 0 */
+  shadowOpacity?: number;
+  /** Shadow blur radius (iOS only). @default 0 */
+  shadowRadius?: number;
+  /** Shadow color (iOS only). Accepts any React Native color value. @default 'black' */
+  shadowColor?: ColorValue;
+  /** Shadow horizontal offset (iOS only). @default 0 */
+  shadowOffsetX?: number;
+  /** Shadow vertical offset (iOS only). @default 0 */
+  shadowOffsetY?: number;
+  /** Android elevation for material shadow. @default 0 */
+  elevation?: number;
 };
