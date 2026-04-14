@@ -5,25 +5,34 @@ import { EaseView } from 'react-native-ease';
 import { Section } from '../components/Section';
 import { Button } from '../components/Button';
 
+const states = [
+  { borderWidth: 0, borderColor: '#4a90d9', label: 'None' },
+  { borderWidth: 4, borderColor: '#e74c3c', label: 'Red' },
+  { borderWidth: 4, borderColor: '#4ade80', label: 'Green' },
+] as const;
+
+const nextLabel = ['Add Red', 'Go Green', 'Remove'] as const;
+
 export function BorderDemo() {
-  const [active, setActive] = useState(false);
+  const [index, setIndex] = useState(0);
+  const state = states[index]!;
   return (
     <Section title="Border">
       <EaseView
         animate={{
-          borderWidth: active ? 4 : 0,
-          borderColor: active ? '#e74c3c' : '#4a90d9',
+          borderWidth: state.borderWidth,
+          borderColor: state.borderColor,
         }}
         transition={{
           border: { type: 'spring', damping: 15, stiffness: 120 },
         }}
         style={styles.box}
       >
-        <Text style={styles.text}>{active ? 'Red' : 'None'}</Text>
+        <Text style={styles.text}>{state.label}</Text>
       </EaseView>
       <Button
-        label={active ? 'Remove' : 'Add Border'}
-        onPress={() => setActive((v) => !v)}
+        label={nextLabel[index]!}
+        onPress={() => setIndex((i) => (i + 1) % states.length)}
       />
     </Section>
   );
