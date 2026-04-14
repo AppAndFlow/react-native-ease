@@ -248,6 +248,8 @@ Available category keys:
 | `opacity`         | opacity                                                          |
 | `borderRadius`    | borderRadius                                                     |
 | `backgroundColor` | backgroundColor                                                  |
+| `border`          | borderWidth, borderColor                                         |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
 
 Use `default` as a fallback for categories not explicitly listed:
 
@@ -267,7 +269,7 @@ When no `default` key is provided, the library default (timing 300ms easeInOut) 
 
 ### Border Radius
 
-`borderRadius` can be animated just like other properties. It uses hardware-accelerated platform APIs — `ViewOutlineProvider` + `clipToOutline` on Android and `layer.cornerRadius` + `layer.masksToBounds` on iOS. Unlike RN's style-based `borderRadius` (which uses a Canvas drawable on Android), this clips children properly and is GPU-accelerated.
+`borderRadius` can be animated just like other properties. It uses hardware-accelerated platform APIs — `ViewOutlineProvider` + `clipToOutline` on Android and `layer.cornerRadius` on iOS.
 
 ```tsx
 <EaseView
@@ -302,6 +304,38 @@ On Android, background color uses `ValueAnimator.ofArgb()` (timing only — spri
 
 When `backgroundColor` is in `animate`, any `backgroundColor` in `style` is automatically stripped to avoid conflicts.
 
+### Border
+
+`borderWidth` and `borderColor` can be animated. On iOS, these use Core Animation on the `CALayer` border properties. On Android, they use `BackgroundStyleApplicator` which updates the `BorderDrawable` each frame.
+
+```tsx
+<EaseView
+  animate={{
+    borderWidth: selected ? 3 : 0,
+    borderColor: selected ? '#3B82F6' : '#E5E7EB',
+  }}
+  transition={{ border: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={styles.card}
+/>
+```
+
+### Shadow / Elevation
+
+Shadow properties are iOS-only (`shadowOpacity`, `shadowRadius`, `shadowColor`, `shadowOffset`). On Android, use `elevation` for material shadows.
+
+```tsx
+<EaseView
+  animate={{
+    shadowOpacity: active ? 0.4 : 0,
+    shadowRadius: active ? 16 : 0,
+    shadowOffset: active ? { width: 0, height: 8 } : { width: 0, height: 0 },
+    elevation: active ? 12 : 0,
+  }}
+  transition={{ shadow: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={{ shadowColor: '#000', backgroundColor: '#fff', borderRadius: 16 }}
+/>
+```
+
 ### Animatable Properties
 
 All properties are set in the `animate` prop as flat values (no transform array).
@@ -318,8 +352,15 @@ All properties are set in the `animate` prop as flat values (no transform array)
     rotate: 0, // Z-axis rotation in degrees
     rotateX: 0, // X-axis rotation in degrees (3D)
     rotateY: 0, // Y-axis rotation in degrees (3D)
-    borderRadius: 0, // pixels (hardware-accelerated, clips children)
+    borderRadius: 0, // pixels (hardware-accelerated)
     backgroundColor: 'transparent', // any RN color value
+    borderWidth: 0, // pixels
+    borderColor: 'black', // any RN color value
+    shadowOpacity: 0, // 0–1 (iOS only)
+    shadowRadius: 0, // pixels (iOS only)
+    shadowColor: 'black', // any RN color value (iOS only)
+    shadowOffset: { width: 0, height: 0 }, // iOS only
+    elevation: 0, // Android material shadow
   }}
 />
 ```
@@ -502,8 +543,15 @@ A `View` that animates property changes using native platform APIs.
 | `rotate`          | `number`     | `0`             | Z-axis rotation in degrees                                                           |
 | `rotateX`         | `number`     | `0`             | X-axis rotation in degrees (3D)                                                      |
 | `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees (3D)                                                      |
-| `borderRadius`    | `number`     | `0`             | Border radius in pixels (hardware-accelerated, clips children)                       |
+| `borderRadius`    | `number`     | `0`             | Border radius in pixels (hardware-accelerated)                                       |
 | `backgroundColor` | `ColorValue` | `'transparent'` | Background color (any RN color value). Timing-only on Android, spring+timing on iOS. |
+| `borderWidth`     | `number`     | `0`             | Border width in pixels                                                               |
+| `borderColor`     | `ColorValue` | `'black'`       | Border color                                                                         |
+| `shadowOpacity`   | `number`     | `0`             | Shadow opacity 0–1 (iOS only)                                                        |
+| `shadowRadius`    | `number`     | `0`             | Shadow blur radius (iOS only)                                                        |
+| `shadowColor`     | `ColorValue` | `'black'`       | Shadow color (iOS only)                                                              |
+| `shadowOffset`    | `object`     | `{width:0,height:0}` | Shadow offset `{ width, height }` (iOS only)                                   |
+| `elevation`       | `number`     | `0`             | Material shadow elevation (Android only)                                             |
 
 Properties not specified in `animate` default to their identity values.
 
@@ -552,6 +600,8 @@ A per-property map that applies different transition configs to different proper
 | `opacity`         | opacity                                                          |
 | `borderRadius`    | borderRadius                                                     |
 | `backgroundColor` | backgroundColor                                                  |
+| `border`          | borderWidth, borderColor                                         |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
 
 ## Hardware Layers (Android)
 

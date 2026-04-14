@@ -91,6 +91,8 @@ Available category keys:
 | `opacity`         | opacity |
 | `borderRadius`    | borderRadius |
 | `backgroundColor` | backgroundColor |
+| `border`          | borderWidth, borderColor |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
 
 When no `default` key is provided, the library default (timing 300ms easeInOut) applies to all categories.
 
@@ -125,6 +127,36 @@ When `borderRadius` is in `animate`, any `borderRadius` in `style` is automatica
 
 On Android, background color uses timing animation only. On iOS, it supports both timing and spring transitions.
 
+## Border
+
+```tsx
+<EaseView
+  animate={{
+    borderWidth: selected ? 3 : 0,
+    borderColor: selected ? '#3B82F6' : '#E5E7EB',
+  }}
+  transition={{ border: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={styles.card}
+/>
+```
+
+## Shadow / Elevation
+
+Shadow properties are iOS-only. On Android, use `elevation` for material shadows.
+
+```tsx
+<EaseView
+  animate={{
+    shadowOpacity: active ? 0.4 : 0,
+    shadowRadius: active ? 16 : 0,
+    shadowOffset: active ? { width: 0, height: 8 } : { width: 0, height: 0 },
+    elevation: active ? 12 : 0,
+  }}
+  transition={{ shadow: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={{ shadowColor: '#000', backgroundColor: '#fff', borderRadius: 16 }}
+/>
+```
+
 ## Animatable properties
 
 ```tsx
@@ -141,6 +173,13 @@ On Android, background color uses timing animation only. On iOS, it supports bot
     rotateY: 0,
     borderRadius: 0,
     backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'black',
+    shadowOpacity: 0,         // iOS only
+    shadowRadius: 0,          // iOS only
+    shadowColor: 'black',     // iOS only
+    shadowOffset: { width: 0, height: 0 }, // iOS only
+    elevation: 0,             // Android only
   }}
 />
 ```
