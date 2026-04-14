@@ -73,10 +73,8 @@ static const int kMaskBorderColor = 1 << 11;
 static const int kMaskShadowOpacity = 1 << 12;
 static const int kMaskShadowRadius = 1 << 13;
 static const int kMaskShadowColor = 1 << 14;
-static const int kMaskShadowOffsetX = 1 << 15;
-static const int kMaskShadowOffsetY = 1 << 16;
-// kMaskElevation = 1 << 17 — Android-only, no-op on iOS
-static const int kMaskAnyShadowOffset = kMaskShadowOffsetX | kMaskShadowOffsetY;
+static const int kMaskShadowOffset = 1 << 15;
+// kMaskElevation = 1 << 16 — Android-only, no-op on iOS
 static const int kMaskAnyTransform = kMaskTranslateX | kMaskTranslateY |
                                      kMaskScaleX | kMaskScaleY | kMaskRotate |
                                      kMaskRotateX | kMaskRotateY;
@@ -385,7 +383,7 @@ static std::string lowestTransformPropertyName(int mask) {
       viewProps.initialAnimateShadowColor != viewProps.animateShadowColor;
 
   BOOL hasInitialShadowOffset =
-      (mask & kMaskAnyShadowOffset) &&
+      (mask & kMaskShadowOffset) &&
       (viewProps.initialAnimateShadowOffsetX !=
            viewProps.animateShadowOffsetX ||
        viewProps.initialAnimateShadowOffsetY != viewProps.animateShadowOffsetY);
@@ -451,7 +449,7 @@ static std::string lowestTransformPropertyName(int mask) {
       self.layer.shadowColor =
           RCTUIColorFromSharedColor(viewProps.initialAnimateShadowColor)
               .CGColor;
-    if (mask & kMaskAnyShadowOffset)
+    if (mask & kMaskShadowOffset)
       self.layer.shadowOffset =
           CGSizeMake(viewProps.initialAnimateShadowOffsetX,
                      viewProps.initialAnimateShadowOffsetY);
@@ -704,7 +702,7 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskShadowColor)
       self.layer.shadowColor =
           RCTUIColorFromSharedColor(viewProps.animateShadowColor).CGColor;
-    if (mask & kMaskAnyShadowOffset)
+    if (mask & kMaskShadowOffset)
       self.layer.shadowOffset = CGSizeMake(viewProps.animateShadowOffsetX,
                                            viewProps.animateShadowOffsetY);
   }
@@ -802,7 +800,7 @@ static std::string lowestTransformPropertyName(int mask) {
     if (mask & kMaskShadowColor)
       self.layer.shadowColor =
           RCTUIColorFromSharedColor(newViewProps.animateShadowColor).CGColor;
-    if (mask & kMaskAnyShadowOffset)
+    if (mask & kMaskShadowOffset)
       self.layer.shadowOffset = CGSizeMake(newViewProps.animateShadowOffsetX,
                                            newViewProps.animateShadowOffsetY);
     if (_eventEmitter) {
@@ -1119,11 +1117,10 @@ static std::string lowestTransformPropertyName(int mask) {
       }
     }
 
-    if ((mask & kMaskAnyShadowOffset) &&
-        (oldViewProps.animateShadowOffsetX !=
-             newViewProps.animateShadowOffsetX ||
-         oldViewProps.animateShadowOffsetY !=
-             newViewProps.animateShadowOffsetY)) {
+    if ((mask & kMaskShadowOffset) && (oldViewProps.animateShadowOffsetX !=
+                                           newViewProps.animateShadowOffsetX ||
+                                       oldViewProps.animateShadowOffsetY !=
+                                           newViewProps.animateShadowOffsetY)) {
       anyPropertyChanged = YES;
       EaseTransitionConfig config =
           transitionConfigForProperty("shadowOffset", newViewProps);
@@ -1180,8 +1177,7 @@ static std::string lowestTransformPropertyName(int mask) {
 
   if (!(mask & (kMaskOpacity | kMaskBorderRadius | kMaskBackgroundColor |
                 kMaskBorderWidth | kMaskBorderColor | kMaskShadowOpacity |
-                kMaskShadowRadius | kMaskShadowColor |
-                kMaskAnyShadowOffset))) {
+                kMaskShadowRadius | kMaskShadowColor | kMaskShadowOffset))) {
     return;
   }
 
@@ -1223,7 +1219,7 @@ static std::string lowestTransformPropertyName(int mask) {
     self.layer.shadowColor =
         RCTUIColorFromSharedColor(viewProps.animateShadowColor).CGColor;
   }
-  if (mask & kMaskAnyShadowOffset) {
+  if (mask & kMaskShadowOffset) {
     [self.layer removeAnimationForKey:kAnimKeyShadowOffset];
     self.layer.shadowOffset = CGSizeMake(viewProps.animateShadowOffsetX,
                                          viewProps.animateShadowOffsetY);

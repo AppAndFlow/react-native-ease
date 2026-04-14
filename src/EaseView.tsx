@@ -24,8 +24,8 @@ const IDENTITY = {
   borderWidth: 0,
   shadowOpacity: 0,
   shadowRadius: 0,
-  shadowOffsetX: 0,
-  shadowOffsetY: 0,
+  shadowOffsetWidth: 0,
+  shadowOffsetHeight: 0,
   elevation: 0,
 };
 
@@ -46,9 +46,8 @@ const MASK_BORDER_COLOR = 1 << 11;
 const MASK_SHADOW_OPACITY = 1 << 12;
 const MASK_SHADOW_RADIUS = 1 << 13;
 const MASK_SHADOW_COLOR = 1 << 14;
-const MASK_SHADOW_OFFSET_X = 1 << 15;
-const MASK_SHADOW_OFFSET_Y = 1 << 16;
-const MASK_ELEVATION = 1 << 17;
+const MASK_SHADOW_OFFSET = 1 << 15;
+const MASK_ELEVATION = 1 << 16;
 /* eslint-enable no-bitwise */
 
 /** Maps animate prop keys to style keys that conflict. */
@@ -69,8 +68,7 @@ const ANIMATE_TO_STYLE_KEYS: Record<keyof AnimateProps, string> = {
   shadowOpacity: 'shadowOpacity',
   shadowRadius: 'shadowRadius',
   shadowColor: 'shadowColor',
-  shadowOffsetX: 'shadowOffset',
-  shadowOffsetY: 'shadowOffset',
+  shadowOffset: 'shadowOffset',
   elevation: 'elevation',
 };
 
@@ -270,10 +268,7 @@ export function EaseView({
   if (animate?.shadowOpacity != null) animatedProperties |= MASK_SHADOW_OPACITY;
   if (animate?.shadowRadius != null) animatedProperties |= MASK_SHADOW_RADIUS;
   if (animate?.shadowColor != null) animatedProperties |= MASK_SHADOW_COLOR;
-  if (animate?.shadowOffsetX != null)
-    animatedProperties |= MASK_SHADOW_OFFSET_X;
-  if (animate?.shadowOffsetY != null)
-    animatedProperties |= MASK_SHADOW_OFFSET_Y;
+  if (animate?.shadowOffset != null) animatedProperties |= MASK_SHADOW_OFFSET;
   if (animate?.elevation != null) animatedProperties |= MASK_ELEVATION;
   /* eslint-enable no-bitwise */
 
@@ -285,6 +280,9 @@ export function EaseView({
     scaleY: animate?.scaleY ?? animate?.scale ?? IDENTITY.scaleY,
     rotateX: animate?.rotateX ?? IDENTITY.rotateX,
     rotateY: animate?.rotateY ?? IDENTITY.rotateY,
+    // Flatten shadowOffset object into individual values for native
+    shadowOffsetWidth: animate?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: animate?.shadowOffset?.height ?? 0,
   };
 
   // Resolve initialAnimate:
@@ -299,6 +297,8 @@ export function EaseView({
     scaleY: initial?.scaleY ?? initial?.scale ?? IDENTITY.scaleY,
     rotateX: initial?.rotateX ?? IDENTITY.rotateX,
     rotateY: initial?.rotateY ?? IDENTITY.rotateY,
+    shadowOffsetWidth: initial?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: initial?.shadowOffset?.height ?? 0,
   };
 
   // Resolve color props — passed as ColorValue directly (codegen handles conversion)
@@ -371,8 +371,8 @@ export function EaseView({
       animateShadowOpacity={resolved.shadowOpacity}
       animateShadowRadius={resolved.shadowRadius}
       animateShadowColor={animShadowColor}
-      animateShadowOffsetX={resolved.shadowOffsetX}
-      animateShadowOffsetY={resolved.shadowOffsetY}
+      animateShadowOffsetX={resolved.shadowOffsetWidth}
+      animateShadowOffsetY={resolved.shadowOffsetHeight}
       animateElevation={resolved.elevation}
       initialAnimateOpacity={resolvedInitial.opacity}
       initialAnimateTranslateX={resolvedInitial.translateX}
@@ -389,8 +389,8 @@ export function EaseView({
       initialAnimateShadowOpacity={resolvedInitial.shadowOpacity}
       initialAnimateShadowRadius={resolvedInitial.shadowRadius}
       initialAnimateShadowColor={initialShadowColor}
-      initialAnimateShadowOffsetX={resolvedInitial.shadowOffsetX}
-      initialAnimateShadowOffsetY={resolvedInitial.shadowOffsetY}
+      initialAnimateShadowOffsetX={resolvedInitial.shadowOffsetWidth}
+      initialAnimateShadowOffsetY={resolvedInitial.shadowOffsetHeight}
       initialAnimateElevation={resolvedInitial.elevation}
       transitions={transitions}
       useHardwareLayer={useHardwareLayer}

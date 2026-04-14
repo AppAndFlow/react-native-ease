@@ -727,8 +727,7 @@ describe('EaseView', () => {
           animate={{
             shadowOpacity: 0.5,
             shadowRadius: 10,
-            shadowOffsetX: 2,
-            shadowOffsetY: 4,
+            shadowOffset: { width: 2, height: 4 },
           }}
         />,
       );
@@ -774,15 +773,14 @@ describe('EaseView', () => {
       expect(getNativeProps().animatedProperties).toBe(16384);
     });
 
-    it('sets bitmask for shadowOffset (X=1<<15, Y=1<<16)', () => {
+    it('sets bitmask for shadowOffset (1 << 15 = 32768)', () => {
       render(
         <EaseView
           testID="ease"
-          animate={{ shadowOffsetX: 2, shadowOffsetY: 4 }}
+          animate={{ shadowOffset: { width: 2, height: 4 } }}
         />,
       );
-      // shadowOffsetX = 1<<15 = 32768, shadowOffsetY = 1<<16 = 65536 → 98304
-      expect(getNativeProps().animatedProperties).toBe(98304);
+      expect(getNativeProps().animatedProperties).toBe(32768);
     });
 
     it('passes initialAnimate shadow values', () => {
@@ -830,12 +828,12 @@ describe('EaseView', () => {
       spy.mockRestore();
     });
 
-    it('strips style shadowOffset when animate.shadowOffsetX is set', () => {
+    it('strips style shadowOffset when animate.shadowOffset is set', () => {
       const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       render(
         <EaseView
           testID="ease"
-          animate={{ shadowOffsetX: 2 }}
+          animate={{ shadowOffset: { width: 2, height: 4 } }}
           style={{
             shadowOffset: { width: 0, height: 3 },
             backgroundColor: 'red',
@@ -862,9 +860,9 @@ describe('EaseView', () => {
       expect(getNativeProps().animateElevation).toBe(0);
     });
 
-    it('sets bitmask for elevation (1 << 17 = 131072)', () => {
+    it('sets bitmask for elevation (1 << 16 = 65536)', () => {
       render(<EaseView testID="ease" animate={{ elevation: 5 }} />);
-      expect(getNativeProps().animatedProperties).toBe(131072);
+      expect(getNativeProps().animatedProperties).toBe(65536);
     });
 
     it('passes initialAnimate elevation', () => {

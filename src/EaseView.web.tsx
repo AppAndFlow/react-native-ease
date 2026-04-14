@@ -12,8 +12,11 @@ import type {
 
 /** Identity values used as defaults for animate/initialAnimate. */
 const IDENTITY: Required<
-  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor' | 'shadowColor'>
-> = {
+  Omit<
+    AnimateProps,
+    'scale' | 'backgroundColor' | 'borderColor' | 'shadowColor' | 'shadowOffset'
+  >
+> & { shadowOffset: { width: number; height: number } } = {
   opacity: 1,
   translateX: 0,
   translateY: 0,
@@ -26,8 +29,7 @@ const IDENTITY: Required<
   borderWidth: 0,
   shadowOpacity: 0,
   shadowRadius: 0,
-  shadowOffsetX: 0,
-  shadowOffsetY: 0,
+  shadowOffset: { width: 0, height: 0 },
   elevation: 0,
 };
 
@@ -131,9 +133,9 @@ export type EaseViewProps = {
   children?: React.ReactNode;
 };
 
-function resolveAnimateValues(props: AnimateProps | undefined): Required<
-  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor' | 'shadowColor'>
-> & {
+function resolveAnimateValues(
+  props: AnimateProps | undefined,
+): typeof IDENTITY & {
   backgroundColor?: string;
   borderColor?: string;
   shadowColor?: string;
@@ -145,6 +147,10 @@ function resolveAnimateValues(props: AnimateProps | undefined): Required<
     scaleY: props?.scaleY ?? props?.scale ?? IDENTITY.scaleY,
     rotateX: props?.rotateX ?? IDENTITY.rotateX,
     rotateY: props?.rotateY ?? IDENTITY.rotateY,
+    shadowOffset: {
+      width: props?.shadowOffset?.width ?? 0,
+      height: props?.shadowOffset?.height ?? 0,
+    },
     backgroundColor: props?.backgroundColor as string | undefined,
     borderColor: props?.borderColor as string | undefined,
     shadowColor: props?.shadowColor as string | undefined,
@@ -211,7 +217,6 @@ const CSS_PROP_MAP = {
   borderWidth: 'border-width',
   borderColor: 'border-color',
   boxShadow: 'box-shadow',
-  elevation: 'elevation',
 } as const;
 
 type CategoryKey = keyof typeof CSS_PROP_MAP;
@@ -230,7 +235,6 @@ function resolvePerCategoryConfigs(
       borderWidth: def,
       borderColor: def,
       boxShadow: def,
-      elevation: def,
     };
   }
   if (isSingleTransition(transition)) {
@@ -243,7 +247,6 @@ function resolvePerCategoryConfigs(
       borderWidth: def,
       borderColor: def,
       boxShadow: def,
-      elevation: def,
     };
   }
   // TransitionMap
@@ -270,7 +273,6 @@ function resolvePerCategoryConfigs(
     borderWidth: borderConfig,
     borderColor: borderConfig,
     boxShadow: shadowConfig,
-    elevation: shadowConfig,
   };
 }
 
@@ -530,14 +532,8 @@ export function EaseView({
           shadowColor: displayValues.shadowColor ?? 'black',
           shadowOpacity: displayValues.shadowOpacity,
           shadowRadius: displayValues.shadowRadius,
-          shadowOffset: {
-            width: displayValues.shadowOffsetX,
-            height: displayValues.shadowOffsetY,
-          },
+          shadowOffset: displayValues.shadowOffset,
         }
-      : {}),
-    ...(displayValues.elevation > 0
-      ? { elevation: displayValues.elevation }
       : {}),
   };
 

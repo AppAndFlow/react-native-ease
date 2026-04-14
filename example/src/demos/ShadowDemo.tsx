@@ -15,15 +15,13 @@ export function ShadowDemo() {
             ? {
                 shadowOpacity: 0.4,
                 shadowRadius: 16,
-                shadowOffsetX: 0,
-                shadowOffsetY: 8,
+                shadowOffset: { width: 0, height: 8 },
                 elevation: 12,
               }
             : {
                 shadowOpacity: 0,
                 shadowRadius: 0,
-                shadowOffsetX: 0,
-                shadowOffsetY: 0,
+                shadowOffset: { width: 0, height: 0 },
                 elevation: 0,
               }
         }

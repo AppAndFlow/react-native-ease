@@ -128,10 +128,8 @@ export type AnimateProps = {
   shadowRadius?: number;
   /** Shadow color (iOS only). Accepts any React Native color value. @default 'black' */
   shadowColor?: ColorValue;
-  /** Shadow horizontal offset (iOS only). @default 0 */
-  shadowOffsetX?: number;
-  /** Shadow vertical offset (iOS only). @default 0 */
-  shadowOffsetY?: number;
+  /** Shadow offset (iOS only). @default { width: 0, height: 0 } */
+  shadowOffset?: { width?: number; height?: number };
   /** Android elevation for material shadow. @default 0 */
   elevation?: number;
 };

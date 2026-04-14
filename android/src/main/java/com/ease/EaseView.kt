@@ -132,8 +132,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         const val MASK_BACKGROUND_COLOR = 1 shl 9
         const val MASK_BORDER_WIDTH = 1 shl 10
         const val MASK_BORDER_COLOR = 1 shl 11
-        // Masks 12-16 are shadow properties (iOS only)
-        const val MASK_ELEVATION = 1 shl 17
+        // Masks 12-15 are shadow properties (iOS only)
+        const val MASK_ELEVATION = 1 shl 16
     }
 
     // --- Transform origin (0–1 fractions) ---
