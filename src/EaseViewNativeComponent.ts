@@ -26,6 +26,7 @@ type NativeTransitions = Readonly<{
   opacity?: NativeTransitionConfig;
   borderRadius?: NativeTransitionConfig;
   backgroundColor?: NativeTransitionConfig;
+  border?: NativeTransitionConfig;
 }>;
 
 export interface NativeProps extends ViewProps {
@@ -43,6 +44,8 @@ export interface NativeProps extends ViewProps {
   animateRotateY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
   animateBorderRadius?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
   animateBackgroundColor?: ColorValue;
+  animateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateBorderColor?: ColorValue;
 
   // Initial values for enter animations
   initialAnimateOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
@@ -58,6 +61,8 @@ export interface NativeProps extends ViewProps {
     0.0
   >;
   initialAnimateBackgroundColor?: ColorValue;
+  initialAnimateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  initialAnimateBorderColor?: ColorValue;
 
   // Unified transition config — one struct with per-property configs
   transitions?: NativeTransitions;

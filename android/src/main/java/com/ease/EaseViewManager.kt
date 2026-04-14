@@ -153,6 +153,31 @@ class EaseViewManager : ReactViewManager() {
         view.initialAnimateBackgroundColor = value ?: Color.TRANSPARENT
     }
 
+    // --- Border width ---
+
+    @ReactProp(name = "animateBorderWidth", defaultFloat = 0f)
+    fun setAnimateBorderWidth(view: EaseView, value: Float) {
+        // BackgroundStyleApplicator.setBorderWidth expects DIPs (converts internally)
+        view.pendingBorderWidth = value
+    }
+
+    @ReactProp(name = "initialAnimateBorderWidth", defaultFloat = 0f)
+    fun setInitialAnimateBorderWidth(view: EaseView, value: Float) {
+        view.initialAnimateBorderWidth = value
+    }
+
+    // --- Border color ---
+
+    @ReactProp(name = "animateBorderColor", customType = "Color")
+    fun setAnimateBorderColor(view: EaseView, value: Int?) {
+        view.pendingBorderColor = value ?: Color.BLACK
+    }
+
+    @ReactProp(name = "initialAnimateBorderColor", customType = "Color")
+    fun setInitialAnimateBorderColor(view: EaseView, value: Int?) {
+        view.initialAnimateBorderColor = value ?: Color.BLACK
+    }
+
     // --- Hardware layer ---
 
     @ReactProp(name = "useHardwareLayer", defaultBoolean = false)

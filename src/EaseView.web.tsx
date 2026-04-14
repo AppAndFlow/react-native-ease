@@ -11,7 +11,9 @@ import type {
 } from './types';
 
 /** Identity values used as defaults for animate/initialAnimate. */
-const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
+const IDENTITY: Required<
+  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor'>
+> = {
   opacity: 1,
   translateX: 0,
   translateY: 0,
@@ -21,6 +23,7 @@ const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
   rotateX: 0,
   rotateY: 0,
   borderRadius: 0,
+  borderWidth: 0,
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -124,9 +127,10 @@ export type EaseViewProps = {
 };
 
 function resolveAnimateValues(props: AnimateProps | undefined): Required<
-  Omit<AnimateProps, 'scale' | 'backgroundColor'>
+  Omit<AnimateProps, 'scale' | 'backgroundColor' | 'borderColor'>
 > & {
   backgroundColor?: string;
+  borderColor?: string;
 } {
   return {
     ...IDENTITY,
@@ -136,6 +140,7 @@ function resolveAnimateValues(props: AnimateProps | undefined): Required<
     rotateX: props?.rotateX ?? IDENTITY.rotateX,
     rotateY: props?.rotateY ?? IDENTITY.rotateY,
     backgroundColor: props?.backgroundColor as string | undefined,
+    borderColor: props?.borderColor as string | undefined,
   };
 }
 
@@ -196,6 +201,8 @@ const CSS_PROP_MAP = {
   transform: 'transform',
   borderRadius: 'border-radius',
   backgroundColor: 'background-color',
+  borderWidth: 'border-width',
+  borderColor: 'border-color',
 } as const;
 
 type CategoryKey = keyof typeof CSS_PROP_MAP;
@@ -211,6 +218,8 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
     };
   }
   if (isSingleTransition(transition)) {
@@ -220,10 +229,15 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
     };
   }
   // TransitionMap
   const defaultConfig = resolveConfigForCss(transition.default);
+  const borderConfig = transition.border
+    ? resolveConfigForCss(transition.border)
+    : defaultConfig;
   return {
     opacity: transition.opacity
       ? resolveConfigForCss(transition.opacity)
@@ -237,6 +251,8 @@ function resolvePerCategoryConfigs(
     backgroundColor: transition.backgroundColor
       ? resolveConfigForCss(transition.backgroundColor)
       : defaultConfig,
+    borderWidth: borderConfig,
+    borderColor: borderConfig,
   };
 }
 
@@ -484,6 +500,12 @@ export function EaseView({
       : {}),
     ...(displayValues.backgroundColor
       ? { backgroundColor: displayValues.backgroundColor }
+      : {}),
+    ...(displayValues.borderWidth > 0
+      ? { borderWidth: displayValues.borderWidth }
+      : {}),
+    ...(displayValues.borderColor
+      ? { borderColor: displayValues.borderColor }
       : {}),
   };
 

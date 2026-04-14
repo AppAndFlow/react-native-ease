@@ -60,6 +60,8 @@ export type TransitionMap = {
   borderRadius?: SingleTransition;
   /** Config for backgroundColor. */
   backgroundColor?: SingleTransition;
+  /** Config for border properties (borderWidth, borderColor). */
+  border?: SingleTransition;
 };
 
 /** Animation transition configuration — either a single config or a per-property map. */
@@ -114,4 +116,8 @@ export type AnimateProps = {
   borderRadius?: number;
   /** Background color. Accepts any React Native color value. @default 'transparent' */
   backgroundColor?: ColorValue;
+  /** Border width in pixels. @default 0 */
+  borderWidth?: number;
+  /** Border color. Accepts any React Native color value. @default 'black' */
+  borderColor?: ColorValue;
 };
