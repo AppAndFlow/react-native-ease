@@ -16,6 +16,7 @@ import { EnterDemo } from './EnterDemo';
 import { ExitDemo } from './ExitDemo';
 import { FadeDemo } from './FadeDemo';
 import { InterruptDemo } from './InterruptDemo';
+import { KitchenSinkDemo } from './KitchenSinkDemo';
 import { PulseDemo } from './PulseDemo';
 import { RotateDemo } from './RotateDemo';
 import { ScaleDemo } from './ScaleDemo';
@@ -110,6 +111,11 @@ export const demos: Record<string, DemoEntry> = {
   'per-property': {
     component: PerPropertyDemo,
     title: 'Per-Property',
+    section: 'Advanced',
+  },
+  'kitchen-sink': {
+    component: KitchenSinkDemo,
+    title: 'Kitchen Sink',
     section: 'Advanced',
   },
   ...(Platform.OS !== 'web'
