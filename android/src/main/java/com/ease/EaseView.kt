@@ -15,6 +15,10 @@ import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.uimanager.BackgroundStyleApplicator
+import com.facebook.react.uimanager.LengthPercentage
+import com.facebook.react.uimanager.LengthPercentageType
+import com.facebook.react.uimanager.PixelUtil
+import com.facebook.react.uimanager.style.BorderRadiusProp
 import com.facebook.react.uimanager.style.LogicalEdge
 import com.facebook.react.views.view.ReactViewGroup
 import kotlin.math.sqrt
@@ -160,6 +164,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 clipToOutline = false
             }
             invalidateOutline()
+            // Sync border drawable so borders follow the animated corner radius.
+            // Value is in pixels; convert back to DIPs for BackgroundStyleApplicator.
+            val dip = PixelUtil.toDIPFromPixel(value)
+            BackgroundStyleApplicator.setBorderRadius(
+                this, BorderRadiusProp.BORDER_RADIUS,
+                LengthPercentage(dip, LengthPercentageType.POINT))
         }
     }
 
@@ -246,15 +256,16 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         cameraDistance = density * density * perspective * CAMERA_DISTANCE_NORMALIZATION_MULTIPLIER
     }
 
+    // Custom outline provider used when borderRadius is animated.
+    // Reads _borderRadius dynamically — invalidated on each frame by setAnimateBorderRadius.
+    private val animatedOutlineProvider = object : ViewOutlineProvider() {
+        override fun getOutline(view: View, outline: Outline) {
+            outline.setRoundRect(0, 0, view.width, view.height, _borderRadius)
+        }
+    }
+
     init {
         applyCameraDistance(1280f)
-
-        // ViewOutlineProvider reads _borderRadius dynamically — set once, invalidated on each frame.
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                outline.setRoundRect(0, 0, view.width, view.height, _borderRadius)
-            }
-        }
     }
 
     // --- Hardware layer management ---
@@ -319,6 +330,16 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         // Bitmask: which properties are animated. Non-animated = let style handle.
         val mask = animatedProperties
+
+        // Use custom outline provider only when borderRadius is animated.
+        // Otherwise fall back to BACKGROUND provider so elevation shadows
+        // respect the style borderRadius from the background drawable.
+        val needsCustomOutline = mask and MASK_BORDER_RADIUS != 0
+        if (needsCustomOutline && outlineProvider !== animatedOutlineProvider) {
+            outlineProvider = animatedOutlineProvider
+        } else if (!needsCustomOutline && outlineProvider === animatedOutlineProvider) {
+            outlineProvider = ViewOutlineProvider.BACKGROUND
+        }
 
         if (isFirstMount) {
             isFirstMount = false
@@ -974,6 +995,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         applyBackgroundColor(Color.TRANSPARENT)
         setAnimateBorderWidth(0f)
         applyBorderColor(Color.BLACK)
+        outlineProvider = ViewOutlineProvider.BACKGROUND
 
         transformPerspective = 1280f
         isFirstMount = true
