@@ -157,12 +157,13 @@ class EaseViewManager : ReactViewManager() {
 
     @ReactProp(name = "animateBorderWidth", defaultFloat = 0f)
     fun setAnimateBorderWidth(view: EaseView, value: Float) {
-        view.pendingBorderWidth = PixelUtil.toPixelFromDIP(value)
+        // BackgroundStyleApplicator.setBorderWidth expects DIPs (converts internally)
+        view.pendingBorderWidth = value
     }
 
     @ReactProp(name = "initialAnimateBorderWidth", defaultFloat = 0f)
     fun setInitialAnimateBorderWidth(view: EaseView, value: Float) {
-        view.initialAnimateBorderWidth = PixelUtil.toPixelFromDIP(value)
+        view.initialAnimateBorderWidth = value
     }
 
     // --- Border color ---
