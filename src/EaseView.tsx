@@ -22,6 +22,11 @@ const IDENTITY = {
   rotateY: 0,
   borderRadius: 0,
   borderWidth: 0,
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  shadowOffsetWidth: 0,
+  shadowOffsetHeight: 0,
+  elevation: 0,
 };
 
 /** Bitmask flags — must match native constants. */
@@ -38,6 +43,11 @@ const MASK_BORDER_RADIUS = 1 << 8;
 const MASK_BACKGROUND_COLOR = 1 << 9;
 const MASK_BORDER_WIDTH = 1 << 10;
 const MASK_BORDER_COLOR = 1 << 11;
+const MASK_SHADOW_OPACITY = 1 << 12;
+const MASK_SHADOW_RADIUS = 1 << 13;
+const MASK_SHADOW_COLOR = 1 << 14;
+const MASK_SHADOW_OFFSET = 1 << 15;
+const MASK_ELEVATION = 1 << 16;
 /* eslint-enable no-bitwise */
 
 /** Maps animate prop keys to style keys that conflict. */
@@ -55,6 +65,11 @@ const ANIMATE_TO_STYLE_KEYS: Record<keyof AnimateProps, string> = {
   backgroundColor: 'backgroundColor',
   borderWidth: 'borderWidth',
   borderColor: 'borderColor',
+  shadowOpacity: 'shadowOpacity',
+  shadowRadius: 'shadowRadius',
+  shadowColor: 'shadowColor',
+  shadowOffset: 'shadowOffset',
+  elevation: 'elevation',
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -143,6 +158,7 @@ const CATEGORY_KEYS = [
   'borderRadius',
   'backgroundColor',
   'border',
+  'shadow',
 ] as const;
 
 /** Resolve the transition prop into a NativeTransitions struct. */
@@ -249,6 +265,11 @@ export function EaseView({
     animatedProperties |= MASK_BACKGROUND_COLOR;
   if (animate?.borderWidth != null) animatedProperties |= MASK_BORDER_WIDTH;
   if (animate?.borderColor != null) animatedProperties |= MASK_BORDER_COLOR;
+  if (animate?.shadowOpacity != null) animatedProperties |= MASK_SHADOW_OPACITY;
+  if (animate?.shadowRadius != null) animatedProperties |= MASK_SHADOW_RADIUS;
+  if (animate?.shadowColor != null) animatedProperties |= MASK_SHADOW_COLOR;
+  if (animate?.shadowOffset != null) animatedProperties |= MASK_SHADOW_OFFSET;
+  if (animate?.elevation != null) animatedProperties |= MASK_ELEVATION;
   /* eslint-enable no-bitwise */
 
   // Resolve animate values (identity defaults for non-animated — safe values).
@@ -259,6 +280,9 @@ export function EaseView({
     scaleY: animate?.scaleY ?? animate?.scale ?? IDENTITY.scaleY,
     rotateX: animate?.rotateX ?? IDENTITY.rotateX,
     rotateY: animate?.rotateY ?? IDENTITY.rotateY,
+    // Flatten shadowOffset object into individual values for native
+    shadowOffsetWidth: animate?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: animate?.shadowOffset?.height ?? 0,
   };
 
   // Resolve initialAnimate:
@@ -273,6 +297,8 @@ export function EaseView({
     scaleY: initial?.scaleY ?? initial?.scale ?? IDENTITY.scaleY,
     rotateX: initial?.rotateX ?? IDENTITY.rotateX,
     rotateY: initial?.rotateY ?? IDENTITY.rotateY,
+    shadowOffsetWidth: initial?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: initial?.shadowOffset?.height ?? 0,
   };
 
   // Resolve color props — passed as ColorValue directly (codegen handles conversion)
@@ -280,6 +306,8 @@ export function EaseView({
   const initialBgColor = initialAnimate?.backgroundColor ?? animBgColor;
   const animBorderColor = animate?.borderColor ?? 'black';
   const initialBorderColor = initialAnimate?.borderColor ?? animBorderColor;
+  const animShadowColor = animate?.shadowColor ?? 'black';
+  const initialShadowColor = initialAnimate?.shadowColor ?? animShadowColor;
 
   // Strip style keys that conflict with animated properties
   let cleanStyle: ViewProps['style'] = style;
@@ -340,6 +368,12 @@ export function EaseView({
       animateBackgroundColor={animBgColor}
       animateBorderWidth={resolved.borderWidth}
       animateBorderColor={animBorderColor}
+      animateShadowOpacity={resolved.shadowOpacity}
+      animateShadowRadius={resolved.shadowRadius}
+      animateShadowColor={animShadowColor}
+      animateShadowOffsetX={resolved.shadowOffsetWidth}
+      animateShadowOffsetY={resolved.shadowOffsetHeight}
+      animateElevation={resolved.elevation}
       initialAnimateOpacity={resolvedInitial.opacity}
       initialAnimateTranslateX={resolvedInitial.translateX}
       initialAnimateTranslateY={resolvedInitial.translateY}
@@ -352,6 +386,12 @@ export function EaseView({
       initialAnimateBackgroundColor={initialBgColor}
       initialAnimateBorderWidth={resolvedInitial.borderWidth}
       initialAnimateBorderColor={initialBorderColor}
+      initialAnimateShadowOpacity={resolvedInitial.shadowOpacity}
+      initialAnimateShadowRadius={resolvedInitial.shadowRadius}
+      initialAnimateShadowColor={initialShadowColor}
+      initialAnimateShadowOffsetX={resolvedInitial.shadowOffsetWidth}
+      initialAnimateShadowOffsetY={resolvedInitial.shadowOffsetHeight}
+      initialAnimateElevation={resolvedInitial.elevation}
       transitions={transitions}
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}

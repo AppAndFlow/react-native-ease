@@ -16,6 +16,7 @@ import { EnterDemo } from './EnterDemo';
 import { ExitDemo } from './ExitDemo';
 import { FadeDemo } from './FadeDemo';
 import { InterruptDemo } from './InterruptDemo';
+import { KitchenSinkDemo } from './KitchenSinkDemo';
 import { PulseDemo } from './PulseDemo';
 import { RotateDemo } from './RotateDemo';
 import { ScaleDemo } from './ScaleDemo';
@@ -24,6 +25,7 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { ShadowDemo } from './ShadowDemo';
 import { SpinDemo } from './SpinDemo';
 import { UniwindDemo } from './uniwind/UniwindDemo';
 
@@ -78,6 +80,11 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Background Color',
     section: 'Style',
   },
+  'shadow': {
+    component: ShadowDemo,
+    title: 'Shadow',
+    section: 'Style',
+  },
   'style-rerender': {
     component: StyleReRenderDemo,
     title: 'Style Re-Render',
@@ -104,6 +111,11 @@ export const demos: Record<string, DemoEntry> = {
   'per-property': {
     component: PerPropertyDemo,
     title: 'Per-Property',
+    section: 'Advanced',
+  },
+  'kitchen-sink': {
+    component: KitchenSinkDemo,
+    title: 'Kitchen Sink',
     section: 'Advanced',
   },
   ...(Platform.OS !== 'web'

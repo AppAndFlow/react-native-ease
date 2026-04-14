@@ -178,6 +178,18 @@ class EaseViewManager : ReactViewManager() {
         view.initialAnimateBorderColor = value ?: Color.BLACK
     }
 
+    // --- Elevation ---
+
+    @ReactProp(name = "animateElevation", defaultFloat = 0f)
+    fun setAnimateElevation(view: EaseView, value: Float) {
+        view.pendingElevation = PixelUtil.toPixelFromDIP(value)
+    }
+
+    @ReactProp(name = "initialAnimateElevation", defaultFloat = 0f)
+    fun setInitialAnimateElevation(view: EaseView, value: Float) {
+        view.initialAnimateElevation = PixelUtil.toPixelFromDIP(value)
+    }
+
     // --- Hardware layer ---
 
     @ReactProp(name = "useHardwareLayer", defaultBoolean = false)
