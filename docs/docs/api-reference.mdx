@@ -36,6 +36,13 @@ A `View` that animates property changes using native platform APIs.
 | `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees |
 | `borderRadius`    | `number`     | `0`             | Border radius in pixels |
 | `backgroundColor` | `ColorValue` | `'transparent'` | Background color |
+| `borderWidth`     | `number`     | `0`             | Border width in pixels |
+| `borderColor`     | `ColorValue` | `'black'`       | Border color |
+| `shadowOpacity`   | `number`     | `0`             | Shadow opacity 0–1 (iOS only) |
+| `shadowRadius`    | `number`     | `0`             | Shadow blur radius (iOS only) |
+| `shadowColor`     | `ColorValue` | `'black'`       | Shadow color (iOS only) |
+| `shadowOffset`    | `object`     | `{width:0,height:0}` | Shadow offset `{ width, height }` (iOS only) |
+| `elevation`       | `number`     | `0`             | Material shadow elevation (Android only) |
 
 ## `TimingTransition`
 
@@ -82,6 +89,8 @@ A per-property map that applies different transition configs to different proper
 | `opacity`         | opacity |
 | `borderRadius`    | borderRadius |
 | `backgroundColor` | backgroundColor |
+| `border`          | borderWidth, borderColor |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
 
 ## Hardware layers (Android)
 

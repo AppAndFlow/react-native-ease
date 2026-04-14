@@ -63,8 +63,8 @@ Apply these checks in order. The first match determines the result:
 5c. **Uses `withDelay` wrapping `withSequence` or nested `withDelay`?** → NOT migratable — "Complex delay/sequencing not supported"
 6. **Uses complex `interpolate()`?** (more than 2 input/output values) → NOT migratable — "Complex interpolation"
 7. **Uses `layout={...}` prop?** → NOT migratable — "Layout animation"
-8. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor) → NOT migratable — "Animates unsupported property: `<prop>`"
-9. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → MIGRATABLE — map to `TransitionMap` with category keys (`transform`, `opacity`, `borderRadius`, `backgroundColor`, `default`)
+8. **Animates unsupported properties?** (anything besides: opacity, translateX, translateY, scale, scaleX, scaleY, rotate, rotateX, rotateY, borderRadius, backgroundColor, borderWidth, borderColor, shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation) → NOT migratable — "Animates unsupported property: `<prop>`"
+9. **Uses different transition configs per property?** (e.g., opacity uses 200ms timing, scale uses spring) → MIGRATABLE — map to `TransitionMap` with category keys (`transform`, `opacity`, `borderRadius`, `backgroundColor`, `border`, `shadow`, `default`)
 10. **Not driven by state?** (animation triggered by gesture/scroll value, not React state) → NOT migratable — "Not state-driven"
 11. **Otherwise** → MIGRATABLE
 
@@ -363,6 +363,13 @@ All properties in the `animate` prop:
 | `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees (3D)      |
 | `borderRadius`    | `number`     | `0`             | In pixels                            |
 | `backgroundColor` | `ColorValue` | `'transparent'` | Any RN color value                   |
+| `borderWidth`     | `number`     | `0`             | In pixels                            |
+| `borderColor`     | `ColorValue` | `'black'`       | Any RN color value                   |
+| `shadowOpacity`   | `number`     | `0`             | 0–1 (iOS only)                       |
+| `shadowRadius`    | `number`     | `0`             | In pixels (iOS only)                 |
+| `shadowColor`     | `ColorValue` | `'black'`       | Any RN color value (iOS only)        |
+| `shadowOffset`    | `object`     | `{width:0,height:0}` | `{ width, height }` (iOS only) |
+| `elevation`       | `number`     | `0`             | Android material shadow              |
 
 ### Transition Types
 
@@ -400,7 +407,7 @@ transition={{ type: 'none' }}
 
 - `animate` — target values for animated properties
 - `initialAnimate` — starting values (animates to `animate` on mount)
-- `transition` — animation config: a single `SingleTransition` (timing/spring/none) OR a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`)
+- `transition` — animation config: a single `SingleTransition` (timing/spring/none) OR a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`, `border`, `shadow`)
 - `onTransitionEnd` — callback with `{ finished: boolean }`
 - `transformOrigin` — pivot point as `{ x: 0-1, y: 0-1 }`, default center
 - `useHardwareLayer` — Android GPU optimization (boolean, default false)
@@ -409,7 +416,7 @@ transition={{ type: 'none' }}
 ### Important Constraints
 
 - **Loop requires timing** (not spring) and `initialAnimate` must define the start value
-- **Per-property transitions supported** — pass a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`) to use different configs per property group
+- **Per-property transitions supported** — pass a `TransitionMap` with category keys (`default`, `transform`, `opacity`, `borderRadius`, `backgroundColor`, `border`, `shadow`) to use different configs per property group
 - **No animation sequencing** — no equivalent to `withSequence`. Simple `withDelay` IS supported via the `delay` transition prop
 - **No gesture/scroll-driven animations** — EaseView is state-driven only
 - **Style/animate conflict** — if a property appears in both `style` and `animate`, the animated value wins

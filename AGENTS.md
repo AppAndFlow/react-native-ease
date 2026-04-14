@@ -58,6 +58,7 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 - `README.md` (props table + usage section)
 - `docs/docs/usage.mdx` (usage guide)
 - `docs/docs/api-reference.mdx` (API reference table)
+- `skills/react-native-ease-refactor/SKILL.md` (supported properties list, transition category keys, decision tree)
 
 ## Development Commands
 
