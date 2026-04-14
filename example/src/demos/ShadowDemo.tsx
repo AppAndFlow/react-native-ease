@@ -18,12 +18,14 @@ export function ShadowDemo() {
                   shadowRadius: 16,
                   shadowOffset: { width: 0, height: 8 },
                   elevation: 12,
+                  borderRadius: 32,
                 }
               : {
                   shadowOpacity: 0,
                   shadowRadius: 0,
                   shadowOffset: { width: 0, height: 0 },
                   elevation: 0,
+                  borderRadius: 16,
                 }
           }
           transition={{
@@ -58,7 +60,6 @@ const styles = StyleSheet.create({
   box: {
     width: 100,
     height: 100,
-    borderRadius: 16,
     backgroundColor: '#fff',
     shadowColor: '#000',
     alignItems: 'center',
