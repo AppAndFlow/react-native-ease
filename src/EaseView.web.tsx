@@ -7,10 +7,16 @@ import type {
   Transition,
   TransitionEndEvent,
   TransformOrigin,
+  TransformPerspective,
 } from './types';
 
 /** Identity values used as defaults for animate/initialAnimate. */
-const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
+const IDENTITY: Required<
+  Omit<
+    AnimateProps,
+    'scale' | 'backgroundColor' | 'borderColor' | 'shadowColor' | 'shadowOffset'
+  >
+> & { shadowOffset: { width: number; height: number } } = {
   opacity: 1,
   translateX: 0,
   translateY: 0,
@@ -20,6 +26,11 @@ const IDENTITY: Required<Omit<AnimateProps, 'scale' | 'backgroundColor'>> = {
   rotateX: 0,
   rotateY: 0,
   borderRadius: 0,
+  borderWidth: 0,
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  shadowOffset: { width: 0, height: 0 },
+  elevation: 0,
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -112,14 +123,22 @@ export type EaseViewProps = {
   /** No-op on web. */
   useHardwareLayer?: boolean;
   transformOrigin?: TransformOrigin;
+  /**
+   * Distance of the camera from the z=0 plane for 3D transforms (rotateX, rotateY).
+   * Higher values produce a flatter, more telephoto look; lower values exaggerate
+   * perspective. @default 1280
+   */
+  transformPerspective?: TransformPerspective;
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 };
 
-function resolveAnimateValues(props: AnimateProps | undefined): Required<
-  Omit<AnimateProps, 'scale' | 'backgroundColor'>
-> & {
+function resolveAnimateValues(
+  props: AnimateProps | undefined,
+): typeof IDENTITY & {
   backgroundColor?: string;
+  borderColor?: string;
+  shadowColor?: string;
 } {
   return {
     ...IDENTITY,
@@ -128,12 +147,24 @@ function resolveAnimateValues(props: AnimateProps | undefined): Required<
     scaleY: props?.scaleY ?? props?.scale ?? IDENTITY.scaleY,
     rotateX: props?.rotateX ?? IDENTITY.rotateX,
     rotateY: props?.rotateY ?? IDENTITY.rotateY,
+    shadowOffset: {
+      width: props?.shadowOffset?.width ?? 0,
+      height: props?.shadowOffset?.height ?? 0,
+    },
     backgroundColor: props?.backgroundColor as string | undefined,
+    borderColor: props?.borderColor as string | undefined,
+    shadowColor: props?.shadowColor as string | undefined,
   };
 }
 
-function buildTransform(vals: ReturnType<typeof resolveAnimateValues>): string {
+function buildTransform(
+  vals: ReturnType<typeof resolveAnimateValues>,
+  perspective: number | false,
+): string {
   const parts: string[] = [];
+  if (perspective !== false) {
+    parts.push(`perspective(${perspective}px)`);
+  }
   if (vals.translateX !== 0 || vals.translateY !== 0) {
     parts.push(`translate(${vals.translateX}px, ${vals.translateY}px)`);
   }
@@ -183,6 +214,9 @@ const CSS_PROP_MAP = {
   transform: 'transform',
   borderRadius: 'border-radius',
   backgroundColor: 'background-color',
+  borderWidth: 'border-width',
+  borderColor: 'border-color',
+  boxShadow: 'box-shadow',
 } as const;
 
 type CategoryKey = keyof typeof CSS_PROP_MAP;
@@ -198,6 +232,9 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
+      boxShadow: def,
     };
   }
   if (isSingleTransition(transition)) {
@@ -207,10 +244,19 @@ function resolvePerCategoryConfigs(
       transform: def,
       borderRadius: def,
       backgroundColor: def,
+      borderWidth: def,
+      borderColor: def,
+      boxShadow: def,
     };
   }
   // TransitionMap
   const defaultConfig = resolveConfigForCss(transition.default);
+  const borderConfig = transition.border
+    ? resolveConfigForCss(transition.border)
+    : defaultConfig;
+  const shadowConfig = transition.shadow
+    ? resolveConfigForCss(transition.shadow)
+    : defaultConfig;
   return {
     opacity: transition.opacity
       ? resolveConfigForCss(transition.opacity)
@@ -224,6 +270,9 @@ function resolvePerCategoryConfigs(
     backgroundColor: transition.backgroundColor
       ? resolveConfigForCss(transition.backgroundColor)
       : defaultConfig,
+    borderWidth: borderConfig,
+    borderColor: borderConfig,
+    boxShadow: shadowConfig,
   };
 }
 
@@ -269,10 +318,18 @@ export function EaseView({
   onTransitionEnd,
   useHardwareLayer: _useHardwareLayer,
   transformOrigin,
+  transformPerspective = 1280,
   style,
   children,
 }: EaseViewProps) {
   const resolved = resolveAnimateValues(animate);
+
+  const uses3D =
+    animate?.rotateX != null ||
+    animate?.rotateY != null ||
+    initialAnimate?.rotateX != null ||
+    initialAnimate?.rotateY != null;
+
   const hasInitial = initialAnimate != null;
   const [mounted, setMounted] = useState(!hasInitial);
   // On web, View ref gives us the underlying DOM element.
@@ -370,8 +427,14 @@ export function EaseView({
       : resolveAnimateValues(undefined);
     const toValues = resolveAnimateValues(animate);
 
-    const fromTransform = buildTransform(fromValues);
-    const toTransform = buildTransform(toValues);
+    const fromTransform = buildTransform(
+      fromValues,
+      uses3D && transformPerspective,
+    );
+    const toTransform = buildTransform(
+      toValues,
+      uses3D && transformPerspective,
+    );
 
     const name = `ease-loop-${++keyframeCounter}`;
     animationNameRef.current = name;
@@ -421,13 +484,23 @@ export function EaseView({
       el.style.animation = '';
       animationNameRef.current = null;
     };
-  }, [loopMode, animate, initialAnimate, loopDuration, loopEasing, getElement]);
+  }, [
+    loopMode,
+    animate,
+    initialAnimate,
+    loopDuration,
+    loopEasing,
+    getElement,
+    uses3D,
+    transformPerspective,
+  ]);
 
   // Build animated style using RN transform array format.
   // react-native-web converts these to CSS transform strings.
   const animatedStyle: ViewStyle = {
     opacity: displayValues.opacity,
     transform: [
+      ...(uses3D ? [{ perspective: transformPerspective }] : []),
       ...(displayValues.translateX !== 0
         ? [{ translateX: displayValues.translateX }]
         : []),
@@ -439,18 +512,28 @@ export function EaseView({
       ...(displayValues.rotate !== 0
         ? [{ rotate: `${displayValues.rotate}deg` }]
         : []),
-      ...(displayValues.rotateX !== 0
-        ? [{ rotateX: `${displayValues.rotateX}deg` }]
-        : []),
-      ...(displayValues.rotateY !== 0
-        ? [{ rotateY: `${displayValues.rotateY}deg` }]
-        : []),
+      ...(uses3D ? [{ rotateX: `${displayValues.rotateX}deg` }] : []),
+      ...(uses3D ? [{ rotateY: `${displayValues.rotateY}deg` }] : []),
     ],
     ...(displayValues.borderRadius > 0
       ? { borderRadius: displayValues.borderRadius }
       : {}),
     ...(displayValues.backgroundColor
       ? { backgroundColor: displayValues.backgroundColor }
+      : {}),
+    ...(displayValues.borderWidth > 0
+      ? { borderWidth: displayValues.borderWidth }
+      : {}),
+    ...(displayValues.borderColor
+      ? { borderColor: displayValues.borderColor }
+      : {}),
+    ...(displayValues.shadowOpacity > 0
+      ? {
+          shadowColor: displayValues.shadowColor ?? 'black',
+          shadowOpacity: displayValues.shadowOpacity,
+          shadowRadius: displayValues.shadowRadius,
+          shadowOffset: displayValues.shadowOffset,
+        }
       : {}),
   };
 

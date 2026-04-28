@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 import { BackgroundColorDemo } from './BackgroundColorDemo';
 import { BenchmarkDemo } from './BenchmarkDemo';
 import { BannerDemo } from './BannerDemo';
+import { CardFlipDemo } from './CardFlipDemo';
+import { BorderDemo } from './BorderDemo';
 import { BorderRadiusDemo } from './BorderRadiusDemo';
 import { ButtonDemo } from './ButtonDemo';
 import { CombinedDemo } from './CombinedDemo';
@@ -14,6 +16,7 @@ import { EnterDemo } from './EnterDemo';
 import { ExitDemo } from './ExitDemo';
 import { FadeDemo } from './FadeDemo';
 import { InterruptDemo } from './InterruptDemo';
+import { KitchenSinkDemo } from './KitchenSinkDemo';
 import { PulseDemo } from './PulseDemo';
 import { RotateDemo } from './RotateDemo';
 import { ScaleDemo } from './ScaleDemo';
@@ -22,10 +25,13 @@ import { StyleReRenderDemo } from './StyleReRenderDemo';
 import { StyledCardDemo } from './StyledCardDemo';
 import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
+import { ShadowDemo } from './ShadowDemo';
+import { SpinDemo } from './SpinDemo';
 import { TextColorDemo } from './TextColorDemo';
 import { FloatingLabelDemo } from './FloatingLabelDemo';
 import { TextEnterDemo } from './TextEnterDemo';
 import { TextPropsDemo } from './TextPropsDemo';
+import { UniwindDemo } from './uniwind/UniwindDemo';
 
 interface DemoEntry {
   component: ComponentType;
@@ -41,6 +47,11 @@ export const demos: Record<string, DemoEntry> = {
   'exit': { component: ExitDemo, title: 'Exit', section: 'Basic' },
   'rotate': { component: RotateDemo, title: 'Rotate', section: 'Transform' },
   'scale': { component: ScaleDemo, title: 'Scale', section: 'Transform' },
+  'card-flip': {
+    component: CardFlipDemo,
+    title: 'Card Flip',
+    section: 'Transform',
+  },
   'transform-origin': {
     component: TransformOriginDemo,
     title: 'Transform Origin',
@@ -58,6 +69,11 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Styled Card',
     section: 'Style',
   },
+  'border': {
+    component: BorderDemo,
+    title: 'Border',
+    section: 'Style',
+  },
   'border-radius': {
     component: BorderRadiusDemo,
     title: 'Border Radius',
@@ -68,11 +84,22 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Background Color',
     section: 'Style',
   },
+  'shadow': {
+    component: ShadowDemo,
+    title: 'Shadow',
+    section: 'Style',
+  },
   'style-rerender': {
     component: StyleReRenderDemo,
     title: 'Style Re-Render',
     section: 'Style',
   },
+  'uniwind': {
+    component: UniwindDemo,
+    title: 'Uniwind',
+    section: 'Style',
+  },
+  'spin': { component: SpinDemo, title: 'Spin', section: 'Loop' },
   'pulse': { component: PulseDemo, title: 'Pulse', section: 'Loop' },
   'banner': { component: BannerDemo, title: 'Banner', section: 'Loop' },
   'interrupt': {
@@ -88,6 +115,11 @@ export const demos: Record<string, DemoEntry> = {
   'per-property': {
     component: PerPropertyDemo,
     title: 'Per-Property',
+    section: 'Advanced',
+  },
+  'kitchen-sink': {
+    component: KitchenSinkDemo,
+    title: 'Kitchen Sink',
     section: 'Advanced',
   },
   'text-color': {

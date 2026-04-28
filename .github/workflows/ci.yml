@@ -141,7 +141,32 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-
       - name: Build example for iOS
         run: |
           yarn turbo run build:ios --cache-dir="${{ env.TURBO_CACHE_DIR }}"
+
+  build-tvos:
+    runs-on: macos-latest
+
+    env:
+      XCODE_VERSION: 26
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      RCT_USE_RN_DEP: 1
+      RCT_USE_PREBUILT_RNCORE: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Use appropriate Xcode version
+        uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Run tvOS Expo integration build
+        run: |
+          bash ./scripts/test-expo-tv-project.sh

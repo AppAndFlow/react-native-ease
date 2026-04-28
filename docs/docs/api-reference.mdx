@@ -1,0 +1,130 @@
+---
+id: api-reference
+title: API reference
+---
+
+## `<EaseView>`
+
+A `View` that animates property changes using native platform APIs.
+
+| Prop               | Type                         | Description |
+| ------------------ | ---------------------------- | ----------- |
+| `animate`          | `AnimateProps`               | Target values for animated properties |
+| `initialAnimate`   | `AnimateProps`               | Starting values for enter animations |
+| `transition`       | `Transition`                 | Single config or per-property map |
+| `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }` |
+| `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions |
+| `transformPerspective` | `number`                 | Camera distance for 3D transforms (`rotateX`, `rotateY`). Default: `1280` |
+| `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations |
+| `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string |
+| `style`            | `ViewStyle`                  | Non-animated styles |
+| `children`         | `ReactNode`                  | Child elements |
+| `...rest`          | `ViewProps`                  | All other standard View props |
+
+## `AnimateProps`
+
+| Property          | Type         | Default         | Description |
+| ----------------- | ------------ | --------------- | ----------- |
+| `opacity`         | `number`     | `1`             | View opacity (0–1) |
+| `translateX`      | `number`     | `0`             | Horizontal translation in pixels |
+| `translateY`      | `number`     | `0`             | Vertical translation in pixels |
+| `scale`           | `number`     | `1`             | Uniform scale factor |
+| `scaleX`          | `number`     | `1`             | Horizontal scale factor |
+| `scaleY`          | `number`     | `1`             | Vertical scale factor |
+| `rotate`          | `number`     | `0`             | Z-axis rotation in degrees |
+| `rotateX`         | `number`     | `0`             | X-axis rotation in degrees |
+| `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees |
+| `borderRadius`    | `number`     | `0`             | Border radius in pixels |
+| `backgroundColor` | `ColorValue` | `'transparent'` | Background color |
+| `borderWidth`     | `number`     | `0`             | Border width in pixels |
+| `borderColor`     | `ColorValue` | `'black'`       | Border color |
+| `shadowOpacity`   | `number`     | `0`             | Shadow opacity 0–1 (iOS only) |
+| `shadowRadius`    | `number`     | `0`             | Shadow blur radius (iOS only) |
+| `shadowColor`     | `ColorValue` | `'black'`       | Shadow color (iOS only) |
+| `shadowOffset`    | `object`     | `{width:0,height:0}` | Shadow offset `{ width, height }` (iOS only) |
+| `elevation`       | `number`     | `0`             | Material shadow elevation (Android only) |
+
+## `TimingTransition`
+
+```tsx
+{
+  type: 'timing';
+  duration?: number;
+  easing?: EasingType;
+  delay?: number;
+  loop?: 'repeat' | 'reverse';
+}
+```
+
+## `SpringTransition`
+
+```tsx
+{
+  type: 'spring';
+  damping?: number;
+  stiffness?: number;
+  mass?: number;
+  delay?: number;
+}
+```
+
+## `NoneTransition`
+
+```tsx
+{
+  type: 'none';
+}
+```
+
+Applies values instantly with no animation.
+
+## `TransitionMap`
+
+A per-property map that applies different transition configs to different property categories.
+
+| Key               | Properties |
+| ----------------- | ---------- |
+| `default`         | Fallback for categories not explicitly listed |
+| `transform`       | translateX, translateY, scaleX, scaleY, rotate, rotateX, rotateY |
+| `opacity`         | opacity |
+| `borderRadius`    | borderRadius |
+| `backgroundColor` | backgroundColor |
+| `border`          | borderWidth, borderColor |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
+| `color`           | text color (EaseText only, JS-interpolated) |
+
+## `<EaseText>`
+
+A `Text` that animates transforms/opacity natively (via the internal `EaseView`) and optionally interpolates `color` on the JS thread. Accepts all standard `TextProps`.
+
+| Prop                      | Type                         | Description |
+| ------------------------- | ---------------------------- | ----------- |
+| `animate`                 | `TextAnimateProps`           | Target values for animated transforms/opacity |
+| `initialAnimate`          | `TextAnimateProps`           | Starting values for enter animations |
+| `transition`              | `Transition`                 | Single config or per-property map (supports `color` key for JS color interpolation) |
+| `interpolateColor`        | `ColorValue`                 | Target color, smoothly interpolated on the JS thread via `requestAnimationFrame` |
+| `initialInterpolateColor` | `ColorValue`                 | Starting color for mount animations |
+| `onTransitionEnd`         | `(event) => void`            | Fires when transform/opacity animations complete (does not fire for color interpolation) |
+| `transformOrigin`         | `{ x?: number; y?: number }` | Pivot point as 0–1 fractions |
+| `transformPerspective`    | `number`                     | Camera distance for 3D rotations. Default: `1280` |
+| `useHardwareLayer`        | `boolean`                    | Android only |
+| `style`                   | `TextStyle`                  | Use `style.color` for instant color changes (zero JS cost) |
+| `...rest`                 | `TextProps`                  | All standard `Text` props (`numberOfLines`, `ellipsizeMode`, `selectable`, `onPress`, etc.) |
+
+## `TextAnimateProps`
+
+`Omit<AnimateProps, 'borderRadius' | 'backgroundColor' | 'borderWidth' | 'borderColor' | 'shadowOpacity' | 'shadowRadius' | 'shadowColor' | 'shadowOffset' | 'elevation'>` — same transform/opacity props as `AnimateProps`. View-only properties are excluded.
+
+## Hardware layers (Android)
+
+Setting `useHardwareLayer` rasterizes the view into a GPU texture for the duration of the animation.
+
+```tsx
+<EaseView animate={{ opacity: isVisible ? 1 : 0 }} useHardwareLayer />
+```
+
+**Trade-offs:**
+
+- Faster rendering for opacity, scale, and rotation animations.
+- Uses additional GPU memory for the off-screen texture.
+- Overflowing children are clipped by the texture.

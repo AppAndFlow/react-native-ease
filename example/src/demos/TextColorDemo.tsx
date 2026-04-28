@@ -40,7 +40,10 @@ export function TextColorDemo() {
       </EaseText>
 
       <EaseText
-        style={[styles.instant, { color: focused ? '#e94560' : '#8892b0' }]}
+        style={[
+          styles.instant,
+          focused ? styles.instantActive : styles.instantIdle,
+        ]}
       >
         Instant color (style.color, zero JS cost)
       </EaseText>
@@ -70,5 +73,11 @@ const styles = StyleSheet.create({
   instant: {
     fontSize: 14,
     marginBottom: 24,
+  },
+  instantIdle: {
+    color: '#8892b0',
+  },
+  instantActive: {
+    color: '#e94560',
   },
 });

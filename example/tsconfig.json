@@ -1,4 +1,10 @@
 {
-  "compilerOptions": {},
+  "compilerOptions": {
+    "paths": {
+      "react-native-ease": ["../src/index"],
+      "react-native-ease/nativewind": ["../src/nativewind"],
+      "react-native-ease/uniwind": ["../src/uniwind"]
+    }
+  },
   "extends": "expo/tsconfig.base"
 }

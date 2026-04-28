@@ -7,6 +7,7 @@ import type {
   Transition,
   TransitionEndEvent,
   TransformOrigin,
+  TransformPerspective,
 } from './types';
 
 export type EaseTextProps = TextProps & {
@@ -25,6 +26,11 @@ export type EaseTextProps = TextProps & {
   useHardwareLayer?: boolean;
   /** Pivot point for scale and rotation as 0–1 fractions. @default { x: 0.5, y: 0.5 } (center) */
   transformOrigin?: TransformOrigin;
+  /**
+   * Distance of the camera from the z=0 plane for 3D transforms (rotateX, rotateY).
+   * @default 1280
+   */
+  transformPerspective?: TransformPerspective;
   /**
    * Smoothly interpolates the text color using JS (requestAnimationFrame).
    * Follows the `color` key in `transition`, or falls back to `default`.
@@ -45,6 +51,7 @@ export function EaseText({
   onTransitionEnd,
   useHardwareLayer,
   transformOrigin,
+  transformPerspective,
   interpolateColor,
   initialInterpolateColor,
   style,
@@ -70,6 +77,7 @@ export function EaseText({
       onTransitionEnd={onTransitionEnd}
       useHardwareLayer={useHardwareLayer}
       transformOrigin={transformOrigin}
+      transformPerspective={transformPerspective}
     >
       <Text style={textStyle} {...textProps}>
         {children}

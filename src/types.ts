@@ -60,6 +60,10 @@ export type TransitionMap = {
   borderRadius?: SingleTransition;
   /** Config for backgroundColor. */
   backgroundColor?: SingleTransition;
+  /** Config for border properties (borderWidth, borderColor). */
+  border?: SingleTransition;
+  /** Config for shadow properties (shadowOpacity, shadowRadius, shadowColor, shadowOffset) and elevation. */
+  shadow?: SingleTransition;
   /** Config for text color (EaseText only). */
   color?: SingleTransition;
 };
@@ -80,6 +84,17 @@ export type TransformOrigin = {
   /** Vertical origin. 0 = top, 0.5 = center, 1 = bottom. @default 0.5 */
   y?: number;
 };
+
+/**
+ * Distance of the camera from the z=0 plane for 3D transforms (rotateX, rotateY).
+ * Higher values produce a flatter, more telephoto look; lower values exaggerate
+ * perspective. @default 1280 (matches React Native default)
+ *
+ * **iOS note:** On iOS, the parent view must not be flattened by Fabric for
+ * perspective to render correctly. Ensure the parent has `collapsable={false}`
+ * or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+ */
+export type TransformPerspective = number;
 
 /** Animatable view properties. Unspecified properties default to their identity values. */
 export type AnimateProps = {
@@ -105,10 +120,32 @@ export type AnimateProps = {
   borderRadius?: number;
   /** Background color. Accepts any React Native color value. @default 'transparent' */
   backgroundColor?: ColorValue;
+  /** Border width in pixels. @default 0 */
+  borderWidth?: number;
+  /** Border color. Accepts any React Native color value. @default 'black' */
+  borderColor?: ColorValue;
+  /** Shadow opacity (0–1, iOS only). @default 0 */
+  shadowOpacity?: number;
+  /** Shadow blur radius (iOS only). @default 0 */
+  shadowRadius?: number;
+  /** Shadow color (iOS only). Accepts any React Native color value. @default 'black' */
+  shadowColor?: ColorValue;
+  /** Shadow offset (iOS only). @default { width: 0, height: 0 } */
+  shadowOffset?: { width?: number; height?: number };
+  /** Android elevation for material shadow. @default 0 */
+  elevation?: number;
 };
 
-/** Animatable text properties. Same as AnimateProps minus borderRadius/backgroundColor. */
+/** Animatable text properties. Excludes view-only props (border, background, shadow, elevation). */
 export type TextAnimateProps = Omit<
   AnimateProps,
-  'borderRadius' | 'backgroundColor'
+  | 'borderRadius'
+  | 'backgroundColor'
+  | 'borderWidth'
+  | 'borderColor'
+  | 'shadowOpacity'
+  | 'shadowRadius'
+  | 'shadowColor'
+  | 'shadowOffset'
+  | 'elevation'
 >;

@@ -14,8 +14,18 @@ import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.uimanager.BackgroundStyleApplicator
+import com.facebook.react.uimanager.LengthPercentage
+import com.facebook.react.uimanager.LengthPercentageType
+import com.facebook.react.uimanager.PixelUtil
+import com.facebook.react.uimanager.style.BorderRadiusProp
+import com.facebook.react.uimanager.style.LogicalEdge
 import com.facebook.react.views.view.ReactViewGroup
 import kotlin.math.sqrt
+
+// Matches React Native's camera distance normalization.
+// https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/uimanager/BaseViewManager.java#L58
+private val CAMERA_DISTANCE_NORMALIZATION_MULTIPLIER = sqrt(5.0).toFloat()
 
 class EaseView(context: Context) : ReactViewGroup(context) {
 
@@ -30,7 +40,11 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     private var prevRotateY: Float? = null
     private var prevBorderRadius: Float? = null
     private var prevBackgroundColor: Int? = null
+    private var prevBorderWidth: Float? = null
+    private var prevBorderColor: Int? = null
+    private var prevElevation: Float? = null
     private var currentBackgroundColor: Int = Color.TRANSPARENT
+    private var currentBorderColor: Int = Color.BLACK
 
     // --- First mount tracking ---
     private var isFirstMount: Boolean = true
@@ -55,7 +69,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             return
         }
         val configs = mutableMapOf<String, TransitionConfig>()
-        val keys = listOf("defaultConfig", "transform", "opacity", "borderRadius", "backgroundColor")
+        val keys = listOf("defaultConfig", "transform", "opacity", "borderRadius", "backgroundColor", "border", "shadow")
         for (key in keys) {
             if (map.hasKey(key)) {
                 val configMap = map.getMap(key) ?: continue
@@ -88,6 +102,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             "rotate", "rotateX", "rotateY" -> "transform"
             "borderRadius" -> "borderRadius"
             "backgroundColor" -> "backgroundColor"
+            "borderWidth", "borderColor" -> "border"
+            "elevation" -> "shadow"
             else -> null
         }
         if (categoryKey != null) {
@@ -99,7 +115,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     private fun allTransitionsNone(): Boolean {
         val defaultConfig = transitionConfigs["defaultConfig"]
         if (defaultConfig == null || defaultConfig.type != "none") return false
-        val categories = listOf("transform", "opacity", "borderRadius", "backgroundColor")
+        val categories = listOf("transform", "opacity", "borderRadius", "backgroundColor", "border", "shadow")
         return categories.all { key ->
             val config = transitionConfigs[key]
             config == null || config.type == "none"
@@ -118,6 +134,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         const val MASK_ROTATE_Y = 1 shl 7
         const val MASK_BORDER_RADIUS = 1 shl 8
         const val MASK_BACKGROUND_COLOR = 1 shl 9
+        const val MASK_BORDER_WIDTH = 1 shl 10
+        const val MASK_BORDER_COLOR = 1 shl 11
+        // Masks 12-15 are shadow properties (iOS only)
+        const val MASK_ELEVATION = 1 shl 16
     }
 
     // --- Transform origin (0–1 fractions) ---
@@ -148,7 +168,35 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 clipToOutline = false
             }
             invalidateOutline()
+            // Sync border drawable so borders follow the animated corner radius.
+            // Value is in pixels; convert back to DIPs for BackgroundStyleApplicator.
+            val dip = PixelUtil.toDIPFromPixel(value)
+            BackgroundStyleApplicator.setBorderRadius(
+                this, BorderRadiusProp.BORDER_RADIUS,
+                LengthPercentage(dip, LengthPercentageType.POINT))
         }
+    }
+
+    // --- Border width (animated via ObjectAnimator("animateBorderWidth")) ---
+    private var _borderWidth: Float = 0f
+
+    @Suppress("unused") // Used by ObjectAnimator via reflection
+    fun getAnimateBorderWidth(): Float = _borderWidth
+    @Suppress("unused") // Used by ObjectAnimator via reflection
+    fun setAnimateBorderWidth(value: Float) {
+        if (_borderWidth != value) {
+            _borderWidth = value
+            BackgroundStyleApplicator.setBorderWidth(this, LogicalEdge.ALL, value)
+        }
+    }
+
+    private fun applyBorderColor(color: Int) {
+        currentBorderColor = color
+        BackgroundStyleApplicator.setBorderColor(this, LogicalEdge.ALL, color)
+    }
+
+    private fun getCurrentBorderColor(): Int {
+        return currentBorderColor
     }
 
     // --- Hardware layer ---
@@ -173,6 +221,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     var initialAnimateRotateY: Float = 0.0f
     var initialAnimateBorderRadius: Float = 0.0f
     var initialAnimateBackgroundColor: Int = Color.TRANSPARENT
+    var initialAnimateBorderWidth: Float = 0.0f
+    var initialAnimateBorderColor: Int = Color.BLACK
+    var initialAnimateElevation: Float = 0.0f
 
     // --- Pending animate values (buffered per-view, applied in onAfterUpdateTransaction) ---
     var pendingOpacity: Float = 1.0f
@@ -185,6 +236,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     var pendingRotateY: Float = 0.0f
     var pendingBorderRadius: Float = 0.0f
     var pendingBackgroundColor: Int = Color.TRANSPARENT
+    var pendingBorderWidth: Float = 0.0f
+    var pendingBorderColor: Int = Color.BLACK
+    var pendingElevation: Float = 0.0f
 
     // --- Running animations ---
     private val runningAnimators = mutableMapOf<String, Animator>()
@@ -194,16 +248,30 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     // --- Animated properties bitmask (set by ViewManager) ---
     var animatedProperties: Int = 0
 
-    init {
-        // Set camera distance for 3D perspective rotations (rotateX/rotateY)
-        cameraDistance = resources.displayMetrics.density * 850f
-
-        // ViewOutlineProvider reads _borderRadius dynamically — set once, invalidated on each frame.
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                outline.setRoundRect(0, 0, view.width, view.height, _borderRadius)
-            }
+    // --- Transform perspective (camera distance for 3D rotations) ---
+    var transformPerspective: Float = 1280f
+        set(value) {
+            field = value
+            applyCameraDistance(value)
         }
+
+    private fun applyCameraDistance(perspective: Float) {
+        // Match React Native's conversion from CSS perspective to Android cameraDistance.
+        // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/uimanager/BaseViewManager.java#L626-L637
+        val density = resources.displayMetrics.density
+        cameraDistance = density * density * perspective * CAMERA_DISTANCE_NORMALIZATION_MULTIPLIER
+    }
+
+    // Custom outline provider used when borderRadius is animated.
+    // Reads _borderRadius dynamically — invalidated on each frame by setAnimateBorderRadius.
+    private val animatedOutlineProvider = object : ViewOutlineProvider() {
+        override fun getOutline(view: View, outline: Outline) {
+            outline.setRoundRect(0, 0, view.width, view.height, _borderRadius)
+        }
+    }
+
+    init {
+        applyCameraDistance(1280f)
     }
 
     // --- Hardware layer management ---
@@ -241,7 +309,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
     }
 
     fun applyPendingAnimateValues() {
-        applyAnimateValues(pendingOpacity, pendingTranslateX, pendingTranslateY, pendingScaleX, pendingScaleY, pendingRotate, pendingRotateX, pendingRotateY, pendingBorderRadius, pendingBackgroundColor)
+        applyAnimateValues(pendingOpacity, pendingTranslateX, pendingTranslateY, pendingScaleX, pendingScaleY, pendingRotate, pendingRotateX, pendingRotateY, pendingBorderRadius, pendingBackgroundColor, pendingBorderWidth, pendingBorderColor, pendingElevation)
     }
 
     private fun applyAnimateValues(
@@ -254,7 +322,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         rotateX: Float,
         rotateY: Float,
         borderRadius: Float,
-        backgroundColor: Int
+        backgroundColor: Int,
+        borderWidth: Float,
+        borderColor: Int,
+        elevation: Float
     ) {
         if (pendingBatchAnimationCount > 0) {
             onTransitionEnd?.invoke(false)
@@ -266,6 +337,16 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
         // Bitmask: which properties are animated. Non-animated = let style handle.
         val mask = animatedProperties
+
+        // Use custom outline provider only when borderRadius is animated.
+        // Otherwise fall back to BACKGROUND provider so elevation shadows
+        // respect the style borderRadius from the background drawable.
+        val needsCustomOutline = mask and MASK_BORDER_RADIUS != 0
+        if (needsCustomOutline && outlineProvider !== animatedOutlineProvider) {
+            outlineProvider = animatedOutlineProvider
+        } else if (!needsCustomOutline && outlineProvider === animatedOutlineProvider) {
+            outlineProvider = ViewOutlineProvider.BACKGROUND
+        }
 
         if (isFirstMount) {
             isFirstMount = false
@@ -280,7 +361,10 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 (mask and MASK_ROTATE_X != 0 && initialAnimateRotateX != rotateX) ||
                 (mask and MASK_ROTATE_Y != 0 && initialAnimateRotateY != rotateY) ||
                 (mask and MASK_BORDER_RADIUS != 0 && initialAnimateBorderRadius != borderRadius) ||
-                (mask and MASK_BACKGROUND_COLOR != 0 && initialAnimateBackgroundColor != backgroundColor)
+                (mask and MASK_BACKGROUND_COLOR != 0 && initialAnimateBackgroundColor != backgroundColor) ||
+                (mask and MASK_BORDER_WIDTH != 0 && initialAnimateBorderWidth != borderWidth) ||
+                (mask and MASK_BORDER_COLOR != 0 && initialAnimateBorderColor != borderColor) ||
+                (mask and MASK_ELEVATION != 0 && initialAnimateElevation != elevation)
 
             if (hasInitialAnimation) {
                 // Set initial values for animated properties
@@ -294,6 +378,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_ROTATE_Y != 0) this.rotationY = initialAnimateRotateY
                 if (mask and MASK_BORDER_RADIUS != 0) setAnimateBorderRadius(initialAnimateBorderRadius)
                 if (mask and MASK_BACKGROUND_COLOR != 0) applyBackgroundColor(initialAnimateBackgroundColor)
+                if (mask and MASK_BORDER_WIDTH != 0) setAnimateBorderWidth(initialAnimateBorderWidth)
+                if (mask and MASK_BORDER_COLOR != 0) applyBorderColor(initialAnimateBorderColor)
+                if (mask and MASK_ELEVATION != 0) this.elevation = initialAnimateElevation
 
                 // Animate properties that differ from initial to target
                 if (mask and MASK_OPACITY != 0 && initialAnimateOpacity != opacity) {
@@ -326,6 +413,15 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_BACKGROUND_COLOR != 0 && initialAnimateBackgroundColor != backgroundColor) {
                     animateBackgroundColor(initialAnimateBackgroundColor, backgroundColor, getTransitionConfig("backgroundColor"), loop = true)
                 }
+                if (mask and MASK_BORDER_WIDTH != 0 && initialAnimateBorderWidth != borderWidth) {
+                    animateProperty("animateBorderWidth", null, initialAnimateBorderWidth, borderWidth, getTransitionConfig("borderWidth"), loop = true)
+                }
+                if (mask and MASK_BORDER_COLOR != 0 && initialAnimateBorderColor != borderColor) {
+                    animateBorderColorTransition(initialAnimateBorderColor, borderColor, getTransitionConfig("borderColor"), loop = true)
+                }
+                if (mask and MASK_ELEVATION != 0 && initialAnimateElevation != elevation) {
+                    animateProperty("elevation", null, initialAnimateElevation, elevation, getTransitionConfig("elevation"), loop = true)
+                }
 
                 // If all per-property configs were 'none', no animations were queued.
                 // Fire onTransitionEnd immediately to match the scalar 'none' contract.
@@ -344,6 +440,17 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 if (mask and MASK_ROTATE_Y != 0) this.rotationY = rotateY
                 if (mask and MASK_BORDER_RADIUS != 0) setAnimateBorderRadius(borderRadius)
                 if (mask and MASK_BACKGROUND_COLOR != 0) applyBackgroundColor(backgroundColor)
+                if (mask and MASK_BORDER_WIDTH != 0) setAnimateBorderWidth(borderWidth)
+                if (mask and MASK_BORDER_COLOR != 0) applyBorderColor(borderColor)
+                if (mask and MASK_ELEVATION != 0) this.elevation = elevation
+            }
+
+            // Update backface visibility after setting initial rotation values.
+            // Skip when opacity is animated — backface check resets alpha.
+            // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt#L967-L985
+            if (mask and (MASK_ROTATE or MASK_ROTATE_X or MASK_ROTATE_Y) != 0 &&
+                mask and MASK_OPACITY == 0) {
+                setBackfaceVisibilityDependantOpacity()
             }
         } else if (allTransitionsNone()) {
             // No transition (scalar) — set values immediately, cancel running animations
@@ -358,6 +465,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             if (mask and MASK_ROTATE_Y != 0) this.rotationY = rotateY
             if (mask and MASK_BORDER_RADIUS != 0) setAnimateBorderRadius(borderRadius)
             if (mask and MASK_BACKGROUND_COLOR != 0) applyBackgroundColor(backgroundColor)
+            if (mask and MASK_BORDER_WIDTH != 0) setAnimateBorderWidth(borderWidth)
+            if (mask and MASK_BORDER_COLOR != 0) applyBorderColor(borderColor)
+            if (mask and MASK_ELEVATION != 0) this.elevation = elevation
             onTransitionEnd?.invoke(true)
         } else {
             // Subsequent updates: animate changed properties (skip non-animated)
@@ -500,6 +610,44 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 }
             }
 
+            if (prevBorderWidth != null && mask and MASK_BORDER_WIDTH != 0 && prevBorderWidth != borderWidth) {
+                anyPropertyChanged = true
+                val config = getTransitionConfig("borderWidth")
+                if (config.type == "none") {
+                    runningAnimators["animateBorderWidth"]?.cancel()
+                    runningAnimators.remove("animateBorderWidth")
+                    setAnimateBorderWidth(borderWidth)
+                } else {
+                    val from = getCurrentValue("animateBorderWidth")
+                    animateProperty("animateBorderWidth", null, from, borderWidth, config)
+                }
+            }
+
+            if (prevBorderColor != null && mask and MASK_BORDER_COLOR != 0 && prevBorderColor != borderColor) {
+                anyPropertyChanged = true
+                val config = getTransitionConfig("borderColor")
+                if (config.type == "none") {
+                    runningAnimators["borderColor"]?.cancel()
+                    runningAnimators.remove("borderColor")
+                    applyBorderColor(borderColor)
+                } else {
+                    animateBorderColorTransition(getCurrentBorderColor(), borderColor, config)
+                }
+            }
+
+            if (prevElevation != null && mask and MASK_ELEVATION != 0 && prevElevation != elevation) {
+                anyPropertyChanged = true
+                val config = getTransitionConfig("elevation")
+                if (config.type == "none") {
+                    runningAnimators["elevation"]?.cancel()
+                    runningAnimators.remove("elevation")
+                    this.elevation = elevation
+                } else {
+                    val from = getCurrentValue("elevation")
+                    animateProperty("elevation", null, from, elevation, config)
+                }
+            }
+
             // If all changed properties resolved to 'none', no animations were queued.
             // Fire onTransitionEnd immediately.
             if (anyPropertyChanged && pendingBatchAnimationCount == 0) {
@@ -517,6 +665,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         prevRotateY = rotateY
         prevBorderRadius = borderRadius
         prevBackgroundColor = backgroundColor
+        prevBorderWidth = borderWidth
+        prevBorderColor = borderColor
+        prevElevation = elevation
     }
 
     private fun getCurrentValue(propertyName: String): Float = when (propertyName) {
@@ -529,6 +680,8 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         "rotationX" -> this.rotationX
         "rotationY" -> this.rotationY
         "animateBorderRadius" -> getAnimateBorderRadius()
+        "animateBorderWidth" -> getAnimateBorderWidth()
+        "elevation" -> this.elevation
         else -> 0f
     }
 
@@ -587,6 +740,50 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         animator.start()
     }
 
+    private fun animateBorderColorTransition(fromColor: Int, toColor: Int, config: TransitionConfig, loop: Boolean = false) {
+        runningAnimators["borderColor"]?.cancel()
+
+        val batchId = animationBatchId
+        pendingBatchAnimationCount++
+
+        val animator = ValueAnimator.ofArgb(fromColor, toColor).apply {
+            duration = config.duration.toLong()
+            startDelay = config.delay
+
+            interpolator = PathInterpolator(
+                config.easingBezier[0], config.easingBezier[1],
+                config.easingBezier[2], config.easingBezier[3]
+            )
+            if (loop && config.loop != "none") {
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = if (config.loop == "reverse") ValueAnimator.REVERSE else ValueAnimator.RESTART
+            }
+            addUpdateListener { animation ->
+                this@EaseView.applyBorderColor(animation.animatedValue as Int)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationStart(animation: Animator) {
+                    this@EaseView.onEaseAnimationStart()
+                }
+                override fun onAnimationCancel(animation: Animator) { cancelled = true }
+                override fun onAnimationEnd(animation: Animator) {
+                    this@EaseView.onEaseAnimationEnd()
+                    if (batchId == animationBatchId) {
+                        if (cancelled) anyInterrupted = true
+                        pendingBatchAnimationCount--
+                        if (pendingBatchAnimationCount <= 0) {
+                            onTransitionEnd?.invoke(!anyInterrupted)
+                        }
+                    }
+                }
+            })
+        }
+
+        runningAnimators["borderColor"] = animator
+        animator.start()
+    }
+
     private fun animateProperty(
         propertyName: String,
         viewProperty: DynamicAnimation.ViewProperty?,
@@ -613,12 +810,22 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         }
     }
 
+    // React Native's backfaceVisibility on Android checks rotationX/rotationY and sets alpha=0
+    // when the back face is showing. We must call setBackfaceVisibilityDependantOpacity() during
+    // rotation animations so the check runs each frame.
+    // https://github.com/facebook/react-native/blob/a98aa814/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt#L967-L985
+    private val isRotationProperty = setOf("rotation", "rotationX", "rotationY")
+
     private fun animateTiming(propertyName: String, fromValue: Float, toValue: Float, config: TransitionConfig, loop: Boolean = false) {
         cancelSpringForProperty(propertyName)
         runningAnimators[propertyName]?.cancel()
 
         val batchId = animationBatchId
         pendingBatchAnimationCount++
+        // Only update backface visibility when opacity is NOT animated — the backface
+        // check resets alpha, which would clobber the animated opacity value.
+        val needsBackfaceUpdate = propertyName in isRotationProperty &&
+            (animatedProperties and MASK_OPACITY == 0)
 
         val animator = ObjectAnimator.ofFloat(this, propertyName, fromValue, toValue).apply {
             duration = config.duration.toLong()
@@ -635,6 +842,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 } else {
                     ObjectAnimator.RESTART
                 }
+            }
+            if (needsBackfaceUpdate) {
+                addUpdateListener { this@EaseView.setBackfaceVisibilityDependantOpacity() }
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false
@@ -675,6 +885,11 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val batchId = animationBatchId
         pendingBatchAnimationCount++
 
+        val needsBackfaceUpdate = (viewProperty == DynamicAnimation.ROTATION ||
+            viewProperty == DynamicAnimation.ROTATION_X ||
+            viewProperty == DynamicAnimation.ROTATION_Y) &&
+            (animatedProperties and MASK_OPACITY == 0)
+
         val dampingRatio = (config.damping / (2.0f * sqrt(config.stiffness * config.mass)))
             .coerceAtLeast(0.01f)
 
@@ -687,6 +902,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                 // First update — enable hardware layer
                 if (activeAnimationCount == 0) {
                     this@EaseView.onEaseAnimationStart()
+                }
+                if (needsBackfaceUpdate) {
+                    this@EaseView.setBackfaceVisibilityDependantOpacity()
                 }
             }
             addEndListener { _, canceled, _, _ ->
@@ -797,6 +1015,9 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         prevRotateY = null
         prevBorderRadius = null
         prevBackgroundColor = null
+        prevBorderWidth = null
+        prevBorderColor = null
+        prevElevation = null
 
         this.alpha = 1f
         this.translationX = 0f
@@ -808,7 +1029,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         this.rotationY = 0f
         setAnimateBorderRadius(0f)
         applyBackgroundColor(Color.TRANSPARENT)
+        setAnimateBorderWidth(0f)
+        applyBorderColor(Color.BLACK)
+        this.elevation = 0f
+        outlineProvider = ViewOutlineProvider.BACKGROUND
 
+        transformPerspective = 1280f
         isFirstMount = true
         transitionConfigs = emptyMap()
     }

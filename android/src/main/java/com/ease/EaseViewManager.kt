@@ -153,6 +153,43 @@ class EaseViewManager : ReactViewManager() {
         view.initialAnimateBackgroundColor = value ?: Color.TRANSPARENT
     }
 
+    // --- Border width ---
+
+    @ReactProp(name = "animateBorderWidth", defaultFloat = 0f)
+    fun setAnimateBorderWidth(view: EaseView, value: Float) {
+        // BackgroundStyleApplicator.setBorderWidth expects DIPs (converts internally)
+        view.pendingBorderWidth = value
+    }
+
+    @ReactProp(name = "initialAnimateBorderWidth", defaultFloat = 0f)
+    fun setInitialAnimateBorderWidth(view: EaseView, value: Float) {
+        view.initialAnimateBorderWidth = value
+    }
+
+    // --- Border color ---
+
+    @ReactProp(name = "animateBorderColor", customType = "Color")
+    fun setAnimateBorderColor(view: EaseView, value: Int?) {
+        view.pendingBorderColor = value ?: Color.BLACK
+    }
+
+    @ReactProp(name = "initialAnimateBorderColor", customType = "Color")
+    fun setInitialAnimateBorderColor(view: EaseView, value: Int?) {
+        view.initialAnimateBorderColor = value ?: Color.BLACK
+    }
+
+    // --- Elevation ---
+
+    @ReactProp(name = "animateElevation", defaultFloat = 0f)
+    fun setAnimateElevation(view: EaseView, value: Float) {
+        view.pendingElevation = PixelUtil.toPixelFromDIP(value)
+    }
+
+    @ReactProp(name = "initialAnimateElevation", defaultFloat = 0f)
+    fun setInitialAnimateElevation(view: EaseView, value: Float) {
+        view.initialAnimateElevation = PixelUtil.toPixelFromDIP(value)
+    }
+
     // --- Hardware layer ---
 
     @ReactProp(name = "useHardwareLayer", defaultBoolean = false)
@@ -170,6 +207,13 @@ class EaseViewManager : ReactViewManager() {
     @ReactProp(name = "transformOriginY", defaultFloat = 0.5f)
     fun setTransformOriginY(view: EaseView, value: Float) {
         view.transformOriginY = value
+    }
+
+    // --- Transform perspective ---
+
+    @ReactProp(name = "transformPerspective", defaultFloat = 1280f)
+    fun setTransformPerspective(view: EaseView, value: Float) {
+        view.transformPerspective = value
     }
 
     // --- Lifecycle ---

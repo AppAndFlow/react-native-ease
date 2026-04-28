@@ -32,7 +32,10 @@ export function TextPropsDemo() {
       </EaseText>
 
       <EaseText
-        style={[styles.pressable, { color: active ? '#e94560' : '#8892b0' }]}
+        style={[
+          styles.pressable,
+          active ? styles.pressableActive : styles.pressableIdle,
+        ]}
         onPress={() => Alert.alert('Pressed!', 'onPress works on EaseText')}
       >
         Tap me — onPress + instant color (style)
@@ -71,6 +74,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 16,
     textDecorationLine: 'underline',
+  },
+  pressableIdle: {
+    color: '#8892b0',
+  },
+  pressableActive: {
+    color: '#e94560',
   },
   multiline: {
     fontSize: 14,

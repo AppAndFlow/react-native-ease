@@ -7,6 +7,7 @@ import type {
   Transition,
   TransitionEndEvent,
   TransformOrigin,
+  TransformPerspective,
 } from './types';
 
 /** Identity values used as defaults for animate/initialAnimate. */
@@ -20,6 +21,12 @@ const IDENTITY = {
   rotateX: 0,
   rotateY: 0,
   borderRadius: 0,
+  borderWidth: 0,
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  shadowOffsetWidth: 0,
+  shadowOffsetHeight: 0,
+  elevation: 0,
 };
 
 /** Bitmask flags — must match native constants. */
@@ -34,6 +41,13 @@ const MASK_ROTATE_X = 1 << 6;
 const MASK_ROTATE_Y = 1 << 7;
 const MASK_BORDER_RADIUS = 1 << 8;
 const MASK_BACKGROUND_COLOR = 1 << 9;
+const MASK_BORDER_WIDTH = 1 << 10;
+const MASK_BORDER_COLOR = 1 << 11;
+const MASK_SHADOW_OPACITY = 1 << 12;
+const MASK_SHADOW_RADIUS = 1 << 13;
+const MASK_SHADOW_COLOR = 1 << 14;
+const MASK_SHADOW_OFFSET = 1 << 15;
+const MASK_ELEVATION = 1 << 16;
 /* eslint-enable no-bitwise */
 
 /** Maps animate prop keys to style keys that conflict. */
@@ -49,6 +63,13 @@ const ANIMATE_TO_STYLE_KEYS: Record<keyof AnimateProps, string> = {
   rotateY: 'transform',
   borderRadius: 'borderRadius',
   backgroundColor: 'backgroundColor',
+  borderWidth: 'borderWidth',
+  borderColor: 'borderColor',
+  shadowOpacity: 'shadowOpacity',
+  shadowRadius: 'shadowRadius',
+  shadowColor: 'shadowColor',
+  shadowOffset: 'shadowOffset',
+  elevation: 'elevation',
 };
 
 /** Preset easing curves as cubic bezier control points. */
@@ -136,6 +157,8 @@ const CATEGORY_KEYS = [
   'opacity',
   'borderRadius',
   'backgroundColor',
+  'border',
+  'shadow',
 ] as const;
 
 /** Resolve the transition prop into a NativeTransitions struct. */
@@ -196,7 +219,19 @@ export type EaseViewProps = ViewProps & {
   useHardwareLayer?: boolean;
   /** Pivot point for scale and rotation as 0–1 fractions. @default { x: 0.5, y: 0.5 } (center) */
   transformOrigin?: TransformOrigin;
-  /** NativeWind / Tailwind CSS class string. Requires NativeWind in your project. */
+  /**
+   * Distance of the camera from the z=0 plane for 3D transforms (rotateX,
+   * rotateY). Higher values produce a flatter look; lower values exaggerate
+   * perspective.
+   *
+   * **iOS note:** On iOS, the parent view must not be flattened by Fabric for
+   * perspective to render correctly. Ensure the parent has `collapsable={false}`
+   * or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+   *
+   * @default 1280
+   */
+  transformPerspective?: TransformPerspective;
+  /** NativeWind / Uniwind / Tailwind CSS class string. Requires a compatible className interop in your project. */
   className?: string;
 };
 
@@ -207,6 +242,7 @@ export function EaseView({
   onTransitionEnd,
   useHardwareLayer = false,
   transformOrigin,
+  transformPerspective,
   style,
   ...rest
 }: EaseViewProps) {
@@ -227,6 +263,13 @@ export function EaseView({
   if (animate?.borderRadius != null) animatedProperties |= MASK_BORDER_RADIUS;
   if (animate?.backgroundColor != null)
     animatedProperties |= MASK_BACKGROUND_COLOR;
+  if (animate?.borderWidth != null) animatedProperties |= MASK_BORDER_WIDTH;
+  if (animate?.borderColor != null) animatedProperties |= MASK_BORDER_COLOR;
+  if (animate?.shadowOpacity != null) animatedProperties |= MASK_SHADOW_OPACITY;
+  if (animate?.shadowRadius != null) animatedProperties |= MASK_SHADOW_RADIUS;
+  if (animate?.shadowColor != null) animatedProperties |= MASK_SHADOW_COLOR;
+  if (animate?.shadowOffset != null) animatedProperties |= MASK_SHADOW_OFFSET;
+  if (animate?.elevation != null) animatedProperties |= MASK_ELEVATION;
   /* eslint-enable no-bitwise */
 
   // Resolve animate values (identity defaults for non-animated — safe values).
@@ -237,6 +280,9 @@ export function EaseView({
     scaleY: animate?.scaleY ?? animate?.scale ?? IDENTITY.scaleY,
     rotateX: animate?.rotateX ?? IDENTITY.rotateX,
     rotateY: animate?.rotateY ?? IDENTITY.rotateY,
+    // Flatten shadowOffset object into individual values for native
+    shadowOffsetWidth: animate?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: animate?.shadowOffset?.height ?? 0,
   };
 
   // Resolve initialAnimate:
@@ -251,11 +297,17 @@ export function EaseView({
     scaleY: initial?.scaleY ?? initial?.scale ?? IDENTITY.scaleY,
     rotateX: initial?.rotateX ?? IDENTITY.rotateX,
     rotateY: initial?.rotateY ?? IDENTITY.rotateY,
+    shadowOffsetWidth: initial?.shadowOffset?.width ?? 0,
+    shadowOffsetHeight: initial?.shadowOffset?.height ?? 0,
   };
 
-  // Resolve backgroundColor — passed as ColorValue directly (codegen handles conversion)
+  // Resolve color props — passed as ColorValue directly (codegen handles conversion)
   const animBgColor = animate?.backgroundColor ?? 'transparent';
   const initialBgColor = initialAnimate?.backgroundColor ?? animBgColor;
+  const animBorderColor = animate?.borderColor ?? 'black';
+  const initialBorderColor = initialAnimate?.borderColor ?? animBorderColor;
+  const animShadowColor = animate?.shadowColor ?? 'black';
+  const initialShadowColor = initialAnimate?.shadowColor ?? animShadowColor;
 
   // Strip style keys that conflict with animated properties
   let cleanStyle: ViewProps['style'] = style;
@@ -314,6 +366,14 @@ export function EaseView({
       animateRotateY={resolved.rotateY}
       animateBorderRadius={resolved.borderRadius}
       animateBackgroundColor={animBgColor}
+      animateBorderWidth={resolved.borderWidth}
+      animateBorderColor={animBorderColor}
+      animateShadowOpacity={resolved.shadowOpacity}
+      animateShadowRadius={resolved.shadowRadius}
+      animateShadowColor={animShadowColor}
+      animateShadowOffsetX={resolved.shadowOffsetWidth}
+      animateShadowOffsetY={resolved.shadowOffsetHeight}
+      animateElevation={resolved.elevation}
       initialAnimateOpacity={resolvedInitial.opacity}
       initialAnimateTranslateX={resolvedInitial.translateX}
       initialAnimateTranslateY={resolvedInitial.translateY}
@@ -324,10 +384,19 @@ export function EaseView({
       initialAnimateRotateY={resolvedInitial.rotateY}
       initialAnimateBorderRadius={resolvedInitial.borderRadius}
       initialAnimateBackgroundColor={initialBgColor}
+      initialAnimateBorderWidth={resolvedInitial.borderWidth}
+      initialAnimateBorderColor={initialBorderColor}
+      initialAnimateShadowOpacity={resolvedInitial.shadowOpacity}
+      initialAnimateShadowRadius={resolvedInitial.shadowRadius}
+      initialAnimateShadowColor={initialShadowColor}
+      initialAnimateShadowOffsetX={resolvedInitial.shadowOffsetWidth}
+      initialAnimateShadowOffsetY={resolvedInitial.shadowOffsetHeight}
+      initialAnimateElevation={resolvedInitial.elevation}
       transitions={transitions}
       useHardwareLayer={useHardwareLayer}
       transformOriginX={transformOrigin?.x ?? 0.5}
       transformOriginY={transformOrigin?.y ?? 0.5}
+      transformPerspective={transformPerspective ?? 1280}
       {...rest}
     />
   );

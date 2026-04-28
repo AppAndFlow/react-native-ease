@@ -60,7 +60,7 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 
 **Why not native text color animation:** Fabric's text rendering pipeline (`RCTParagraphComponentView` on iOS) manages text via `NSAttributedString` in the shadow tree. The `attributedText` is readonly — color can't be mutated from outside the Fabric commit cycle. Android's `ReactTextView.setTextColor()` works, but iOS doesn't. JS interpolation keeps behavior consistent cross-platform.
 
-**TextAnimateProps:** `Omit<AnimateProps, 'borderRadius' | 'backgroundColor'>` — same transform/opacity props as EaseView. Color is handled separately via `interpolateColor`.
+**TextAnimateProps:** `Omit<AnimateProps, 'borderRadius' | 'backgroundColor' | 'borderWidth' | 'borderColor' | 'shadowOpacity' | 'shadowRadius' | 'shadowColor' | 'shadowOffset' | 'elevation'>` — transform/opacity props only; view-only properties (border, background, shadow, elevation) are excluded. Color is handled separately via `interpolateColor`.
 
 ## Adding a New Animatable Property
 
@@ -72,6 +72,12 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 6. **Recycle:** Reset the new property to its identity value in `prepareForRecycle` (iOS) and `cleanup()` (Android). Fabric recycles views — any property not reset will leak stale values to the next user of the view.
 7. Add tests and update README
 8. Add an example/demo in the example app (`example/src/App.tsx` or a new screen)
+
+**Important:** When adding or changing props/features, also update:
+- `README.md` (props table + usage section)
+- `docs/docs/usage.mdx` (usage guide)
+- `docs/docs/api-reference.mdx` (API reference table)
+- `skills/react-native-ease-refactor/SKILL.md` (supported properties list, transition category keys, decision tree)
 
 ## Development Commands
 

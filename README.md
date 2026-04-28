@@ -59,6 +59,31 @@ This registers `EaseView` with NativeWind's `cssInterop` so `className` is prope
 
 > **Tip:** If you use the [migration skill](#migration-skill), it detects NativeWind automatically and adds this import for you.
 
+### Uniwind Support
+
+If you're using [Uniwind](https://docs.uniwind.dev/), first follow the
+[Uniwind quickstart](https://docs.uniwind.dev/quickstart) to install and
+configure Uniwind in your app. That setup includes the required CSS entry file,
+app-root CSS import, and bundler configuration.
+
+Once Uniwind is set up, import `EaseView` from the Uniwind entry point:
+
+```tsx
+import { EaseView } from 'react-native-ease/uniwind';
+```
+
+This wraps `EaseView` with Uniwind's `withUniwind(...)` so `className` is converted to styles:
+
+```tsx
+<EaseView
+  className="flex-1 bg-white rounded-2xl p-4"
+  animate={{ opacity: visible ? 1 : 0 }}
+  transition={{ type: 'timing', duration: 300 }}
+>
+  {children}
+</EaseView>
+```
+
 ### Example
 
 ```tsx
@@ -223,6 +248,8 @@ Available category keys:
 | `opacity`         | opacity                                                          |
 | `borderRadius`    | borderRadius                                                     |
 | `backgroundColor` | backgroundColor                                                  |
+| `border`          | borderWidth, borderColor                                         |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
 
 Use `default` as a fallback for categories not explicitly listed:
 
@@ -242,7 +269,7 @@ When no `default` key is provided, the library default (timing 300ms easeInOut) 
 
 ### Border Radius
 
-`borderRadius` can be animated just like other properties. It uses hardware-accelerated platform APIs — `ViewOutlineProvider` + `clipToOutline` on Android and `layer.cornerRadius` + `layer.masksToBounds` on iOS. Unlike RN's style-based `borderRadius` (which uses a Canvas drawable on Android), this clips children properly and is GPU-accelerated.
+`borderRadius` can be animated just like other properties. It uses hardware-accelerated platform APIs — `ViewOutlineProvider` + `clipToOutline` on Android and `layer.cornerRadius` on iOS.
 
 ```tsx
 <EaseView
@@ -277,6 +304,38 @@ On Android, background color uses `ValueAnimator.ofArgb()` (timing only — spri
 
 When `backgroundColor` is in `animate`, any `backgroundColor` in `style` is automatically stripped to avoid conflicts.
 
+### Border
+
+`borderWidth` and `borderColor` can be animated. On iOS, these use Core Animation on the `CALayer` border properties. On Android, they use `BackgroundStyleApplicator` which updates the `BorderDrawable` each frame.
+
+```tsx
+<EaseView
+  animate={{
+    borderWidth: selected ? 3 : 0,
+    borderColor: selected ? '#3B82F6' : '#E5E7EB',
+  }}
+  transition={{ border: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={styles.card}
+/>
+```
+
+### Shadow / Elevation
+
+Shadow properties are iOS-only (`shadowOpacity`, `shadowRadius`, `shadowColor`, `shadowOffset`). On Android, use `elevation` for material shadows.
+
+```tsx
+<EaseView
+  animate={{
+    shadowOpacity: active ? 0.4 : 0,
+    shadowRadius: active ? 16 : 0,
+    shadowOffset: active ? { width: 0, height: 8 } : { width: 0, height: 0 },
+    elevation: active ? 12 : 0,
+  }}
+  transition={{ shadow: { type: 'spring', damping: 15, stiffness: 120 } }}
+  style={{ shadowColor: '#000', backgroundColor: '#fff', borderRadius: 16 }}
+/>
+```
+
 ### Animatable Properties
 
 All properties are set in the `animate` prop as flat values (no transform array).
@@ -293,8 +352,15 @@ All properties are set in the `animate` prop as flat values (no transform array)
     rotate: 0, // Z-axis rotation in degrees
     rotateX: 0, // X-axis rotation in degrees (3D)
     rotateY: 0, // Y-axis rotation in degrees (3D)
-    borderRadius: 0, // pixels (hardware-accelerated, clips children)
+    borderRadius: 0, // pixels (hardware-accelerated)
     backgroundColor: 'transparent', // any RN color value
+    borderWidth: 0, // pixels
+    borderColor: 'black', // any RN color value
+    shadowOpacity: 0, // 0–1 (iOS only)
+    shadowRadius: 0, // pixels (iOS only)
+    shadowColor: 'black', // any RN color value (iOS only)
+    shadowOffset: { width: 0, height: 0 }, // iOS only
+    elevation: 0, // Android material shadow
   }}
 />
 ```
@@ -401,6 +467,23 @@ By default, scale and rotation animate from the view's center. Use `transformOri
 | `{ x: 0.5, y: 0.5 }` | Center (default) |
 | `{ x: 1, y: 1 }`     | Bottom-right     |
 
+### Transform Perspective
+
+Control the 3D perspective depth for `rotateX` and `rotateY` animations. Lower values create a more dramatic 3D effect; higher values look flatter.
+
+```tsx
+<EaseView
+  animate={{ rotateY: flipped ? 180 : 0 }}
+  transformPerspective={800}
+  transition={{ type: 'timing', duration: 600, easing: 'easeInOut' }}
+  style={styles.card}
+/>
+```
+
+Default is `1280`, matching React Native's default perspective.
+
+> **iOS note:** On iOS, the parent view must not be flattened by Fabric for perspective to render correctly. Ensure the parent has `collapsable={false}` or a style that prevents flattening (e.g. `transform`, `opacity`, `zIndex`).
+
 ### Style Handling
 
 `EaseView` accepts all standard `ViewStyle` properties. If a property appears in both `style` and `animate`, the animated value takes priority and the style value is stripped. A dev warning is logged when this happens.
@@ -427,6 +510,49 @@ By default, scale and rotation animate from the view's center. Use `transformOri
 />
 ```
 
+### Animated Text (`EaseText`)
+
+`EaseText` provides native transform/opacity animations on text plus optional smooth color transitions. It composes `EaseView` (for native animations) with a standard `<Text>` (for text rendering).
+
+```tsx
+import { EaseText } from 'react-native-ease';
+
+// Smooth color + native transforms
+<EaseText
+  interpolateColor={focused ? '#000' : '#999'}
+  animate={{ translateY: focused ? -12 : 0, scale: focused ? 0.8 : 1 }}
+  transition={{
+    color: { type: 'timing', duration: 150 },
+    transform: { type: 'spring', damping: 12, stiffness: 250 },
+  }}
+  transformOrigin={{ x: 0, y: 0.5 }}
+  style={{ fontSize: 15 }}
+  numberOfLines={1}
+>
+  {label}
+</EaseText>
+
+// Instant color via style (zero JS cost)
+<EaseText
+  animate={{ scale: pressed ? 0.95 : 1 }}
+  transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+  style={{ color: pressed ? '#000' : '#999', fontSize: 15 }}
+>
+  Tap me
+</EaseText>
+```
+
+**Two color modes:**
+
+- `style.color` — instant change, zero JS cost. Recommended when you don't need smooth color transitions.
+- `interpolateColor` prop — smooth JS interpolation via `requestAnimationFrame`. Follows the `color` key in `transition` (or `default` as fallback).
+
+Transforms and opacity are always native (60fps via the internal `EaseView`). Standard `TextProps` like `numberOfLines`, `ellipsizeMode`, `selectable`, and `onPress` are passed through to the underlying `<Text>`.
+
+**Layout note:** `EaseText` renders a wrapping `View` around `<Text>`. For floating-label patterns, place it in an absolutely positioned wrapper.
+
+**Spring color caveat:** spring transitions on `interpolateColor` are approximated as a 500 ms `easeOut` (real spring physics on the JS thread isn't worth the cost). Prefer `timing` for color transitions when precise feel matters.
+
 ## API Reference
 
 ### `<EaseView>`
@@ -440,8 +566,9 @@ A `View` that animates property changes using native platform APIs.
 | `transition`       | `Transition`                 | Animation configuration — a single config (timing, spring, or none) or a [per-property map](#per-property-transitions)        |
 | `onTransitionEnd`  | `(event) => void`            | Called when all animations complete with `{ finished: boolean }`                                                             |
 | `transformOrigin`  | `{ x?: number; y?: number }` | Pivot point for scale/rotation as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }` (center)                                      |
+| `transformPerspective` | `number`                 | Camera distance for 3D transforms (`rotateX`, `rotateY`). See [Transform Perspective](#transform-perspective). Default: `1280` |
 | `useHardwareLayer` | `boolean`                    | Android only — rasterize to GPU texture during animations. See [Hardware Layers](#hardware-layers-android). Default: `false` |
-| `className`        | `string`                     | NativeWind / Tailwind CSS class string. Requires NativeWind in your project.                                                 |
+| `className`        | `string`                     | NativeWind / Uniwind / Tailwind CSS class string. Requires NativeWind or Uniwind in your project.                            |
 | `style`            | `ViewStyle`                  | Non-animated styles (layout, colors, borders, etc.)                                                                          |
 | `children`         | `ReactNode`                  | Child elements                                                                                                               |
 | ...rest            | `ViewProps`                  | All other standard View props                                                                                                |
@@ -459,8 +586,15 @@ A `View` that animates property changes using native platform APIs.
 | `rotate`          | `number`     | `0`             | Z-axis rotation in degrees                                                           |
 | `rotateX`         | `number`     | `0`             | X-axis rotation in degrees (3D)                                                      |
 | `rotateY`         | `number`     | `0`             | Y-axis rotation in degrees (3D)                                                      |
-| `borderRadius`    | `number`     | `0`             | Border radius in pixels (hardware-accelerated, clips children)                       |
+| `borderRadius`    | `number`     | `0`             | Border radius in pixels (hardware-accelerated)                                       |
 | `backgroundColor` | `ColorValue` | `'transparent'` | Background color (any RN color value). Timing-only on Android, spring+timing on iOS. |
+| `borderWidth`     | `number`     | `0`             | Border width in pixels                                                               |
+| `borderColor`     | `ColorValue` | `'black'`       | Border color                                                                         |
+| `shadowOpacity`   | `number`     | `0`             | Shadow opacity 0–1 (iOS only)                                                        |
+| `shadowRadius`    | `number`     | `0`             | Shadow blur radius (iOS only)                                                        |
+| `shadowColor`     | `ColorValue` | `'black'`       | Shadow color (iOS only)                                                              |
+| `shadowOffset`    | `object`     | `{width:0,height:0}` | Shadow offset `{ width, height }` (iOS only)                                   |
+| `elevation`       | `number`     | `0`             | Material shadow elevation (Android only)                                             |
 
 Properties not specified in `animate` default to their identity values.
 
@@ -509,6 +643,31 @@ A per-property map that applies different transition configs to different proper
 | `opacity`         | opacity                                                          |
 | `borderRadius`    | borderRadius                                                     |
 | `backgroundColor` | backgroundColor                                                  |
+| `border`          | borderWidth, borderColor                                         |
+| `shadow`          | shadowOpacity, shadowRadius, shadowColor, shadowOffset, elevation |
+| `color`           | text color (EaseText only, JS-interpolated)                      |
+
+### `<EaseText>`
+
+A `Text` that animates transforms/opacity natively (via the internal `EaseView`) and optionally interpolates `color` on the JS thread. Accepts all standard `TextProps`.
+
+| Prop                      | Type                            | Description                                                                                            |
+| ------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `animate`                 | `TextAnimateProps`              | Target values for animated transforms/opacity. Excludes view-only props (border, shadow, background).  |
+| `initialAnimate`          | `TextAnimateProps`              | Starting values for enter animations.                                                                  |
+| `transition`              | `Transition`                    | Same as `EaseView` — supports an extra `color` key in `TransitionMap` for the JS color interpolation.  |
+| `interpolateColor`        | `ColorValue`                    | Target color, smoothly interpolated on the JS thread via `requestAnimationFrame`.                      |
+| `initialInterpolateColor` | `ColorValue`                    | Starting color for mount animations (only applied when `interpolateColor` is set).                     |
+| `onTransitionEnd`         | `(event) => void`               | Called when transform/opacity animations complete (does not fire for color interpolation).             |
+| `transformOrigin`         | `{ x?: number; y?: number }`    | Pivot point as 0–1 fractions. Default: `{ x: 0.5, y: 0.5 }`.                                          |
+| `transformPerspective`    | `number`                        | Camera distance for 3D rotations. Default: `1280`.                                                     |
+| `useHardwareLayer`        | `boolean`                       | Android only — same as `EaseView`.                                                                     |
+| `style`                   | `TextStyle`                     | Use `style.color` for instant color changes (zero JS cost).                                            |
+| ...rest                   | `TextProps`                     | All standard `Text` props (`numberOfLines`, `ellipsizeMode`, `selectable`, `onPress`, etc.).           |
+
+### `TextAnimateProps`
+
+`Omit<AnimateProps, 'borderRadius' \| 'backgroundColor' \| 'borderWidth' \| 'borderColor' \| 'shadowOpacity' \| 'shadowRadius' \| 'shadowColor' \| 'shadowOffset' \| 'elevation'>` — same transform and opacity props as `AnimateProps`. View-only properties are excluded; color is set via `interpolateColor` or `style.color`.
 
 ## Hardware Layers (Android)
 

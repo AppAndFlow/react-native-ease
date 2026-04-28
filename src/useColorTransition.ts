@@ -83,22 +83,26 @@ function resolveColorConfig(transition?: Transition): {
  * Interpolates a color value over time using requestAnimationFrame.
  * Respects the `color` or `default` key from the transition config.
  *
- * On first render, `initialColor` is displayed immediately (no animation).
- * Subsequent changes to `targetColor` animate from the current displayed color.
+ * On first render, `initialColor` is displayed immediately and will animate
+ * to `targetColor` if it differs. Subsequent changes to `targetColor` animate
+ * from the current displayed color. `transition` updates take effect on the
+ * next color change.
  */
 export function useColorTransition(
   targetColor: unknown,
   transition?: Transition,
   initialColor?: unknown,
 ): string | undefined {
+  const { duration, easing, delay } = resolveColorConfig(transition);
+
+  const initialColorRef = useRef(initialColor);
   const currentRGBA = useRef<RGBA | null>(null);
   const animRef = useRef<{ rafId: number; id: number } | null>(null);
   const batchId = useRef(0);
   const isFirstRender = useRef(true);
 
   const [displayColor, setDisplayColor] = useState<string | undefined>(() => {
-    // On mount: show initialColor if provided, else targetColor
-    const startColor = initialColor ?? targetColor;
+    const startColor = initialColorRef.current ?? targetColor;
     if (startColor == null) return undefined;
     const parsed = parseColor(startColor);
     if (!parsed) return undefined;
@@ -116,13 +120,10 @@ export function useColorTransition(
     const toRGBA = parseColor(targetColor);
     if (!toRGBA) return;
 
-    // First render with initialColor: animate initialColor → targetColor
-    // First render without initialColor: set immediately
     if (isFirstRender.current) {
       isFirstRender.current = false;
       const fromRGBA = currentRGBA.current;
 
-      // No initialColor or same as target → set immediately
       if (
         !fromRGBA ||
         (fromRGBA[0] === toRGBA[0] &&
@@ -134,21 +135,15 @@ export function useColorTransition(
         setDisplayColor(rgbaToHex(...toRGBA));
         return;
       }
-
-      // initialColor differs from targetColor → animate
-      // (fall through to animation logic below)
     }
 
     const fromRGBA = currentRGBA.current ?? toRGBA;
-    const { duration, easing, delay } = resolveColorConfig(transition);
 
-    // Cancel running animation
     if (animRef.current) {
       cancelAnimationFrame(animRef.current.rafId);
       animRef.current = null;
     }
 
-    // Duration 0 = instant
     if (duration === 0) {
       currentRGBA.current = toRGBA;
       setDisplayColor(rgbaToHex(...toRGBA));
@@ -195,7 +190,7 @@ export function useColorTransition(
         animRef.current = null;
       }
     };
-  }, [targetColor]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [targetColor, duration, easing, delay]);
 
   return displayColor;
 }

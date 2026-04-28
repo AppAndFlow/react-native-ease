@@ -85,3 +85,6 @@ android/generated
 # React Native Nitro Modules
 nitrogen/
 .playwright-cli/
+
+# Uniwind generated types
+uniwind-types.d.ts
