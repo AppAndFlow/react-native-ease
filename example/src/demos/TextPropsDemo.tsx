@@ -25,10 +25,10 @@ export function TextPropsDemo() {
         interpolateColor={active ? '#e94560' : '#ccd6f6'}
         animate={{ opacity: active ? 1 : 0.7 }}
         transition={{ type: 'timing', duration: 300 }}
-        selectable
+        onLongPress={() => Alert.alert('Long-press', 'onLongPress fired')}
         style={styles.selectable}
       >
-        This text is selectable — long press to copy
+        Long-press me — onLongPress fires an Alert
       </EaseText>
 
       <EaseText
