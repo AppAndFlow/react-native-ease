@@ -38,7 +38,9 @@ const easings: Record<string, (t: number) => number> = {
 };
 
 /** Resolve the color transition config. Follows the same logic as EaseView:
- * color category → default fallback. No transition = instant. */
+ * use `color`, else `default`, else implicit defaults (300ms easeInOut), including
+ * when `transition` is omitted or a category map has no color-specific entry.
+ * Instant only when the resolved single transition has `type: 'none'`. */
 function resolveColorConfig(transition?: Transition): {
   duration: number;
   easing: (t: number) => number;
@@ -55,7 +57,11 @@ function resolveColorConfig(transition?: Transition): {
     config = transition.color ?? transition.default;
   }
 
-  if (!config || config.type === 'none') {
+  if (!config) {
+    return defaults;
+  }
+
+  if (config.type === 'none') {
     return { duration: 0, easing: easings.linear!, delay: 0 };
   }
 
