@@ -1162,20 +1162,36 @@ static std::string lowestTransformPropertyName(int mask) {
 - (void)invalidateLayer {
   [super invalidateLayer];
 
-  // super resets layer.opacity, layer.cornerRadius, and layer.backgroundColor
-  // from style props. Re-apply our animated values.
+  // super resets layer.opacity, layer.cornerRadius, layer.backgroundColor,
+  // AND layer.transform from style props. Re-apply our animated values.
+  //
+  // The transform re-apply is intentionally unconditional (not gated on
+  // "no animation in flight"). A running CABasicAnimation interpolates
+  // the *presentation* layer between its own fromValue/toValue and ignores
+  // the model layer for its lifetime. We're already inside
+  // setDisableActions:YES so the model write does NOT start an implicit
+  // animation. The model layer needs to hold the target value at animation
+  // completion time so that when the explicit animation removes itself
+  // (fillMode=removed), the presentation reverts to the correct resting
+  // state instead of identity.
   const auto &viewProps =
       *std::static_pointer_cast<const EaseViewProps>(_props);
   int mask = viewProps.animatedProperties;
 
   if (!(mask & (kMaskOpacity | kMaskBorderRadius | kMaskBackgroundColor |
                 kMaskBorderWidth | kMaskBorderColor | kMaskShadowOpacity |
-                kMaskShadowRadius | kMaskShadowColor | kMaskShadowOffset))) {
+                kMaskShadowRadius | kMaskShadowColor | kMaskShadowOffset |
+                kMaskAnyTransform))) {
     return;
   }
 
+  BOOL hasTransform = (mask & kMaskAnyTransform) != 0;
+
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
+  if (hasTransform) {
+    self.layer.transform = [self targetTransformFromProps:viewProps];
+  }
   if (mask & kMaskOpacity) {
     [self.layer removeAnimationForKey:@"opacity"];
     self.layer.opacity = viewProps.animateOpacity;
