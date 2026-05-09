@@ -1,27 +1,47 @@
 import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { SectionList, Text, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getDemoSections } from '../src/demos';
-
-const sections = getDemoSections();
+import { getDemoSections, TABS, type TabKey } from '../src/demos';
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<TabKey>('api');
+
+  const sections = useMemo(() => getDemoSections(tab), [tab]);
 
   return (
     <SectionList
       sections={sections}
       keyExtractor={(item) => item.key}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
+      contentContainerStyle={styles.content}
       stickySectionHeadersEnabled={false}
       ListHeaderComponent={
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
           <Text style={styles.title}>react-native-ease</Text>
           <Text style={styles.subtitle}>
             Native animations, zero JS overhead
           </Text>
+          <View style={styles.tabBar}>
+            {TABS.map(({ key, label }) => {
+              const active = tab === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setTab(key)}
+                  style={[styles.tab, active && styles.tabActive]}
+                >
+                  <Text
+                    style={[styles.tabLabel, active && styles.tabLabelActive]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       }
       renderSectionHeader={({ section }) => (
@@ -30,7 +50,7 @@ export default function HomeScreen() {
       renderItem={({ item }) => (
         <Pressable
           style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-          onPress={() => router.push(`/${item.key}`)}
+          onPress={() => router.push(item.route)}
         >
           <Text style={styles.rowTitle}>{item.title}</Text>
           <Text style={styles.chevron}>›</Text>
@@ -57,6 +77,31 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     color: '#8888aa',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#16213e',
+    borderRadius: 12,
+    padding: 4,
+    marginTop: 20,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  tabActive: {
+    backgroundColor: '#2a3a5e',
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8888aa',
+  },
+  tabLabelActive: {
+    color: '#fff',
   },
   sectionHeader: {
     fontSize: 13,
