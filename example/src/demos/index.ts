@@ -30,7 +30,14 @@ import { SpinDemo } from './SpinDemo';
 import { UniwindDemo } from './uniwind/UniwindDemo';
 
 interface DemoEntry {
-  component: ComponentType;
+  /** Component rendered inside the catch-all `[demo].tsx` screen. */
+  component?: ComponentType;
+  /**
+   * Custom expo-router path. Used by issue reproducers that need their own
+   * layout (tabs, modals, etc.) under `app/issues/...`. When omitted, the
+   * registry key is used as a single-segment route handled by `[demo].tsx`.
+   */
+  route?: string;
   title: string;
   section: string;
 }
@@ -127,12 +134,40 @@ export const demos: Record<string, DemoEntry> = {
         },
       }
     : {}),
+  // --- Issue reproducers ---
+  // Each entry routes to its own layout under `app/issues/<n>/`. Add a new
+  // reproducer when fixing a bug so we can test for regressions.
+  'issue-42': {
+    route: '/issues/42',
+    title: 'Issue #42 — Tabs loop',
+    section: 'Issues',
+  },
 };
 
 interface SectionData {
   title: string;
-  data: { key: string; title: string }[];
+  data: { key: string; title: string; route: string }[];
 }
+
+export type TabKey = 'api' | 'demos' | 'issues';
+
+export const TABS: { key: TabKey; label: string }[] = [
+  { key: 'api', label: 'API' },
+  { key: 'demos', label: 'Demos' },
+  { key: 'issues', label: 'Issues' },
+];
+
+// Section → top-level tab. API covers building-block primitives, Demos covers
+// compound showcase screens, Issues covers regression reproducers.
+const sectionToTab: Record<string, TabKey> = {
+  Basic: 'api',
+  Transform: 'api',
+  Timing: 'api',
+  Style: 'api',
+  Loop: 'api',
+  Advanced: 'demos',
+  Issues: 'issues',
+};
 
 const sectionOrder = [
   'Basic',
@@ -141,14 +176,19 @@ const sectionOrder = [
   'Style',
   'Loop',
   'Advanced',
+  'Issues',
 ];
 
-export function getDemoSections(): SectionData[] {
-  const grouped = new Map<string, { key: string; title: string }[]>();
+export function getDemoSections(tab: TabKey): SectionData[] {
+  const grouped = new Map<
+    string,
+    { key: string; title: string; route: string }[]
+  >();
 
   for (const [key, entry] of Object.entries(demos)) {
+    if (sectionToTab[entry.section] !== tab) continue;
     const list = grouped.get(entry.section) ?? [];
-    list.push({ key, title: entry.title });
+    list.push({ key, title: entry.title, route: entry.route ?? `/${key}` });
     grouped.set(entry.section, list);
   }
 

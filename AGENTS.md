@@ -60,6 +60,15 @@ transition={{ type: 'spring', damping: 10 }}  →  transitionType="spring", tran
 - `docs/docs/api-reference.mdx` (API reference table)
 - `skills/react-native-ease-refactor/SKILL.md` (supported properties list, transition category keys, decision tree)
 
+## Fixing a Bug
+
+When fixing a reported bug, add a reproducer to the example app so we can manually verify the fix and catch regressions later.
+
+1. Create a new layout under `example/app/issues/<issue-number>/` — use whatever structure the bug needs (tabs, modals, nested stacks). Self-contained so it can be opened directly from the home screen.
+2. Register it in `example/src/demos/index.ts` under section `'Issues'` with a `route` field pointing at the new layout (e.g. `route: '/issues/42'`). No `component` is needed — the route owns its own rendering.
+3. Include enough context in the screen itself: title, GitHub issue link, repro steps, and visual cues so it's obvious whether the bug is present (e.g. a `mountId` to distinguish "remount" from "still mounted but broken").
+4. The reproducer should fail visibly on the broken code path and pass once the fix is in. Don't skip this even when the bug feels obvious — the regression test pays for itself the first time someone touches related code.
+
 ## Development Commands
 
 ```sh

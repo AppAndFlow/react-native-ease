@@ -181,6 +181,13 @@ static std::string lowestTransformPropertyName(int mask) {
   CGFloat _transformOriginX;
   CGFloat _transformOriginY;
   CGFloat _transformPerspective;
+  // Snapshot of in-flight loop animations, keyed by animation key. iOS
+  // removes CAAnimations when a layer leaves the window hierarchy (e.g.
+  // react-navigation tab switches), so we re-add these on re-attach.
+  // Each saved animation has an explicit beginTime, which iOS preserves
+  // through addAnimation's copy — so phase continues seamlessly via
+  // (currentMediaTime - beginTime) mod period.
+  NSMutableDictionary<NSString *, CAAnimation *> *_loopAnimations;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -196,6 +203,7 @@ static std::string lowestTransformPropertyName(int mask) {
     _hasPendingFirstMountUpdate = NO;
     _transformOriginX = 0.5;
     _transformOriginY = 0.5;
+    _loopAnimations = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -303,13 +311,48 @@ static std::string lowestTransformPropertyName(int mask) {
                                                    toValue:toValue
                                                     config:config
                                                       loop:loop];
+  BOOL isLooping =
+      loop && (config.loop == "repeat" || config.loop == "reverse");
   if (config.delay > 0) {
     animation.beginTime = CACurrentMediaTime() + (config.delay / 1000.0);
     animation.fillMode = kCAFillModeBackwards;
+  } else if (isLooping) {
+    // Set explicit beginTime so the phase survives the addAnimation copy.
+    // Without this, re-adding the saved animation later would reset to a
+    // fresh "now" and visually restart the loop from the start.
+    animation.beginTime = CACurrentMediaTime();
   }
   [animation setValue:@(_animationBatchId) forKey:@"easeBatchId"];
   animation.delegate = self;
   [self.layer addAnimation:animation forKey:animationKey];
+
+  if (isLooping) {
+    _loopAnimations[animationKey] = animation;
+  } else {
+    [_loopAnimations removeObjectForKey:animationKey];
+  }
+}
+
+// Remove the explicit animation from both the layer and our saved snapshot
+// so it doesn't get re-added when the view re-enters a window.
+- (void)removeEaseAnimationForKey:(NSString *)key {
+  [self.layer removeAnimationForKey:key];
+  [_loopAnimations removeObjectForKey:key];
+}
+
+- (void)reapplyLoopAnimations {
+  if (_loopAnimations.count == 0) {
+    return;
+  }
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  for (NSString *key in _loopAnimations) {
+    // Increment to balance the eventual animationDidStop callback when the
+    // view detaches again (or the loop is replaced).
+    _pendingAnimationCount++;
+    [self.layer addAnimation:_loopAnimations[key] forKey:key];
+  }
+  [CATransaction commit];
 }
 
 /// Compose a CATransform3D from EaseViewProps target values.
@@ -816,7 +859,7 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty("opacity", newViewProps);
       if (opacityConfig.type == "none") {
         self.layer.opacity = newViewProps.animateOpacity;
-        [self.layer removeAnimationForKey:kAnimKeyOpacity];
+        [self removeEaseAnimationForKey:kAnimKeyOpacity];
       } else {
         self.layer.opacity = newViewProps.animateOpacity;
         [self
@@ -867,7 +910,7 @@ static std::string lowestTransformPropertyName(int mask) {
 
         if (transformConfig.type == "none") {
           self.layer.transform = [self targetTransformFromProps:newViewProps];
-          [self.layer removeAnimationForKey:kAnimKeyTransform];
+          [self removeEaseAnimationForKey:kAnimKeyTransform];
         } else {
           // Read "from" values from the presentation layer BEFORE setting
           // the new model transform. During an active animation, CA tracks
@@ -973,7 +1016,7 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty("borderRadius", newViewProps);
       self.layer.cornerRadius = newViewProps.animateBorderRadius;
       if (brConfig.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyCornerRadius];
+        [self removeEaseAnimationForKey:kAnimKeyCornerRadius];
       } else {
         [self applyAnimationForKeyPath:@"cornerRadius"
                           animationKey:kAnimKeyCornerRadius
@@ -996,7 +1039,7 @@ static std::string lowestTransformPropertyName(int mask) {
               .CGColor;
       self.layer.backgroundColor = toColor;
       if (bgConfig.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyBackgroundColor];
+        [self removeEaseAnimationForKey:kAnimKeyBackgroundColor];
       } else {
         CGColorRef fromColor = (__bridge CGColorRef)
             [self presentationValueForKeyPath:@"backgroundColor"];
@@ -1016,7 +1059,7 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty("borderWidth", newViewProps);
       self.layer.borderWidth = newViewProps.animateBorderWidth;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyBorderWidth];
+        [self removeEaseAnimationForKey:kAnimKeyBorderWidth];
       } else {
         [self applyAnimationForKeyPath:@"borderWidth"
                           animationKey:kAnimKeyBorderWidth
@@ -1037,7 +1080,7 @@ static std::string lowestTransformPropertyName(int mask) {
           RCTUIColorFromSharedColor(newViewProps.animateBorderColor).CGColor;
       self.layer.borderColor = toColor;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyBorderColor];
+        [self removeEaseAnimationForKey:kAnimKeyBorderColor];
       } else {
         CGColorRef fromColor = (__bridge CGColorRef)
             [self presentationValueForKeyPath:@"borderColor"];
@@ -1057,7 +1100,7 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty("shadowOpacity", newViewProps);
       self.layer.shadowOpacity = newViewProps.animateShadowOpacity;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyShadowOpacity];
+        [self removeEaseAnimationForKey:kAnimKeyShadowOpacity];
       } else {
         [self applyAnimationForKeyPath:@"shadowOpacity"
                           animationKey:kAnimKeyShadowOpacity
@@ -1076,7 +1119,7 @@ static std::string lowestTransformPropertyName(int mask) {
           transitionConfigForProperty("shadowRadius", newViewProps);
       self.layer.shadowRadius = newViewProps.animateShadowRadius;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyShadowRadius];
+        [self removeEaseAnimationForKey:kAnimKeyShadowRadius];
       } else {
         [self applyAnimationForKeyPath:@"shadowRadius"
                           animationKey:kAnimKeyShadowRadius
@@ -1097,7 +1140,7 @@ static std::string lowestTransformPropertyName(int mask) {
           RCTUIColorFromSharedColor(newViewProps.animateShadowColor).CGColor;
       self.layer.shadowColor = toColor;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyShadowColor];
+        [self removeEaseAnimationForKey:kAnimKeyShadowColor];
       } else {
         CGColorRef fromColor = (__bridge CGColorRef)
             [self presentationValueForKeyPath:@"shadowColor"];
@@ -1121,7 +1164,7 @@ static std::string lowestTransformPropertyName(int mask) {
                                        newViewProps.animateShadowOffsetY);
       self.layer.shadowOffset = targetOffset;
       if (config.type == "none") {
-        [self.layer removeAnimationForKey:kAnimKeyShadowOffset];
+        [self removeEaseAnimationForKey:kAnimKeyShadowOffset];
       } else {
         CGSize fromOffset =
             [[self presentationValueForKeyPath:@"shadowOffset"] CGSizeValue];
@@ -1157,6 +1200,13 @@ static std::string lowestTransformPropertyName(int mask) {
 - (void)didMoveToWindow {
   [super didMoveToWindow];
   [self tryApplyPendingFirstMountProps];
+
+  // iOS removes CAAnimations when a layer leaves the window hierarchy.
+  // When the view re-attaches (e.g. after a react-navigation tab switch),
+  // re-apply any loop animations that were running.
+  if (self.window != nil && !_isFirstMount) {
+    [self reapplyLoopAnimations];
+  }
 }
 
 - (void)invalidateLayer {
@@ -1206,29 +1256,29 @@ static std::string lowestTransformPropertyName(int mask) {
         RCTUIColorFromSharedColor(viewProps.animateBackgroundColor).CGColor;
   }
   if (mask & kMaskBorderWidth) {
-    [self.layer removeAnimationForKey:kAnimKeyBorderWidth];
+    [self removeEaseAnimationForKey:kAnimKeyBorderWidth];
     self.layer.borderWidth = viewProps.animateBorderWidth;
   }
   if (mask & kMaskBorderColor) {
-    [self.layer removeAnimationForKey:kAnimKeyBorderColor];
+    [self removeEaseAnimationForKey:kAnimKeyBorderColor];
     self.layer.borderColor =
         RCTUIColorFromSharedColor(viewProps.animateBorderColor).CGColor;
   }
   if (mask & kMaskShadowOpacity) {
-    [self.layer removeAnimationForKey:kAnimKeyShadowOpacity];
+    [self removeEaseAnimationForKey:kAnimKeyShadowOpacity];
     self.layer.shadowOpacity = viewProps.animateShadowOpacity;
   }
   if (mask & kMaskShadowRadius) {
-    [self.layer removeAnimationForKey:kAnimKeyShadowRadius];
+    [self removeEaseAnimationForKey:kAnimKeyShadowRadius];
     self.layer.shadowRadius = viewProps.animateShadowRadius;
   }
   if (mask & kMaskShadowColor) {
-    [self.layer removeAnimationForKey:kAnimKeyShadowColor];
+    [self removeEaseAnimationForKey:kAnimKeyShadowColor];
     self.layer.shadowColor =
         RCTUIColorFromSharedColor(viewProps.animateShadowColor).CGColor;
   }
   if (mask & kMaskShadowOffset) {
-    [self.layer removeAnimationForKey:kAnimKeyShadowOffset];
+    [self removeEaseAnimationForKey:kAnimKeyShadowOffset];
     self.layer.shadowOffset = CGSizeMake(viewProps.animateShadowOffsetX,
                                          viewProps.animateShadowOffsetY);
   }
@@ -1259,6 +1309,7 @@ static std::string lowestTransformPropertyName(int mask) {
 - (void)prepareForRecycle {
   [super prepareForRecycle];
   [self.layer removeAllAnimations];
+  [_loopAnimations removeAllObjects];
   _isFirstMount = YES;
   _hasPendingFirstMountUpdate = NO;
   _pendingAnimationCount = 0;

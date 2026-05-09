@@ -7,7 +7,7 @@ export default function DemoScreen() {
   const { demo } = useLocalSearchParams<{ demo: string }>();
   const entry = demos[demo!];
 
-  if (!entry) {
+  if (!entry?.component) {
     return null;
   }
 
