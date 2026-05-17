@@ -1,13 +1,15 @@
 import {
   codegenNativeComponent,
-  type CodegenTypes,
   type ViewProps,
   type HostComponent,
   type ColorValue,
 } from 'react-native';
-
-type Float = CodegenTypes.Float;
-type Int32 = CodegenTypes.Int32;
+import type {
+  DirectEventHandler,
+  Float,
+  Int32,
+  WithDefault,
+} from 'react-native/Libraries/Types/CodegenTypes';
 
 type NativeTransitionConfig = Readonly<{
   type: string;
@@ -32,80 +34,63 @@ type NativeTransitions = Readonly<{
 
 export interface NativeProps extends ViewProps {
   // Bitmask of which properties are animated (0 = none, let style handle all)
-  animatedProperties?: CodegenTypes.WithDefault<CodegenTypes.Int32, 0>;
+  animatedProperties?: WithDefault<Int32, 0>;
 
   // Animate target values
-  animateOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  animateTranslateX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateTranslateY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateScaleX?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  animateScaleY?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  animateRotate?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateRotateX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateRotateY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateBorderRadius?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateOpacity?: WithDefault<Float, 1.0>;
+  animateTranslateX?: WithDefault<Float, 0.0>;
+  animateTranslateY?: WithDefault<Float, 0.0>;
+  animateScaleX?: WithDefault<Float, 1.0>;
+  animateScaleY?: WithDefault<Float, 1.0>;
+  animateRotate?: WithDefault<Float, 0.0>;
+  animateRotateX?: WithDefault<Float, 0.0>;
+  animateRotateY?: WithDefault<Float, 0.0>;
+  animateBorderRadius?: WithDefault<Float, 0.0>;
   animateBackgroundColor?: ColorValue;
-  animateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateBorderWidth?: WithDefault<Float, 0.0>;
   animateBorderColor?: ColorValue;
-  animateShadowOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateShadowRadius?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateShadowOpacity?: WithDefault<Float, 0.0>;
+  animateShadowRadius?: WithDefault<Float, 0.0>;
   animateShadowColor?: ColorValue;
-  animateShadowOffsetX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateShadowOffsetY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  animateElevation?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  animateShadowOffsetX?: WithDefault<Float, 0.0>;
+  animateShadowOffsetY?: WithDefault<Float, 0.0>;
+  animateElevation?: WithDefault<Float, 0.0>;
 
   // Initial values for enter animations
-  initialAnimateOpacity?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  initialAnimateTranslateX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  initialAnimateTranslateY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  initialAnimateScaleX?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  initialAnimateScaleY?: CodegenTypes.WithDefault<CodegenTypes.Float, 1.0>;
-  initialAnimateRotate?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  initialAnimateRotateX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  initialAnimateRotateY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
-  initialAnimateBorderRadius?: CodegenTypes.WithDefault<
-    CodegenTypes.Float,
-    0.0
-  >;
+  initialAnimateOpacity?: WithDefault<Float, 1.0>;
+  initialAnimateTranslateX?: WithDefault<Float, 0.0>;
+  initialAnimateTranslateY?: WithDefault<Float, 0.0>;
+  initialAnimateScaleX?: WithDefault<Float, 1.0>;
+  initialAnimateScaleY?: WithDefault<Float, 1.0>;
+  initialAnimateRotate?: WithDefault<Float, 0.0>;
+  initialAnimateRotateX?: WithDefault<Float, 0.0>;
+  initialAnimateRotateY?: WithDefault<Float, 0.0>;
+  initialAnimateBorderRadius?: WithDefault<Float, 0.0>;
   initialAnimateBackgroundColor?: ColorValue;
-  initialAnimateBorderWidth?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  initialAnimateBorderWidth?: WithDefault<Float, 0.0>;
   initialAnimateBorderColor?: ColorValue;
-  initialAnimateShadowOpacity?: CodegenTypes.WithDefault<
-    CodegenTypes.Float,
-    0.0
-  >;
-  initialAnimateShadowRadius?: CodegenTypes.WithDefault<
-    CodegenTypes.Float,
-    0.0
-  >;
+  initialAnimateShadowOpacity?: WithDefault<Float, 0.0>;
+  initialAnimateShadowRadius?: WithDefault<Float, 0.0>;
   initialAnimateShadowColor?: ColorValue;
-  initialAnimateShadowOffsetX?: CodegenTypes.WithDefault<
-    CodegenTypes.Float,
-    0.0
-  >;
-  initialAnimateShadowOffsetY?: CodegenTypes.WithDefault<
-    CodegenTypes.Float,
-    0.0
-  >;
-  initialAnimateElevation?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.0>;
+  initialAnimateShadowOffsetX?: WithDefault<Float, 0.0>;
+  initialAnimateShadowOffsetY?: WithDefault<Float, 0.0>;
+  initialAnimateElevation?: WithDefault<Float, 0.0>;
 
   // Unified transition config — one struct with per-property configs
   transitions?: NativeTransitions;
 
   // Transform origin (0–1 fractions, default center)
-  transformOriginX?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
-  transformOriginY?: CodegenTypes.WithDefault<CodegenTypes.Float, 0.5>;
+  transformOriginX?: WithDefault<Float, 0.5>;
+  transformOriginY?: WithDefault<Float, 0.5>;
 
   // 3D perspective distance (default 1280, matches RN default)
-  transformPerspective?: CodegenTypes.WithDefault<CodegenTypes.Float, 1280.0>;
+  transformPerspective?: WithDefault<Float, 1280.0>;
 
   // Events
-  onTransitionEnd?: CodegenTypes.DirectEventHandler<
-    Readonly<{ finished: boolean }>
-  >;
+  onTransitionEnd?: DirectEventHandler<Readonly<{ finished: boolean }>>;
 
   // Android hardware layer optimization (no-op on iOS)
-  useHardwareLayer?: CodegenTypes.WithDefault<boolean, false>;
+  useHardwareLayer?: WithDefault<boolean, false>;
 }
 
 export default codegenNativeComponent<NativeProps>(
