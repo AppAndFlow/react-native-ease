@@ -691,7 +691,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
 
     private fun applyBackgroundColor(color: Int) {
         currentBackgroundColor = color
-        setBackgroundColor(color)
+        BackgroundStyleApplicator.setBackgroundColor(this, color)
     }
 
     private fun animateBackgroundColor(fromColor: Int, toColor: Int, config: TransitionConfig, loop: Boolean = false) {
@@ -714,8 +714,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             }
             addUpdateListener { animation ->
                 val color = animation.animatedValue as Int
-                this@EaseView.currentBackgroundColor = color
-                this@EaseView.setBackgroundColor(color)
+                this@EaseView.applyBackgroundColor(color)
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false
@@ -983,7 +982,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         runningSpringAnimations.remove(viewProperty)
     }
 
-    fun cleanup() {
+    fun stopAnimations() {
         for (runnable in pendingDelayedRunnables) {
             removeCallbacks(runnable)
         }
@@ -1004,6 +1003,12 @@ class EaseView(context: Context) : ReactViewGroup(context) {
             setLayerType(savedLayerType, null)
         }
         activeAnimationCount = 0
+        pendingBatchAnimationCount = 0
+        anyInterrupted = false
+    }
+
+    fun cleanup() {
+        stopAnimations()
 
         prevOpacity = null
         prevTranslateX = null

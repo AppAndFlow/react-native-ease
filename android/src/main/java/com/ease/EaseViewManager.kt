@@ -225,7 +225,15 @@ class EaseViewManager : ReactViewManager() {
 
     override fun onDropViewInstance(view: ReactViewGroup) {
         super.onDropViewInstance(view)
+        (view as? EaseView)?.stopAnimations()
+    }
+
+    override fun prepareToRecycleView(
+        reactContext: ThemedReactContext,
+        view: ReactViewGroup
+    ): ReactViewGroup? {
         (view as? EaseView)?.cleanup()
+        return super.prepareToRecycleView(reactContext, view)
     }
 
     override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any>? {
