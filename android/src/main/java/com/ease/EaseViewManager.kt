@@ -225,7 +225,17 @@ class EaseViewManager : ReactViewManager() {
 
     override fun onDropViewInstance(view: ReactViewGroup) {
         super.onDropViewInstance(view)
+        // Android screen transitions may keep drawing dropped views briefly.
+        // Stop animation work here, but keep visual state until recycle.
+        (view as? EaseView)?.stopAnimations()
+    }
+
+    override fun prepareToRecycleView(
+        reactContext: ThemedReactContext,
+        view: ReactViewGroup
+    ): ReactViewGroup? {
         (view as? EaseView)?.cleanup()
+        return super.prepareToRecycleView(reactContext, view)
     }
 
     override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any>? {

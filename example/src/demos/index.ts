@@ -142,6 +142,11 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Issue #42 — Tabs loop',
     section: 'Issues',
   },
+  'issue-45': {
+    route: '/issues/45',
+    title: 'Issue #45 — Android modal background',
+    section: 'Issues',
+  },
 };
 
 interface SectionData {
