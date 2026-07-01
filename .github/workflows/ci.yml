@@ -31,6 +31,19 @@ jobs:
       - name: Check lint
         run: yarn lint
 
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Run unit tests
+        run: yarn test
+
   build-library:
     runs-on: ubuntu-latest
 
