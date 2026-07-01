@@ -172,6 +172,22 @@ static std::string lowestTransformPropertyName(int mask) {
   return "translateX"; // fallback
 }
 
+// CAAnimation strongly retains its delegate, and the loop animations saved in
+// _loopAnimations never complete, so making the view itself the delegate
+// would create a permanent retain cycle (view → _loopAnimations → animation →
+// view) that leaks the view on any release path that skips prepareForRecycle.
+// Animations retain this proxy instead; it holds the view weakly and forwards
+// the completion callback.
+@interface EaseAnimationDelegateProxy : NSObject <CAAnimationDelegate>
+@property(nonatomic, weak) EaseView *target;
+@end
+
+@implementation EaseAnimationDelegateProxy
+- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag {
+  [self.target animationDidStop:anim finished:flag];
+}
+@end
+
 @implementation EaseView {
   BOOL _isFirstMount;
   BOOL _hasPendingFirstMountUpdate;
@@ -188,6 +204,7 @@ static std::string lowestTransformPropertyName(int mask) {
   // through addAnimation's copy — so phase continues seamlessly via
   // (currentMediaTime - beginTime) mod period.
   NSMutableDictionary<NSString *, CAAnimation *> *_loopAnimations;
+  EaseAnimationDelegateProxy *_delegateProxy;
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {
@@ -204,6 +221,8 @@ static std::string lowestTransformPropertyName(int mask) {
     _transformOriginX = 0.5;
     _transformOriginY = 0.5;
     _loopAnimations = [NSMutableDictionary dictionary];
+    _delegateProxy = [EaseAnimationDelegateProxy new];
+    _delegateProxy.target = self;
   }
   return self;
 }
@@ -323,7 +342,7 @@ static std::string lowestTransformPropertyName(int mask) {
     animation.beginTime = CACurrentMediaTime();
   }
   [animation setValue:@(_animationBatchId) forKey:@"easeBatchId"];
-  animation.delegate = self;
+  animation.delegate = _delegateProxy;
   [self.layer addAnimation:animation forKey:animationKey];
 
   if (isLooping) {
@@ -815,6 +834,9 @@ static std::string lowestTransformPropertyName(int mask) {
     // All transitions are 'none' — set values immediately
     [self beginAnimationBatch];
     [self.layer removeAllAnimations];
+    // Drop saved loop snapshots so didMoveToWindow doesn't re-add the
+    // cancelled loops.
+    [_loopAnimations removeAllObjects];
     if (mask & kMaskOpacity)
       self.layer.opacity = newViewProps.animateOpacity;
     if (hasTransform)
