@@ -1,8 +1,8 @@
 {
-  "name": "Ease",
-  "displayName": "Ease",
+  "name": "EaseExample",
+  "displayName": "Ease Example",
   "expo": {
-    "name": "Ease",
+    "name": "Ease Example",
     "slug": "ease-example",
     "scheme": "ease-example",
     "version": "1.0.0",
