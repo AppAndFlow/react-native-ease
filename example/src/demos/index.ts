@@ -147,6 +147,11 @@ export const demos: Record<string, DemoEntry> = {
     title: 'Issue #45 — Android modal background',
     section: 'Issues',
   },
+  'issue-loop-cancel': {
+    route: '/issues/loop-cancel',
+    title: 'Audit — Cancelled loop resurrects',
+    section: 'Issues',
+  },
 };
 
 interface SectionData {
