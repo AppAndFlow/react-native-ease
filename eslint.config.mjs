@@ -27,6 +27,7 @@ export default defineConfig([
     ignores: [
       'node_modules/',
       'lib/',
+      'example/dist/',
       'example/uniwind-types.d.ts',
       'example/src/uniwind-types.d.ts',
     ],
