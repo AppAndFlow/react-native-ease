@@ -16,6 +16,7 @@ type NativeTransitionConfig = Readonly<{
   damping: Float;
   stiffness: Float;
   mass: Float;
+  velocity: Float;
   loop: string;
   delay: Int32;
 }>;

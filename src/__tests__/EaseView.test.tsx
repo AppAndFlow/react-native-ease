@@ -188,6 +188,37 @@ describe('EaseView', () => {
       expect(t.defaultConfig.damping).toBe(15);
       expect(t.defaultConfig.stiffness).toBe(120);
       expect(t.defaultConfig.mass).toBe(1);
+      expect(t.defaultConfig.velocity).toBe(0);
+    });
+
+    it('passes spring velocity through to the native config', () => {
+      const { rerender } = render(
+        <EaseView
+          testID="ease"
+          transition={{ type: 'spring', velocity: 2.5 }}
+        />,
+      );
+      expect(getNativeProps().transitions.defaultConfig.velocity).toBe(2.5);
+
+      // Negative velocity means the value is already moving down.
+      rerender(
+        <EaseView
+          testID="ease"
+          transition={{ type: 'spring', velocity: -2.5 }}
+        />,
+      );
+      expect(getNativeProps().transitions.defaultConfig.velocity).toBe(-2.5);
+    });
+
+    it('ignores velocity on timing transitions', () => {
+      render(
+        <EaseView
+          testID="ease"
+          // @ts-expect-error velocity is spring-only
+          transition={{ type: 'timing', duration: 200, velocity: 5 }}
+        />,
+      );
+      expect(getNativeProps().transitions.defaultConfig.velocity).toBe(0);
     });
 
     it('passes none transition type to defaultConfig', () => {

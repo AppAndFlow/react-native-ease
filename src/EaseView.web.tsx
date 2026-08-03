@@ -284,6 +284,9 @@ function resolveEasing(transition: SingleTransition | undefined): string {
     const d = transition.damping ?? 15;
     const s = transition.stiffness ?? 120;
     const m = transition.mass ?? 1;
+    // `velocity` is not applied here: the easing is a single normalized 0->1
+    // curve shared by every property in the category, while an initial velocity
+    // only has meaning relative to each property's own from->to distance.
     if (supportsLinearEasing()) {
       return getSpringEasing(d, s, m).easing;
     }

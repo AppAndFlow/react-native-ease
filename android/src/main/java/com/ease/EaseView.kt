@@ -59,6 +59,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val damping: Float,
         val stiffness: Float,
         val mass: Float,
+        val velocity: Float,
         val loop: String,
         val delay: Long
     )
@@ -86,6 +87,7 @@ class EaseView(context: Context) : ReactViewGroup(context) {
                     damping = configMap.getDouble("damping").toFloat(),
                     stiffness = configMap.getDouble("stiffness").toFloat(),
                     mass = configMap.getDouble("mass").toFloat(),
+                    velocity = if (configMap.hasKey("velocity")) configMap.getDouble("velocity").toFloat() else 0f,
                     loop = configMap.getString("loop")!!,
                     delay = configMap.getInt("delay").toLong()
                 )
@@ -892,10 +894,22 @@ class EaseView(context: Context) : ReactViewGroup(context) {
         val dampingRatio = (config.damping / (2.0f * sqrt(config.stiffness * config.mass)))
             .coerceAtLeast(0.01f)
 
+        // translationX/Y animate in pixels, so a DIP/s velocity has to be converted
+        // the same way the target value is in EaseViewManager. Every other property
+        // (scale, rotation, alpha) already shares its unit with the JS side.
+        val startVelocity = when (viewProperty) {
+            DynamicAnimation.TRANSLATION_X, DynamicAnimation.TRANSLATION_Y ->
+                PixelUtil.toPixelFromDIP(config.velocity)
+            else -> config.velocity
+        }
+
         val spring = SpringAnimation(this, viewProperty).apply {
             spring = SpringForce(toValue).apply {
                 this.dampingRatio = dampingRatio
                 this.stiffness = config.stiffness
+            }
+            if (startVelocity != 0f) {
+                setStartVelocity(startVelocity)
             }
             addUpdateListener { _, _, _ ->
                 // First update — enable hardware layer

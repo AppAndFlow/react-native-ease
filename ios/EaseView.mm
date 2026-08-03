@@ -87,6 +87,7 @@ struct EaseTransitionConfig {
   float damping;
   float stiffness;
   float mass;
+  float velocity;
   std::string loop;
   int delay;
 };
@@ -113,6 +114,7 @@ static EaseTransitionConfig transitionConfigFromStruct(const T &src) {
   config.damping = src.damping;
   config.stiffness = src.stiffness;
   config.mass = src.mass;
+  config.velocity = src.velocity;
   config.loop = src.loop;
   config.delay = src.delay;
   return config;
@@ -294,7 +296,20 @@ static std::string lowestTransformPropertyName(int mask) {
     spring.damping = config.damping;
     spring.stiffness = config.stiffness;
     spring.mass = config.mass;
+    // config.velocity is in value units per second; CASpringAnimation
+    // normalizes initialVelocity against the from->to distance (1 means "the
+    // whole distance in one second"), which also flips the sign for
+    // decreasing animations.
     spring.initialVelocity = 0;
+    if (config.velocity != 0 && [fromValue isKindOfClass:[NSNumber class]] &&
+        [toValue isKindOfClass:[NSNumber class]]) {
+      double delta = [(NSNumber *)toValue doubleValue] -
+                     [(NSNumber *)fromValue doubleValue];
+      if (fabs(delta) > 1e-9) {
+        spring.initialVelocity = config.velocity / delta;
+      }
+    }
+    // settlingDuration accounts for initialVelocity, so read it after.
     spring.duration = spring.settlingDuration;
     return spring;
   } else {

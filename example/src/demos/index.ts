@@ -27,6 +27,7 @@ import { TransformOriginDemo } from './TransformOriginDemo';
 import { PerPropertyDemo } from './PerPropertyDemo';
 import { ShadowDemo } from './ShadowDemo';
 import { SpinDemo } from './SpinDemo';
+import { SpringVelocityDemo } from './SpringVelocityDemo';
 import { UniwindDemo } from './uniwind/UniwindDemo';
 
 interface DemoEntry {
@@ -66,6 +67,11 @@ export const demos: Record<string, DemoEntry> = {
     section: 'Timing',
   },
   'delay': { component: DelayDemo, title: 'Delay', section: 'Timing' },
+  'spring-velocity': {
+    component: SpringVelocityDemo,
+    title: 'Spring Velocity',
+    section: 'Timing',
+  },
   'combined': { component: CombinedDemo, title: 'Combined', section: 'Timing' },
   'styled-card': {
     component: StyledCardDemo,

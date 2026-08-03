@@ -81,7 +81,7 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | Reanimated / Animated Pattern                                                                                             | EaseView Equivalent                                                                                          |
 | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `useSharedValue` + `useAnimatedStyle` + `withTiming` for opacity, translate, scale, rotate, borderRadius, backgroundColor | `animate={{ prop: value }}` + `transition={{ type: 'timing', duration, easing }}`                            |
-| `withSpring`                                                                                                              | `transition={{ type: 'spring', damping, stiffness, mass }}`                                                  |
+| `withSpring`                                                                                                              | `transition={{ type: 'spring', damping, stiffness, mass, velocity }}`                                        |
 | `entering={FadeIn}` / `FadeIn.duration(N)`                                                                                | `initialAnimate={{ opacity: 0 }}` + `animate={{ opacity: 1 }}` + timing transition                           |
 | `entering={FadeInDown}` / `FadeInUp`                                                                                      | `initialAnimate={{ opacity: 0, translateY: ±value }}` + `animate={{ opacity: 1, translateY: 0 }}`            |
 | `entering={SlideInLeft}` / `SlideInRight`                                                                                 | `initialAnimate={{ translateX: ±value }}` + `animate={{ translateX: 0 }}`                                    |
@@ -116,6 +116,7 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | `damping` | `10` | `15` | **Must set `damping: 10`** |
 | `stiffness` | `100` | `120` | **Must set `stiffness: 100`** |
 | `mass` | `1` | `1` | Same — omit |
+| `velocity` | `0` | `0` | Same — carry over only when set |
 
 **Reanimated v4 defaults:**
 
@@ -124,6 +125,7 @@ Use this table to convert Reanimated/Animated patterns to EaseView:
 | `damping` | `120` | `15` | **Must set `damping: 120`** |
 | `stiffness` | `900` | `120` | **Must set `stiffness: 900`** |
 | `mass` | `4` | `1` | **Must set `mass: 4`** |
+| `velocity` | `0` | `0` | Same — carry over only when set |
 
 Reanimated v4 changed to a critically damped, snappy spring (no bounce) as the default. The rationale was that the old physics-based defaults were too sensitive to start/end conditions. v4 recommends using `duration` + `dampingRatio` instead of raw physics params.
 
@@ -179,12 +181,19 @@ RN Animated uses `friction`/`tension` by default: `friction: 7, tension: 40`. Th
 | stiffness (tension) | `40` | `120` | **Must set `stiffness: 40`** |
 | damping (friction) | `7` | `15` | **Must set `damping: 7`** |
 | mass | `1` | `1` | Same — omit |
+| velocity | `0` | `0` | Same — carry over only when set |
+
+`Animated.spring` also accepts `bounciness`/`speed` instead of `friction`/`tension`. Those go
+through `SpringConfig.fromBouncinessAndSpeed`, so convert with that function rather than mapping
+the numbers directly — the default `bounciness: 0, speed: 12` resolves to
+`{ stiffness: 342.1, damping: 36.93 }`.
 
 ### Unit Conversions
 
 - **Rotation:** Reanimated uses `'45deg'` strings in transforms → EaseView uses `45` (number, degrees). Strip the `'deg'` suffix and parse to number.
 - **Translation:** Both use DIPs (density-independent pixels). No conversion needed.
 - **Scale:** Both use unitless multipliers. No conversion needed.
+- **Spring velocity:** Same units as the property being animated, per second — DIPs for translate, degrees for rotate, unitless for scale and opacity. No conversion needed, but note it is per-transition, so a `transform` transition shared by translate and scale can only carry one meaningful velocity. Split the categories if both need one.
 
 ---
 
@@ -416,6 +425,7 @@ transition={{
   damping: 15,      // default 15
   stiffness: 120,   // default 120
   mass: 1,          // default 1
+  velocity: 0,      // property units/s, default 0, native only
   delay: 0,         // ms, default 0
 }}
 ```
