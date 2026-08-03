@@ -33,6 +33,13 @@ export type SpringTransition = {
   stiffness?: number;
   /** Mass of the object — higher values mean slower, more momentum. @default 1 */
   mass?: number;
+  /**
+   * Initial velocity, in animated-property units per second, signed in value
+   * space — positive means the value is already moving up. Units follow the JS
+   * side: DIPs for translateX/translateY, degrees for rotate, unitless for
+   * scale and opacity. Ignored on web. @default 0
+   */
+  velocity?: number;
   /** Delay in milliseconds before the animation starts. @default 0 */
   delay?: number;
 };

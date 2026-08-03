@@ -194,7 +194,24 @@ Spring animations use a physics-based model for natural-feeling motion. Great fo
 | `damping`   | `number` | `15`    | Friction — higher values reduce oscillation                   |
 | `stiffness` | `number` | `120`   | Spring constant — higher values mean faster animation         |
 | `mass`      | `number` | `1`     | Mass of the object — higher values mean slower, more momentum |
+| `velocity`  | `number` | `0`     | Initial velocity in property units per second (native only)   |
 | `delay`     | `number` | `0`     | Delay in milliseconds before the animation starts             |
+
+`velocity` gives the spring a head start, the way `Animated.spring`'s `velocity` does — useful
+when the animation continues a gesture that was already moving. It is signed in value space, so a
+positive value means the property is already increasing:
+
+```tsx
+<EaseView
+  animate={{ translateY: dismissed ? 400 : 0 }}
+  transition={{ type: 'spring', damping: 18, stiffness: 200, velocity: 1200 }}
+/>
+```
+
+Units follow the JS side — DIPs per second for `translateX`/`translateY`, degrees per second for
+`rotate`, and plain units per second for `scale` and `opacity`. It has no effect on web, where a
+spring compiles to a single normalized CSS easing curve that cannot express a per-property
+starting velocity.
 
 Spring presets for common feels:
 
@@ -575,6 +592,7 @@ Properties not specified in `animate` default to their identity values.
   damping?: number;    // default: 15
   stiffness?: number;  // default: 120
   mass?: number;       // default: 1
+  velocity?: number;   // default: 0 (property units/s, native only)
   delay?: number;      // default: 0 (ms)
 }
 ```

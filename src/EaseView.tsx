@@ -96,6 +96,7 @@ const DEFAULT_CONFIG: NativeTransitionConfig = {
   damping: 15,
   stiffness: 120,
   mass: 1,
+  velocity: 0,
   loop: 'none',
   delay: 0,
 };
@@ -133,6 +134,7 @@ function resolveSingleConfig(config: SingleTransition): NativeTransitionConfig {
   const damping = config.type === 'spring' ? config.damping ?? 15 : 15;
   const stiffness = config.type === 'spring' ? config.stiffness ?? 120 : 120;
   const mass = config.type === 'spring' ? config.mass ?? 1 : 1;
+  const velocity = config.type === 'spring' ? config.velocity ?? 0 : 0;
   const loop: string =
     config.type === 'timing' ? config.loop ?? 'none' : 'none';
   const delay =
@@ -146,6 +148,7 @@ function resolveSingleConfig(config: SingleTransition): NativeTransitionConfig {
     damping,
     stiffness,
     mass,
+    velocity,
     loop,
     delay,
   };
